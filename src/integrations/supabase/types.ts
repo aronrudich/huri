@@ -14,13 +14,220 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          is_anonymous: boolean
+          recipient_id: string | null
+          recipient_role_id: string | null
+          sender_id: string | null
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          recipient_id?: string | null
+          recipient_role_id?: string | null
+          sender_id?: string | null
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          is_anonymous?: boolean
+          recipient_id?: string | null
+          recipient_role_id?: string | null
+          sender_id?: string | null
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_recipient_role_id_fkey"
+            columns: ["recipient_role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      parked_cars: {
+        Row: {
+          car_model: string | null
+          created_at: string
+          id: string
+          lot_position: string
+          notes: string | null
+          parked_by: string | null
+          ro_number: string | null
+          tag_number: string
+          updated_at: string
+        }
+        Insert: {
+          car_model?: string | null
+          created_at?: string
+          id?: string
+          lot_position?: string
+          notes?: string | null
+          parked_by?: string | null
+          ro_number?: string | null
+          tag_number: string
+          updated_at?: string
+        }
+        Update: {
+          car_model?: string | null
+          created_at?: string
+          id?: string
+          lot_position?: string
+          notes?: string | null
+          parked_by?: string | null
+          ro_number?: string | null
+          tag_number?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      pickup_requests: {
+        Row: {
+          advisor_name: string | null
+          car_model: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          completed_at: string | null
+          created_at: string
+          id: string
+          requested_by: string | null
+          ro_number: string | null
+          status: string
+          tag_number: string | null
+        }
+        Insert: {
+          advisor_name?: string | null
+          car_model?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          requested_by?: string | null
+          ro_number?: string | null
+          status?: string
+          tag_number?: string | null
+        }
+        Update: {
+          advisor_name?: string | null
+          car_model?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          requested_by?: string | null
+          ro_number?: string | null
+          status?: string
+          tag_number?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          nickname: string | null
+          phone: string | null
+          role_id: string | null
+          role_name: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          full_name: string
+          id: string
+          nickname?: string | null
+          phone?: string | null
+          role_id?: string | null
+          role_name: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          nickname?: string | null
+          phone?: string | null
+          role_id?: string | null
+          role_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      roles: {
+        Row: {
+          created_at: string
+          id: string
+          is_group: boolean
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_group?: boolean
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_group?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      archive_stale_pickups: { Args: never; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

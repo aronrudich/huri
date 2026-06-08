@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.archive_stale_pickups() FROM authenticated, anon, public;

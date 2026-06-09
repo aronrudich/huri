@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { adjacentCoords } from "@/lib/lot";
+import { adjacentSpots, satelliteEmbedUrl, LOT_COORDS } from "@/lib/lot";
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
@@ -114,8 +114,8 @@ function PickupPage() {
         )}
         {pickups.map((p) => {
           const car = p.tag_number ? carsByTag[p.tag_number] : undefined;
-          const adj = car ? adjacentCoords(car.lot_position) : [];
-          const blockers = adj.map((pos) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
+          const adj = car ? adjacentSpots(car.lot_position) : [];
+          const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
           return (
             <li key={p.id} className="overflow-hidden rounded-2xl bg-background">

@@ -4,7 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { isValidCoord } from "@/lib/lot";
+import { isValidSpot } from "@/lib/lot";
 
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
@@ -26,8 +26,8 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!tag.trim()) return toast.error("Tag # is required");
-    const cleanPos = pos.trim().toUpperCase();
-    if (cleanPos && !isValidCoord(cleanPos)) return toast.error("Lot position must look like C2 or AB1");
+    const cleanPos = pos.trim();
+    if (cleanPos && !isValidSpot(cleanPos)) return toast.error("Spot must be a number 1–147");
     if (!user) return;
     setBusy(true);
     const { error } = await supabase.from("parked_cars").upsert(
@@ -59,7 +59,7 @@ function ParkPage() {
         <Field label="Tag Number" value={tag} onChange={setTag} required />
         <Field label="RO Number" value={ro} onChange={setRo} />
         <Field label="Car Model" value={model} onChange={setModel} />
-        <Field label="Lot Position (e.g. C2)" value={pos} onChange={(v) => setPos(v.toUpperCase())} placeholder="Leave blank if unknown" />
+        <Field label="Spot Number (1–147)" value={pos} onChange={setPos} placeholder="Leave blank if unknown" />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>
           <textarea

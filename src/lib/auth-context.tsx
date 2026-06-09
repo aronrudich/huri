@@ -10,6 +10,9 @@ export type Profile = {
   phone: string | null;
   role_id: string | null;
   role_name: string;
+  is_active?: boolean;
+  deactivated_at?: string | null;
+  deactivated_by?: string | null;
 };
 
 type Ctx = {

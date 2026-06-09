@@ -122,7 +122,7 @@ function PickupPage() {
               {flagged && (
                 <div className="flex items-start gap-2 bg-warning/15 px-4 py-2 text-warning-foreground">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                  <p className="text-xs font-medium"><span className="font-bold">Tech note:</span> {car!.notes}</p>
+                  <p className="text-xs font-medium"><span className="font-bold">Note:</span> {car!.notes}</p>
                 </div>
               )}
               <div className="px-4 py-3">
@@ -172,7 +172,7 @@ function PickupPage() {
                       <div className="overflow-hidden rounded-xl border border-border">
                         <iframe
                           title={`Lot map ${car.lot_position}`}
-                          src={satelliteEmbedUrl()}
+                          src={satelliteEmbedUrl(car.lot_position)}
                           className="h-32 w-full"
                           loading="lazy"
                         />

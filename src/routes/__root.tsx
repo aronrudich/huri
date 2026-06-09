@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { ensureServiceWorker } from "@/lib/push";
+import { NotificationGate } from "@/components/NotificationGate";
 
 function NotFoundComponent() {
   return (
@@ -105,6 +106,7 @@ function RootComponent() {
       <AuthProvider>
         <SWRegistrar />
         <Outlet />
+        <NotificationGate />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

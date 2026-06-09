@@ -147,15 +147,40 @@ function PickupPage() {
                 </div>
 
                 {car && (
-                  <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
-                    <p><span className="text-muted-foreground">Parked at:</span> <span className="font-semibold">{car.lot_position}</span></p>
-                    {blockers.length > 0 && blockers.map((b) => (
-                      <p key={b.id} className="text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Blocked by {b.lot_position}:</span> TAG #{b.tag_number}
-                        {b.car_model && ` · ${b.car_model}`}
-                        {b.ro_number && ` · RO #${b.ro_number}`}
+                  <div className="mb-2 space-y-2">
+                    <div className="rounded-xl bg-surface px-3 py-2 text-sm">
+                      <p>
+                        <span className="text-muted-foreground">Parked at:</span>{" "}
+                        <span className="font-semibold">
+                          {car.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${car.lot_position}`}
+                        </span>
                       </p>
-                    ))}
+                      {blockers.length > 0 && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                          {blockers.map((b, i) => (
+                            <span key={b.id}>
+                              {i > 0 && " and "}
+                              Spot {b.lot_position} (TAG #{b.tag_number}
+                              {b.car_model && ` · ${b.car_model}`})
+                            </span>
+                          ))}
+                        </p>
+                      )}
+                    </div>
+                    {car.lot_position !== "UNKNOWN" && (
+                      <div className="overflow-hidden rounded-xl border border-border">
+                        <iframe
+                          title={`Lot map ${car.lot_position}`}
+                          src={satelliteEmbedUrl()}
+                          className="h-32 w-full"
+                          loading="lazy"
+                        />
+                        <p className="bg-surface px-3 py-1 text-[10px] text-muted-foreground">
+                          {LOT_COORDS.lat}, {LOT_COORDS.lng} · Spot {car.lot_position}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, PenSquare, Car } from "lucide-react";
+import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar } from "@/components/BottomBar";
@@ -180,15 +180,6 @@ function InboxPage() {
         ))}
       </ul>
 
-      {/* Pickup FAB (bottom-left) */}
-      <Link
-        to="/pickup"
-        className="fixed bottom-24 left-5 z-20 grid h-12 w-12 place-items-center rounded-full bg-warning text-warning-foreground shadow-lg active:scale-95"
-        aria-label="Pickup queue"
-      >
-        <Car className="h-5 w-5" />
-      </Link>
-
       {/* Compose FAB (bottom-right) */}
       <Link
         to="/compose"
@@ -202,3 +193,4 @@ function InboxPage() {
     </div>
   );
 }
+

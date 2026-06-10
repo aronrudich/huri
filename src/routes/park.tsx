@@ -6,22 +6,44 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { isValidSpot } from "@/lib/lot";
 
+type ParkSearch = { tag?: string };
+
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
+  validateSearch: (s: Record<string, unknown>): ParkSearch => ({
+    tag: typeof s.tag === "string" ? s.tag : undefined,
+  }),
   component: ParkPage,
 });
 
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [tag, setTag] = useState("");
+  const { tag: tagParam } = Route.useSearch();
+  const [tag, setTag] = useState(tagParam ?? "");
   const [ro, setRo] = useState("");
   const [model, setModel] = useState("");
   const [pos, setPos] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
+
+  // Prefill from existing car if tag passed
+  useEffect(() => {
+    if (!tagParam) return;
+    supabase.from("parked_cars").select("*").eq("tag_number", tagParam).maybeSingle()
+      .then(({ data }) => {
+        if (!data) return;
+        setEditing(true);
+        setTag(data.tag_number);
+        setRo(data.ro_number ?? "");
+        setModel(data.car_model ?? "");
+        setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
+        setNotes(data.notes ?? "");
+      });
+  }, [tagParam]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,7 +65,7 @@ function ParkPage() {
     );
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Car logged");
+    toast.success(editing ? "Car updated" : "Car logged");
     navigate({ to: "/pickup", replace: true });
   };
 
@@ -51,7 +73,7 @@ function ParkPage() {
     <div className="min-h-screen bg-surface safe-top safe-bottom">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-        <h1 className="flex-1 text-center text-base font-semibold">Park a Car</h1>
+        <h1 className="flex-1 text-center text-base font-semibold">{editing ? "Edit Car" : "Park a Car"}</h1>
         <div className="w-8" />
       </header>
 
@@ -68,7 +90,7 @@ function ParkPage() {
           />
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Saving…" : "Log Vehicle"}
+          {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
         </button>
       </form>
     </div>

@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { Plus, Car as CarIcon, Clock, CheckCircle2, AlertTriangle } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Clock, CheckCircle2, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
-import { adjacentSpots, satelliteEmbedUrl, LOT_COORDS } from "@/lib/lot";
+import { adjacentSpots } from "@/lib/lot";
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
@@ -26,33 +26,34 @@ type ParkedCar = {
 
 function PickupPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const [pickups, setPickups] = useState<Pickup[]>([]);
+  const [allCars, setAllCars] = useState<ParkedCar[]>([]);
   const [carsByTag, setCarsByTag] = useState<Record<string, ParkedCar>>({});
   const [carsByPos, setCarsByPos] = useState<Record<string, ParkedCar>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [q, setQ] = useState("");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   const loadCars = async () => {
     const { data } = await supabase.from("parked_cars").select("*");
+    const cars = (data as ParkedCar[]) ?? [];
     const byTag: Record<string, ParkedCar> = {};
     const byPos: Record<string, ParkedCar> = {};
-    data?.forEach((c: any) => {
+    cars.forEach((c) => {
       byTag[c.tag_number] = c;
       if (c.lot_position && c.lot_position !== "UNKNOWN") byPos[c.lot_position.toUpperCase()] = c;
     });
+    setAllCars(cars);
     setCarsByTag(byTag);
     setCarsByPos(byPos);
   };
 
   useEffect(() => {
     if (!user) return;
-    // Best-effort archive (idempotent client-side check via simple update fallback)
     supabase.from("pickup_requests")
-      .select("*")
-      .neq("status", "completed")
-      .order("created_at", { ascending: true })
+      .select("*").neq("status", "completed").order("created_at", { ascending: true })
       .then(({ data }) => setPickups((data as Pickup[]) ?? []));
     loadCars();
     supabase.from("profiles").select("id, full_name, nickname").then(({ data }) => {
@@ -72,7 +73,26 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [user]);
 
-  // Client-side auto-complete after 45min (visual; server fn could do too)
+  // Valet push: any new pickup_request triggers a browser notification for valets
+  useEffect(() => {
+    if (!profile || profile.role_name !== "Valet") return;
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    const chan = supabase.channel("valet-pickup-alert")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
+        const p = payload.new as Pickup;
+        if (Notification.permission === "granted") {
+          new Notification("New pickup request", {
+            body: [p.tag_number && `Tag #${p.tag_number}`, p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
+              .filter(Boolean).join(" · ") || "Open Huri",
+            icon: "/icon-512.png",
+          });
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(chan); };
+  }, [profile]);
+
+  // Auto-archive after 45min
   useEffect(() => {
     const t = setInterval(() => {
       const now = Date.now();
@@ -89,22 +109,76 @@ function PickupPage() {
   const claim = async (p: Pickup) => {
     if (!user) return;
     const { error } = await supabase
-      .from("pickup_requests")
-      .update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
+      .from("pickup_requests").update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
       .eq("id", p.id).eq("status", "unclaimed");
     if (error) return toast.error(error.message);
     toast.success("Claimed");
   };
 
+  const matches = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    return allCars
+      .filter((c) =>
+        c.tag_number?.toLowerCase().includes(n) ||
+        c.ro_number?.toLowerCase().includes(n) ||
+        c.car_model?.toLowerCase().includes(n),
+      )
+      .slice(0, 8);
+  }, [q, allCars]);
+
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
-      <header className="sticky top-0 z-10 flex items-center justify-between bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Pickup Queue</h1>
-          <p className="text-sm text-muted-foreground">{pickups.filter(p => p.status === "unclaimed").length} unclaimed</p>
+      <header className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-3 backdrop-blur">
+        <div className="mb-3 flex items-center gap-2">
+          <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+          <h1 className="flex-1 text-xl font-bold tracking-tight">Pickup Queue</h1>
+          <Link to="/park" className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-semibold">Park</Link>
+          <Link to="/pickup/new" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Pickup</Link>
         </div>
-        <Link to="/park" className="rounded-full border border-input bg-background px-4 py-2 text-sm font-semibold">Park a Car</Link>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search Tag # or RO #"
+            className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+        <p className="px-1 pt-1 text-[11px] text-muted-foreground">
+          {pickups.filter((p) => p.status === "unclaimed").length} unclaimed · tap a search result to edit a car
+        </p>
       </header>
+
+      {q.trim() && (
+        <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
+          {matches.length === 0 && (
+            <li className="px-4 py-6 text-center text-sm text-muted-foreground">No cars match "{q}"</li>
+          )}
+          {matches.map((c) => (
+            <li key={c.id}>
+              <Link
+                to="/park"
+                search={{ tag: c.tag_number }}
+                className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
+              >
+                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                  {c.lot_position === "UNKNOWN" ? "?" : c.lot_position}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">
+                    Tag #{c.tag_number}{c.ro_number && ` · RO #${c.ro_number}`}
+                  </p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${c.lot_position}`}
+                  </p>
+                </div>
+                <span className="text-xs font-semibold text-primary">Edit</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
 
       <ul className="space-y-2 px-3">
         {pickups.length === 0 && (
@@ -147,39 +221,24 @@ function PickupPage() {
                 </div>
 
                 {car && (
-                  <div className="mb-2 space-y-2">
-                    <div className="rounded-xl bg-surface px-3 py-2 text-sm">
-                      <p>
-                        <span className="text-muted-foreground">Parked at:</span>{" "}
-                        <span className="font-semibold">
-                          {car.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${car.lot_position}`}
-                        </span>
+                  <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
+                    <p>
+                      <span className="text-muted-foreground">Parked at:</span>{" "}
+                      <span className="font-semibold">
+                        {car.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${car.lot_position}`}
+                      </span>
+                    </p>
+                    {blockers.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                        {blockers.map((b, i) => (
+                          <span key={b.id}>
+                            {i > 0 && " and "}
+                            Spot {b.lot_position} (TAG #{b.tag_number}
+                            {b.car_model && ` · ${b.car_model}`})
+                          </span>
+                        ))}
                       </p>
-                      {blockers.length > 0 && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                          {blockers.map((b, i) => (
-                            <span key={b.id}>
-                              {i > 0 && " and "}
-                              Spot {b.lot_position} (TAG #{b.tag_number}
-                              {b.car_model && ` · ${b.car_model}`})
-                            </span>
-                          ))}
-                        </p>
-                      )}
-                    </div>
-                    {car.lot_position !== "UNKNOWN" && (
-                      <div className="overflow-hidden rounded-xl border border-border">
-                        <iframe
-                          title={`Lot map ${car.lot_position}`}
-                          src={satelliteEmbedUrl(car.lot_position)}
-                          className="h-32 w-full"
-                          loading="lazy"
-                        />
-                        <p className="bg-surface px-3 py-1 text-[10px] text-muted-foreground">
-                          {LOT_COORDS.lat}, {LOT_COORDS.lng} · Spot {car.lot_position}
-                        </p>
-                      </div>
                     )}
                   </div>
                 )}
@@ -199,14 +258,6 @@ function PickupPage() {
           );
         })}
       </ul>
-
-      <Link
-        to="/pickup/new"
-        className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95"
-        aria-label="New pickup request"
-      >
-        <Plus className="h-7 w-7" />
-      </Link>
 
       <BottomBar active="pickup" />
     </div>

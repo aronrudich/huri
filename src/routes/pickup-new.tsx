@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/pickup/new")({
+export const Route = createFileRoute("/pickup-new")({
   head: () => ({ meta: [{ title: "New Pickup · Huri" }] }),
   component: NewPickupPage,
 });

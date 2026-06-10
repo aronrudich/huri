@@ -10,17 +10,22 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PickupNewRouteImport } from './routes/pickup-new'
 import { Route as PickupRouteImport } from './routes/pickup'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
-import { Route as PickupNewRouteImport } from './routes/pickup.new'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PickupNewRoute = PickupNewRouteImport.update({
+  id: '/pickup-new',
+  path: '/pickup-new',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PickupRoute = PickupRouteImport.update({
@@ -53,20 +58,15 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PickupNewRoute = PickupNewRouteImport.update({
-  id: '/new',
-  path: '/new',
-  getParentRoute: () => PickupRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/compose': typeof ComposeRoute
   '/park': typeof ParkRoute
-  '/pickup': typeof PickupRouteWithChildren
+  '/pickup': typeof PickupRoute
+  '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
-  '/pickup/new': typeof PickupNewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRoutesByTo {
@@ -74,9 +74,9 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/compose': typeof ComposeRoute
   '/park': typeof ParkRoute
-  '/pickup': typeof PickupRouteWithChildren
+  '/pickup': typeof PickupRoute
+  '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
-  '/pickup/new': typeof PickupNewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRoutesById {
@@ -85,9 +85,9 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/compose': typeof ComposeRoute
   '/park': typeof ParkRoute
-  '/pickup': typeof PickupRouteWithChildren
+  '/pickup': typeof PickupRoute
+  '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
-  '/pickup/new': typeof PickupNewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
 }
 export interface FileRouteTypes {
@@ -98,8 +98,8 @@ export interface FileRouteTypes {
     | '/compose'
     | '/park'
     | '/pickup'
+    | '/pickup-new'
     | '/profile'
-    | '/pickup/new'
     | '/thread/$threadId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -108,8 +108,8 @@ export interface FileRouteTypes {
     | '/compose'
     | '/park'
     | '/pickup'
+    | '/pickup-new'
     | '/profile'
-    | '/pickup/new'
     | '/thread/$threadId'
   id:
     | '__root__'
@@ -118,8 +118,8 @@ export interface FileRouteTypes {
     | '/compose'
     | '/park'
     | '/pickup'
+    | '/pickup-new'
     | '/profile'
-    | '/pickup/new'
     | '/thread/$threadId'
   fileRoutesById: FileRoutesById
 }
@@ -128,7 +128,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ComposeRoute: typeof ComposeRoute
   ParkRoute: typeof ParkRoute
-  PickupRoute: typeof PickupRouteWithChildren
+  PickupRoute: typeof PickupRoute
+  PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
 }
@@ -140,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pickup-new': {
+      id: '/pickup-new'
+      path: '/pickup-new'
+      fullPath: '/pickup-new'
+      preLoaderRoute: typeof PickupNewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pickup': {
@@ -184,33 +192,16 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/pickup/new': {
-      id: '/pickup/new'
-      path: '/new'
-      fullPath: '/pickup/new'
-      preLoaderRoute: typeof PickupNewRouteImport
-      parentRoute: typeof PickupRoute
-    }
   }
 }
-
-interface PickupRouteChildren {
-  PickupNewRoute: typeof PickupNewRoute
-}
-
-const PickupRouteChildren: PickupRouteChildren = {
-  PickupNewRoute: PickupNewRoute,
-}
-
-const PickupRouteWithChildren =
-  PickupRoute._addFileChildren(PickupRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   ComposeRoute: ComposeRoute,
   ParkRoute: ParkRoute,
-  PickupRoute: PickupRouteWithChildren,
+  PickupRoute: PickupRoute,
+  PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
 }

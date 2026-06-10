@@ -132,16 +132,16 @@ function PickupPage() {
       <header className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-3 backdrop-blur">
         <div className="mb-3 flex items-center gap-2">
           <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-          <h1 className="flex-1 text-xl font-bold tracking-tight">Pickup Queue</h1>
-          <Link to="/park" className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-semibold">Park</Link>
-          <Link to="/pickup/new" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Pickup</Link>
+          <h1 className="flex-1 text-xl font-bold tracking-tight">Huri</h1>
+          <Link to="/park" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Park</Link>
+          <Link to="/pickup-new" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Pickup</Link>
         </div>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search Tag # or RO #"
+            placeholder="Search"
             className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
           />
         </div>

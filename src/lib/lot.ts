@@ -42,13 +42,16 @@ export function isValidSpot(raw: string): boolean {
   return parseSpot(raw) !== null;
 }
 
-/** Adjacent (blocker) spots: N-1 and N+1, clamped to 1..147. */
+/** Blocker spots within the same group of 3 (front→back).
+ *  Groups: (1,2,3), (4,5,6), ... Position 0 (front) blocks nothing in front of it.
+ *  Position 1 (middle) is blocked by position 0.
+ *  Position 2 (back) is blocked by positions 0 and 1. */
 export function adjacentSpots(raw: string | null | undefined): string[] {
   const n = parseSpot(raw);
   if (n === null) return [];
+  const posInGroup = (n - 1) % 3; // 0=front, 1=middle, 2=back
   const out: string[] = [];
-  if (n - 1 >= MIN_SPOT) out.push(String(n - 1));
-  if (n + 1 <= MAX_SPOT) out.push(String(n + 1));
+  for (let i = 1; i <= posInGroup; i++) out.push(String(n - i));
   return out;
 }
 

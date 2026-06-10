@@ -1,6 +1,7 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { LogOut, Bell, BellOff, UserX, Shield } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, BellOff, UserX, Shield } from "lucide-react";
+
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar } from "@/components/BottomBar";
@@ -82,9 +83,11 @@ function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
-      <header className="px-5 pb-3 pt-4">
+      <header className="flex items-center gap-2 px-4 pb-3 pt-4">
+        <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
       </header>
+
 
       {profile && (
         <section className="mx-3 overflow-hidden rounded-2xl bg-background">

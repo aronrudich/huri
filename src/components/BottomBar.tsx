@@ -5,12 +5,12 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "profile" }
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (
     <Link
       to={to}
-      className={`flex flex-1 flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
+      aria-label={label}
+      className={`flex flex-1 items-center justify-center py-3 ${
         active === key ? "text-primary" : "text-muted-foreground"
       }`}
     >
       {icon}
-      <span>{label}</span>
     </Link>
   );
   return (

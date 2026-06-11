@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar } from "@/components/BottomBar";
+import { BottomBar, HuriLogo } from "@/components/BottomBar";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/")({
@@ -138,7 +138,7 @@ function InboxPage() {
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="sticky top-0 z-10 bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
-        <h1 className="mb-3 text-3xl font-bold tracking-tight">Inbox</h1>
+        <div className="mb-3 flex items-center"><HuriLogo /></div>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input

@@ -21,3 +21,12 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "profile" }
     </nav>
   );
 }
+
+/** Shared "Huri" wordmark used in every page header's top-left corner. */
+export function HuriLogo() {
+  return (
+    <Link to="/" aria-label="Huri home" className="select-none text-xl font-bold tracking-tight text-primary">
+      Huri
+    </Link>
+  );
+}

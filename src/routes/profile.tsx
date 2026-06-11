@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut, Bell, BellOff, UserX, Shield } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, UserX, Shield } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar } from "@/components/BottomBar";
-import { subscribePush } from "@/lib/push";
+import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { subscribePush, getNotifPref, setNotifPref } from "@/lib/push";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({

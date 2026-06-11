@@ -28,7 +28,6 @@ export function NotificationGate() {
     setBusy(false);
     if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
     if (r === "denied") { toast.error("Permission denied. Enable in browser settings to use Huri."); setPerm("denied"); return; }
-    if (r === "no-key") { toast.message("Push setup pending — continuing without."); setPerm("granted"); return; }
     setPerm("unsupported");
   };
 

@@ -26,6 +26,7 @@ function ProfilePage() {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">("default");
+  const [notifOn, setNotifOn] = useState(true);
   const [staff, setStaff] = useState<Employee[]>([]);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Employee | null>(null);
@@ -37,6 +38,7 @@ function ProfilePage() {
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) setPerm(Notification.permission);
     else setPerm("unsupported");
+    setNotifOn(getNotifPref());
   }, []);
 
   useEffect(() => {
@@ -51,13 +53,19 @@ function ProfilePage() {
     navigate({ to: "/auth", replace: true });
   };
 
-  const enableNotifs = async () => {
+  const toggleNotifs = async (on: boolean) => {
     if (!user) return;
-    const r = await subscribePush(user.id);
-    if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); }
-    else if (r === "denied") toast.error("Notification permission denied");
-    else if (r === "no-key") toast.error("Push not configured yet (VAPID key missing)");
-    else toast.error("Push not supported on this device");
+    if (on) {
+      if (perm !== "granted") {
+        const r = await subscribePush(user.id);
+        if (r === "ok") { setPerm("granted"); setNotifOn(true); setNotifPref(true); toast.success("Notifications on"); return; }
+        if (r === "denied") return toast.error("Permission denied — enable in browser settings");
+        return toast.error("Push not supported on this device");
+      }
+      setNotifPref(true); setNotifOn(true); toast.success("Notifications on");
+    } else {
+      setNotifPref(false); setNotifOn(false); toast.message("Notifications paused");
+    }
   };
 
   const leaveDealership = async () => {
@@ -85,8 +93,9 @@ function ProfilePage() {
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="flex items-center gap-2 px-4 pb-3 pt-4">
+        <HuriLogo />
+        <div className="flex-1" />
         <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-        <h1 className="text-3xl font-bold tracking-tight">Profile</h1>
       </header>
 
 
@@ -108,15 +117,24 @@ function ProfilePage() {
       )}
 
       <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
-        <button onClick={enableNotifs} className="flex w-full items-center gap-3 px-4 py-4 active:bg-accent">
-          {perm === "granted" ? <Bell className="h-5 w-5 text-success" /> : <BellOff className="h-5 w-5 text-muted-foreground" />}
-          <div className="flex-1 text-left">
+        <div className="flex items-center gap-3 px-4 py-4">
+          <Bell className={`h-5 w-5 ${notifOn && perm === "granted" ? "text-primary" : "text-muted-foreground"}`} />
+          <div className="flex-1">
             <p className="font-medium">Push notifications</p>
             <p className="text-xs text-muted-foreground">
-              {perm === "granted" ? "Enabled on this device" : perm === "unsupported" ? "Not supported on this device" : "Tap to enable"}
+              {perm === "unsupported"
+                ? "Not supported on this device"
+                : notifOn && perm === "granted"
+                ? "On — you'll be alerted to new activity"
+                : "Off — pause alerts while you're away from work"}
             </p>
           </div>
-        </button>
+          <Switch
+            checked={notifOn && perm === "granted"}
+            disabled={perm === "unsupported"}
+            onCheckedChange={toggleNotifs}
+          />
+        </div>
       </section>
 
       {isAdmin && (

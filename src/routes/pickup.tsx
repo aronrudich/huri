@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Clock, CheckCircle2, AlertTriangle, Search } from "lucide-react";
+import { Clock, CheckCircle2, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar } from "@/components/BottomBar";
+import { BottomBar, HuriLogo } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
+import { notify } from "@/lib/push";
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
@@ -80,13 +81,12 @@ function PickupPage() {
     const chan = supabase.channel("valet-pickup-alert")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
-        if (Notification.permission === "granted") {
-          new Notification("New pickup request", {
-            body: [p.tag_number && `Tag #${p.tag_number}`, p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
-              .filter(Boolean).join(" · ") || "Open Huri",
-            icon: "/icon-512.png",
-          });
-        }
+        notify(
+          "New pickup request",
+          [p.tag_number && `Tag #${p.tag_number}`, p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
+            .filter(Boolean).join(" · ") || "Open Huri",
+          "/pickup",
+        );
       })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
@@ -131,8 +131,8 @@ function PickupPage() {
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-3 backdrop-blur">
         <div className="mb-3 flex items-center gap-2">
-          <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-          <h1 className="flex-1 text-xl font-bold tracking-tight">Huri</h1>
+          <HuriLogo />
+          <div className="flex-1" />
           <Link to="/park" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Park</Link>
           <Link to="/pickup-new" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Pickup</Link>
         </div>

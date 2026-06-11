@@ -30,7 +30,7 @@ function ComposePage() {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase.from("profiles").select("id, full_name, nickname, role_name").neq("id", user.id),
+      supabase.from("directory").select("id, full_name, nickname, role_name").neq("id", user.id),
       supabase.from("roles").select("id, name").order("name"),
     ]).then(([p, r]) => {
       if (p.data) setPeople(p.data.map((x: any) => ({

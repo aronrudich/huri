@@ -57,7 +57,7 @@ function PickupPage() {
       .select("*").neq("status", "completed").order("created_at", { ascending: true })
       .then(({ data }) => setPickups((data as Pickup[]) ?? []));
     loadCars();
-    supabase.from("profiles").select("id, full_name, nickname").then(({ data }) => {
+    supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
       const m: Record<string, string> = {};
       data?.forEach((p) => { m[p.id] = p.nickname || p.full_name; });
       setProfiles(m);

@@ -34,7 +34,7 @@ function ThreadPage() {
     if (!user) return;
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => setMsgs((data as Msg[]) ?? []));
-    supabase.from("profiles").select("id, full_name, nickname").then(({ data }) => {
+    supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
       const m: Record<string, string> = {};
       data?.forEach((p) => { m[p.id] = p.nickname || p.full_name; });
       setProfiles(m);

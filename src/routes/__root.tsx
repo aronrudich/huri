@@ -116,6 +116,7 @@ function RootComponent() {
         <SWRegistrar />
         <Outlet />
         <NotificationGate />
+        <IOSInstallHint />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

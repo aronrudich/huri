@@ -54,7 +54,7 @@ function InboxPage() {
     supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
       if (data) {
         const m: Record<string, { name: string }> = {};
-        data.forEach((p) => { m[p.id] = { name: p.nickname || p.full_name }; });
+        data.forEach((p) => { if (p.id) m[p.id] = { name: p.nickname || p.full_name || "" }; });
         setProfiles(m);
       }
     });

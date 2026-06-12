@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { sendPickupAlert } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/pickup-new")({
   head: () => ({ meta: [{ title: "New Pickup · Huri" }] }),
@@ -37,6 +38,15 @@ function NewPickupPage() {
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    // Fan-out web push to valets (fire & forget; don't block UX)
+    sendPickupAlert({
+      data: {
+        tag: tag.trim() || null,
+        ro: ro.trim() || null,
+        advisor: advisor.trim() || null,
+        model: model.trim() || null,
+      },
+    }).catch((e) => console.warn("push fan-out failed", e));
     toast.success("Pickup submitted");
     navigate({ to: "/pickup", replace: true });
   };

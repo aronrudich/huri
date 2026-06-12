@@ -59,7 +59,7 @@ function PickupPage() {
     loadCars();
     supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
       const m: Record<string, string> = {};
-      data?.forEach((p) => { m[p.id] = p.nickname || p.full_name; });
+      data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
       setProfiles(m);
     });
 

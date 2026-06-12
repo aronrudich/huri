@@ -15,6 +15,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { ensureServiceWorker } from "@/lib/push";
 import { NotificationGate } from "@/components/NotificationGate";
+import { IOSInstallHint } from "@/components/IOSInstallHint";
 
 function NotFoundComponent() {
   return (
@@ -115,6 +116,7 @@ function RootComponent() {
         <SWRegistrar />
         <Outlet />
         <NotificationGate />
+        <IOSInstallHint />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

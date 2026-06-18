@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
+import { confirmEmailForValidCredentials } from "@/lib/auth.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/auth")({
 });
 
 const DEFAULT_ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "Other"];
+const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
+const errorMessage = (error: unknown) => error instanceof Error ? error.message : "Something went wrong";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -50,7 +53,19 @@ function AuthPage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    let { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+
+    if (isEmailNotConfirmed(error?.message)) {
+      try {
+        await confirmEmailForValidCredentials({ data: { email: email.trim(), password } });
+        const retry = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+        error = retry.error;
+      } catch (confirmError) {
+        setBusy(false);
+        return toast.error(errorMessage(confirmError));
+      }
+    }
+
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Welcome back");
@@ -62,19 +77,32 @@ function AuthPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !password) return toast.error("Name, email, and password are required");
+    const trimmedEmail = email.trim();
+    if (!fullName.trim() || !trimmedEmail || !password) return toast.error("Name, email, and password are required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
 
     setBusy(true);
     const { data: signUp, error: signErr } = await supabase.auth.signUp({
-      email,
+      email: trimmedEmail,
       password,
       options: { data: { full_name: fullName } },
     });
     if (signErr) { setBusy(false); return toast.error(signErr.message); }
 
-    const uid = signUp.user?.id;
+    if (!signUp.session) {
+      try {
+        await confirmEmailForValidCredentials({ data: { email: trimmedEmail, password } });
+        const { error: retryError } = await supabase.auth.signInWithPassword({ email: trimmedEmail, password });
+        if (retryError) throw retryError;
+      } catch (confirmError) {
+        setBusy(false);
+        return toast.error(errorMessage(confirmError));
+      }
+    }
+
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? signUp.user?.id;
     if (!uid) { setBusy(false); return toast.error("Sign-up failed — try again"); }
 
     // ensure role exists (idempotent)
@@ -84,15 +112,15 @@ function AuthPage() {
       roleRow = ins;
     }
 
-    await supabase.from("profiles").insert({
+    await supabase.from("profiles").upsert({
       id: uid,
       full_name: fullName.trim(),
       nickname: nickname.trim() || null,
-      email: email.trim(),
+      email: trimmedEmail,
       phone: phone.trim() || null,
       role_id: roleRow?.id ?? null,
       role_name: finalRole,
-    });
+    }, { onConflict: "id" });
 
     setBusy(false);
     toast.success("Welcome to Huri");

@@ -7,7 +7,6 @@ export type Profile = {
   full_name: string;
   nickname: string | null;
   email: string;
-  phone: string | null;
   role_id: string | null;
   role_name: string;
   is_active?: boolean;
@@ -37,8 +36,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (uid: string) => {
-    const { data } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
-    setProfile((data as Profile) ?? null);
+    const { data: existing } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+    if (existing) {
+      setProfile(existing as Profile);
+      return;
+    }
+
+    const { data: authData } = await supabase.auth.getUser();
+    const authUser = authData.user;
+    if (!authUser) { setProfile(null); return; }
+
+    const fallbackName =
+      (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
+      authUser.email?.split("@")[0] ||
+      "Huri teammate";
+    const { data: created } = await supabase
+      .from("profiles")
+      .upsert(
+        {
+          id: uid,
+          full_name: fallbackName,
+          nickname: null,
+          email: authUser.email ?? "",
+          role_id: null,
+          role_name: "Advisor",
+          is_active: true,
+        },
+        { onConflict: "id" },
+      )
+      .select("*")
+      .maybeSingle();
+    setProfile((created as Profile) ?? null);
   };
 
   useEffect(() => {

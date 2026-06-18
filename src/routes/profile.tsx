@@ -122,7 +122,6 @@ function ProfilePage() {
             </button>
           </div>
           <Row label="Email" value={profile.email} />
-          <Row label="Phone" value={profile.phone ?? "—"} />
         </section>
       )}
 

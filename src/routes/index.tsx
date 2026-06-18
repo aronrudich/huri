@@ -4,7 +4,18 @@ import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
+
+const HIDDEN_KEY = "huri:hiddenThreads";
+const loadHidden = (): Set<string> => {
+  if (typeof window === "undefined") return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); }
+  catch { return new Set(); }
+};
+const saveHidden = (s: Set<string>) => {
+  if (typeof window !== "undefined") localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s]));
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,6 +54,14 @@ function InboxPage() {
   const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [hidden, setHidden] = useState<Set<string>>(() => loadHidden());
+
+  const hideThread = (tid: string) => {
+    const next = new Set(hidden);
+    next.add(tid);
+    setHidden(next);
+    saveHidden(next);
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
@@ -123,13 +142,13 @@ function InboxPage() {
         isGroup,
       });
     }
-    let arr = Array.from(map.values());
+    let arr = Array.from(map.values()).filter((t) => !hidden.has(t.thread_id));
     if (q.trim()) {
       const needle = q.toLowerCase();
       arr = arr.filter((t) => t.title.toLowerCase().includes(needle) || t.preview.toLowerCase().includes(needle));
     }
     return arr;
-  }, [messages, profiles, roles, user, q]);
+  }, [messages, profiles, roles, user, q, hidden]);
 
   if (loading || !user) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
@@ -158,24 +177,26 @@ function InboxPage() {
         )}
         {threads.map((t) => (
           <li key={t.thread_id}>
-            <Link
-              to="/thread/$threadId"
-              params={{ threadId: t.thread_id }}
-              className="flex items-start gap-3 px-5 py-3 active:bg-accent"
-            >
-              <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
-                {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-base font-semibold">{t.title}</p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
-                  </span>
+            <SwipeRow onDelete={() => hideThread(t.thread_id)}>
+              <Link
+                to="/thread/$threadId"
+                params={{ threadId: t.thread_id }}
+                className="flex items-start gap-3 px-5 py-3 active:bg-accent"
+              >
+                <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
+                  {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
                 </div>
-                <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
-              </div>
-            </Link>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate text-base font-semibold">{t.title}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
+                    </span>
+                  </div>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
+                </div>
+              </Link>
+            </SwipeRow>
           </li>
         ))}
       </ul>

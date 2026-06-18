@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { confirmEmailForValidCredentials } from "@/lib/auth.functions";
+import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
@@ -89,32 +89,20 @@ function AuthPage() {
     if (!finalRole) return toast.error("Please specify your role");
 
     setBusy(true);
-    const { data: signUp, error: signErr } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: { data: { full_name: fullName } },
-    });
-    if (signErr) {
+    try {
+      await createConfirmedAccount({ data: { email: trimmedEmail, password, fullName: fullName.trim() } });
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
+      if (signInError) throw signInError;
+    } catch (createError) {
       setBusy(false);
-      return toast.error(signErr.message);
-    }
-
-    if (!signUp.session) {
-      try {
-        await confirmEmailForValidCredentials({ data: { email: trimmedEmail, password } });
-        const { error: retryError } = await supabase.auth.signInWithPassword({
-          email: trimmedEmail,
-          password,
-        });
-        if (retryError) throw retryError;
-      } catch (confirmError) {
-        setBusy(false);
-        return toast.error(errorMessage(confirmError));
-      }
+      return toast.error(errorMessage(createError));
     }
 
     const { data: userData } = await supabase.auth.getUser();
-    const uid = userData.user?.id ?? signUp.user?.id;
+    const uid = userData.user?.id;
     if (!uid) {
       setBusy(false);
       return toast.error("Sign-up failed — try again");

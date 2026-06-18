@@ -143,7 +143,6 @@ export type Database = {
           id: string
           is_active: boolean
           nickname: string | null
-          phone: string | null
           role_id: string | null
           role_name: string
         }
@@ -156,7 +155,6 @@ export type Database = {
           id: string
           is_active?: boolean
           nickname?: string | null
-          phone?: string | null
           role_id?: string | null
           role_name: string
         }
@@ -169,7 +167,6 @@ export type Database = {
           id?: string
           is_active?: boolean
           nickname?: string | null
-          phone?: string | null
           role_id?: string | null
           role_name?: string
         }

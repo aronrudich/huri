@@ -1,12 +1,14 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut, Bell, UserX, Shield } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, UserX, Shield, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo } from "@/components/BottomBar";
 import { subscribePush, getNotifPref, setNotifPref } from "@/lib/push";
 import { Switch } from "@/components/ui/switch";
+import { EditProfileSheet } from "@/components/EditProfileSheet";
+import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/profile")({
@@ -24,12 +26,14 @@ const PROTECTED_ROLES = ["General Manager", "Director"]; // Directors can't remo
 
 function ProfilePage() {
   const navigate = useNavigate();
-  const { user, profile, loading } = useAuth();
+  const { user, profile, loading, refreshProfile } = useAuth();
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">("default");
   const [notifOn, setNotifOn] = useState(true);
   const [staff, setStaff] = useState<Employee[]>([]);
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Employee | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [roleEdit, setRoleEdit] = useState<Employee | null>(null);
 
   const isGM = profile?.role_name === "General Manager";
   const isAdmin = !!profile && ADMIN_ROLES.includes(profile.role_name);
@@ -105,11 +109,17 @@ function ProfilePage() {
             <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary">
               {(profile.nickname || profile.full_name)[0]?.toUpperCase()}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="text-lg font-semibold">{profile.full_name}</p>
               {profile.nickname && <p className="text-xs text-muted-foreground">"{profile.nickname}"</p>}
               <p className="text-sm text-primary">{profile.role_name}</p>
             </div>
+            <button
+              onClick={() => setEditOpen(true)}
+              className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
+            >
+              <Pencil className="h-3.5 w-3.5" /> Edit
+            </button>
           </div>
           <Row label="Email" value={profile.email} />
           <Row label="Phone" value={profile.phone ?? "—"} />
@@ -147,11 +157,19 @@ function ProfilePage() {
               const protectedTarget = PROTECTED_ROLES.includes(emp.role_name);
               const canRemove = isGM || !protectedTarget;
               return (
-                <li key={emp.id} className="flex items-center justify-between border-t border-border px-4 py-3">
+                <li key={emp.id} className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{emp.full_name}</p>
                     <p className="truncate text-xs text-muted-foreground">{emp.role_name}</p>
                   </div>
+                  {isGM && (
+                    <button
+                      onClick={() => setRoleEdit(emp)}
+                      className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
+                    >
+                      Role
+                    </button>
+                  )}
                   {canRemove ? (
                     <button onClick={() => setConfirmRemove(emp)} className="rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-semibold text-destructive">
                       Remove
@@ -198,6 +216,26 @@ function ProfilePage() {
           confirmLabel="Remove from Dealership"
           onCancel={() => setConfirmRemove(null)}
           onConfirm={() => removeEmployee(confirmRemove)}
+        />
+      )}
+
+      {editOpen && profile && (
+        <EditProfileSheet
+          profile={profile}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => refreshProfile()}
+        />
+      )}
+
+      {roleEdit && (
+        <ChangeRoleSheet
+          employeeId={roleEdit.id}
+          employeeName={roleEdit.full_name}
+          currentRole={roleEdit.role_name}
+          onClose={() => setRoleEdit(null)}
+          onSaved={(newRole) =>
+            setStaff((s) => s.map((e) => (e.id === roleEdit.id ? { ...e, role_name: newRole } : e)))
+          }
         />
       )}
 

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { sendMessagePush } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/thread/$threadId")({
   head: () => ({ meta: [{ title: "Thread · Huri" }] }),

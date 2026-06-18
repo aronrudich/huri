@@ -23,6 +23,7 @@ function createAuthClient(key: string) {
       autoRefreshToken: false,
     },
   });
+
 }
 
 export const confirmEmailForValidCredentials = createServerFn({ method: "POST" })

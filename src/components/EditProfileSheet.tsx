@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
 
+const ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "General Manager"];
+
 type Props = {
   profile: Profile;
   onClose: () => void;
@@ -17,6 +19,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   // info
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
+  const [role, setRole] = useState(profile.role_name);
 
   // email
   const [newEmail, setNewEmail] = useState(profile.email);
@@ -33,6 +36,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
       .update({
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
+        role_name: role,
       })
       .eq("id", profile.id);
     setBusy(false);
@@ -99,9 +103,11 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
             <Field label="Nickname">
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
             </Field>
-            <p className="text-xs text-muted-foreground">
-              To change your role, ask a General Manager.
-            </p>
+            <Field label="Role">
+              <select value={role} onChange={(e) => setRole(e.target.value)} className="input">
+                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+              </select>
+            </Field>
             <PrimaryBtn busy={busy} onClick={saveInfo}>Save changes</PrimaryBtn>
           </div>
         )}

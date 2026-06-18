@@ -31,12 +31,15 @@ function ComposePage() {
     if (!user) return;
     Promise.all([
       supabase.from("directory").select("id, full_name, nickname, role_name").neq("id", user.id),
-      supabase.from("roles").select("id, name").order("name"),
+      supabase.from("roles").select("id, name").in("name", ["Valet", "Advisor", "Technician"]).order("name"),
     ]).then(([p, r]) => {
       if (p.data) setPeople(p.data.map((x: any) => ({
-        kind: "user", id: x.id, name: x.nickname || x.full_name, subtitle: x.role_name ?? "",
+        kind: "user",
+        id: x.id,
+        name: `${x.nickname || x.full_name}${x.role_name ? ` (${x.role_name})` : ""}`,
+        subtitle: "",
       })));
-      if (r.data) setGroups(r.data.map((x: any) => ({ kind: "group", id: x.id, name: x.name })));
+      if (r.data) setGroups(r.data.map((x: any) => ({ kind: "group", id: x.id, name: `${x.name}s` })));
     });
   }, [user]);
 

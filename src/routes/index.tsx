@@ -142,13 +142,13 @@ function InboxPage() {
         isGroup,
       });
     }
-    let arr = Array.from(map.values());
+    let arr = Array.from(map.values()).filter((t) => !hidden.has(t.thread_id));
     if (q.trim()) {
       const needle = q.toLowerCase();
       arr = arr.filter((t) => t.title.toLowerCase().includes(needle) || t.preview.toLowerCase().includes(needle));
     }
     return arr;
-  }, [messages, profiles, roles, user, q]);
+  }, [messages, profiles, roles, user, q, hidden]);
 
   if (loading || !user) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;

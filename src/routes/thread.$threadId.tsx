@@ -82,6 +82,15 @@ function ThreadPage() {
     const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
+    sendMessagePush({
+      data: {
+        threadId,
+        body: body.trim(),
+        recipientId: payload.recipient_id ?? null,
+        recipientRoleId: payload.recipient_role_id ?? null,
+        isAnonymous: anonymous,
+      },
+    }).catch((e) => console.warn("msg push failed", e));
     setBody("");
     setAnonymous(false);
   };

@@ -54,6 +54,14 @@ function InboxPage() {
   const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [hidden, setHidden] = useState<Set<string>>(() => loadHidden());
+
+  const hideThread = (tid: string) => {
+    const next = new Set(hidden);
+    next.add(tid);
+    setHidden(next);
+    saveHidden(next);
+  };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });

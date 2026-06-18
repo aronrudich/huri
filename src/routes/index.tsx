@@ -177,24 +177,26 @@ function InboxPage() {
         )}
         {threads.map((t) => (
           <li key={t.thread_id}>
-            <Link
-              to="/thread/$threadId"
-              params={{ threadId: t.thread_id }}
-              className="flex items-start gap-3 px-5 py-3 active:bg-accent"
-            >
-              <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
-                {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="truncate text-base font-semibold">{t.title}</p>
-                  <span className="shrink-0 text-xs text-muted-foreground">
-                    {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
-                  </span>
+            <SwipeRow onDelete={() => hideThread(t.thread_id)}>
+              <Link
+                to="/thread/$threadId"
+                params={{ threadId: t.thread_id }}
+                className="flex items-start gap-3 px-5 py-3 active:bg-accent"
+              >
+                <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
+                  {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
                 </div>
-                <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
-              </div>
-            </Link>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <p className="truncate text-base font-semibold">{t.title}</p>
+                    <span className="shrink-0 text-xs text-muted-foreground">
+                      {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
+                    </span>
+                  </div>
+                  <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
+                </div>
+              </Link>
+            </SwipeRow>
           </li>
         ))}
       </ul>

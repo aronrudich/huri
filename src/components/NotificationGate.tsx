@@ -36,7 +36,7 @@ export function NotificationGate() {
     try {
       const r = await Promise.race<"ok" | "denied" | "unsupported">([
         subscribePush(user.id),
-        new Promise((resolve) => window.setTimeout(() => resolve("unsupported"), 8000)),
+        new Promise<"unsupported">((resolve) => window.setTimeout(() => resolve("unsupported"), 8000)),
       ]);
       if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
       if (r === "denied") { toast.error("Permission denied. You can turn them on later from Profile."); setPerm("denied"); return; }

@@ -17,7 +17,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   // info
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
-  const [phone, setPhone] = useState(profile.phone ?? "");
 
   // email
   const [newEmail, setNewEmail] = useState(profile.email);
@@ -34,7 +33,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
       .update({
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
-        phone: phone.trim() || null,
       })
       .eq("id", profile.id);
     setBusy(false);
@@ -100,9 +98,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
             </Field>
             <Field label="Nickname">
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
-            </Field>
-            <Field label="Phone">
-              <input value={phone} onChange={(e) => setPhone(e.target.value)} className="input" inputMode="tel" />
             </Field>
             <p className="text-xs text-muted-foreground">
               To change your role, ask a General Manager.

@@ -33,7 +33,6 @@ function AuthPage() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
-  const [phone, setPhone] = useState("");
   const [role, setRole] = useState("Advisor");
   const [otherRole, setOtherRole] = useState("");
 
@@ -142,7 +141,6 @@ function AuthPage() {
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
         email: trimmedEmail,
-        phone: phone.trim() || null,
         role_id: roleRow?.id ?? null,
         role_name: finalRole,
       },
@@ -218,13 +216,6 @@ function AuthPage() {
                 type="email"
                 required
                 autoComplete="email"
-              />
-              <Field
-                label="Phone Number"
-                value={phone}
-                onChange={setPhone}
-                type="tel"
-                autoComplete="tel"
               />
               <Field
                 label="Password"

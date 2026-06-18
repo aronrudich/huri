@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
 
 const ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "General Manager"];
+type RoleRow = { id: string; name: string };
 
 type Props = {
   profile: Profile;
@@ -20,6 +21,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
   const [role, setRole] = useState(profile.role_name);
+  const [roleRows, setRoleRows] = useState<RoleRow[]>([]);
 
   // email
   const [newEmail, setNewEmail] = useState(profile.email);
@@ -27,6 +29,12 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   // password
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+
+  useEffect(() => {
+    supabase.from("roles").select("id, name").order("created_at", { ascending: true }).then(({ data }) => {
+      if (data?.length) setRoleRows(data as RoleRow[]);
+    });
+  }, []);
 
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");
@@ -36,6 +44,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
       .update({
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
+        role_id: roleRows.find((r) => r.name === role)?.id ?? profile.role_id,
         role_name: role,
       })
       .eq("id", profile.id);
@@ -105,7 +114,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
             </Field>
             <Field label="Role">
               <select value={role} onChange={(e) => setRole(e.target.value)} className="input">
-                {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
+                {Array.from(new Set([...(roleRows.length ? roleRows.map((r) => r.name) : ROLES), profile.role_name])).map((r) => <option key={r} value={r}>{r}</option>)}
               </select>
             </Field>
             <PrimaryBtn busy={busy} onClick={saveInfo}>Save changes</PrimaryBtn>

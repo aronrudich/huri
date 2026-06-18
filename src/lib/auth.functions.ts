@@ -1,5 +1,5 @@
-import { createServerFn } from "@tanstack/react-start";
 import { createClient } from "@supabase/supabase-js";
+import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -9,10 +9,7 @@ const emailPasswordSchema = z.object({
 });
 
 function createAuthClient(key: string) {
-  const url =
-    process.env.SUPABASE_URL ||
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.VITE_SUPABASE_URL;
+  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
 
   if (!url) throw new Error("Account confirmation is missing the backend URL.");
 
@@ -54,7 +51,10 @@ export const confirmEmailForValidCredentials = createServerFn({ method: "POST" }
     const perPage = 1000;
 
     for (let page = 1; page <= 20; page++) {
-      const { data: usersPage, error: listError } = await adminClient.auth.admin.listUsers({ page, perPage });
+      const { data: usersPage, error: listError } = await adminClient.auth.admin.listUsers({
+        page,
+        perPage,
+      });
       if (listError) throw new Error("Could not look up this account for confirmation.");
 
       const user = usersPage.users.find((candidate) => candidate.email?.toLowerCase() === targetEmail);

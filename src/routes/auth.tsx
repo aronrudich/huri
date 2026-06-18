@@ -18,7 +18,8 @@ export const Route = createFileRoute("/auth")({
 
 const DEFAULT_ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "Other"];
 const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : "Something went wrong");
+const errorMessage = (error: unknown) =>
+  error instanceof Error ? error.message : "Something went wrong";
 
 function AuthPage() {
   const navigate = useNavigate();
@@ -127,7 +128,11 @@ function AuthPage() {
       .eq("name", finalRole)
       .maybeSingle();
     if (!roleRow) {
-      const { data: ins } = await supabase.from("roles").insert({ name: finalRole }).select().maybeSingle();
+      const { data: ins } = await supabase
+        .from("roles")
+        .insert({ name: finalRole })
+        .select()
+        .maybeSingle();
       roleRow = ins;
     }
 
@@ -181,7 +186,13 @@ function AuthPage() {
 
           {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-3">
-              <Field label="Email" value={email} onChange={setEmail} type="email" autoComplete="email" />
+              <Field
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                autoComplete="email"
+              />
               <Field
                 label="Password"
                 value={password}
@@ -189,7 +200,10 @@ function AuthPage() {
                 type="password"
                 autoComplete="current-password"
               />
-              <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
+              <button
+                disabled={busy}
+                className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
+              >
                 {busy ? "Signing in…" : "Sign In"}
               </button>
             </form>
@@ -197,8 +211,21 @@ function AuthPage() {
             <form onSubmit={handleRegister} className="space-y-3">
               <Field label="Full Name" value={fullName} onChange={setFullName} required />
               <Field label="Nickname (optional)" value={nickname} onChange={setNickname} />
-              <Field label="Email" value={email} onChange={setEmail} type="email" required autoComplete="email" />
-              <Field label="Phone Number" value={phone} onChange={setPhone} type="tel" autoComplete="tel" />
+              <Field
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                required
+                autoComplete="email"
+              />
+              <Field
+                label="Phone Number"
+                value={phone}
+                onChange={setPhone}
+                type="tel"
+                autoComplete="tel"
+              />
               <Field
                 label="Password"
                 value={password}
@@ -223,12 +250,24 @@ function AuthPage() {
                 </select>
               </div>
 
-              {role === "Other" && <Field label="Specify your role" value={otherRole} onChange={setOtherRole} required />}
+              {role === "Other" && (
+                <Field
+                  label="Specify your role"
+                  value={otherRole}
+                  onChange={setOtherRole}
+                  required
+                />
+              )}
 
-              <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
+              <button
+                disabled={busy}
+                className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
+              >
                 {busy ? "Creating…" : "Create Account"}
               </button>
-              <p className="text-center text-xs text-muted-foreground">No email verification required.</p>
+              <p className="text-center text-xs text-muted-foreground">
+                No email verification required.
+              </p>
             </form>
           )}
         </div>

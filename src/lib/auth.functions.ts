@@ -9,7 +9,10 @@ const emailPasswordSchema = z.object({
 });
 
 function createAuthClient(key: string) {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.VITE_SUPABASE_URL;
+  const url =
+    process.env.SUPABASE_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.VITE_SUPABASE_URL;
 
   if (!url) throw new Error("Account confirmation is missing the backend URL.");
 
@@ -57,7 +60,9 @@ export const confirmEmailForValidCredentials = createServerFn({ method: "POST" }
       });
       if (listError) throw new Error("Could not look up this account for confirmation.");
 
-      const user = usersPage.users.find((candidate) => candidate.email?.toLowerCase() === targetEmail);
+      const user = usersPage.users.find(
+        (candidate) => candidate.email?.toLowerCase() === targetEmail,
+      );
       if (user) {
         const { error: updateError } = await adminClient.auth.admin.updateUserById(user.id, {
           email_confirm: true,

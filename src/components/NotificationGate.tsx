@@ -11,24 +11,41 @@ import { toast } from "sonner";
 export function NotificationGate() {
   const { user } = useAuth();
   const [perm, setPerm] = useState<NotificationPermission | "unsupported" | null>(null);
+  const [dismissed, setDismissed] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (window.localStorage.getItem("huri.notifications.gate.dismissed") === "yes") {
+      setDismissed(true);
+    }
+    if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
+      setPerm("unsupported");
+      return;
+    }
     if (!("Notification" in window)) { setPerm("unsupported"); return; }
     setPerm(Notification.permission);
   }, [user]);
 
   if (!user) return null;
+  if (dismissed) return null;
   if (perm !== "default") return null; // granted, denied, or unsupported → no block
 
   const enable = async () => {
     setBusy(true);
-    const r = await subscribePush(user.id);
-    setBusy(false);
-    if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
-    if (r === "denied") { toast.error("Permission denied. Enable in browser settings to use Huri."); setPerm("denied"); return; }
-    setPerm("unsupported");
+    try {
+      const r = await subscribePush(user.id);
+      if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
+      if (r === "denied") { toast.error("Permission denied. You can turn them on later from Profile."); setPerm("denied"); return; }
+      setPerm("unsupported");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const skip = () => {
+    window.localStorage.setItem("huri.notifications.gate.dismissed", "yes");
+    setDismissed(true);
   };
 
   return (
@@ -48,7 +65,9 @@ export function NotificationGate() {
         >
           {busy ? "Requesting…" : "Allow Notifications"}
         </button>
-        <p className="mt-3 text-[11px] text-muted-foreground">Required to continue.</p>
+        <button onClick={skip} className="mt-3 text-sm font-medium text-muted-foreground">
+          Not now
+        </button>
       </div>
     </div>
   );

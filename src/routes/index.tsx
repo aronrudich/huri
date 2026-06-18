@@ -4,7 +4,18 @@ import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
+
+const HIDDEN_KEY = "huri:hiddenThreads";
+const loadHidden = (): Set<string> => {
+  if (typeof window === "undefined") return new Set();
+  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); }
+  catch { return new Set(); }
+};
+const saveHidden = (s: Set<string>) => {
+  if (typeof window !== "undefined") localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s]));
+};
 
 export const Route = createFileRoute("/")({
   head: () => ({

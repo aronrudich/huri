@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { sendMessagePush } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/thread/$threadId")({
   head: () => ({ meta: [{ title: "Thread · Huri" }] }),
@@ -81,6 +82,15 @@ function ThreadPage() {
     const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
+    sendMessagePush({
+      data: {
+        threadId,
+        body: body.trim(),
+        recipientId: payload.recipient_id ?? null,
+        recipientRoleId: payload.recipient_role_id ?? null,
+        isAnonymous: anonymous,
+      },
+    }).catch((e) => console.warn("msg push failed", e));
     setBody("");
     setAnonymous(false);
   };

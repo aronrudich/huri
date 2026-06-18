@@ -8,7 +8,6 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
-    // Find active valets
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
@@ -25,7 +24,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     if (!subs?.length) return { sent: 0 };
 
     const body =
-      [data.tag && `Tag #${data.tag}`, data.ro && `RO #${data.ro}`, data.advisor, data.model]
+      [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
     const payload = { title: "New pickup request", body, url: "/pickup", tag: "pickup" };
 
@@ -42,6 +41,75 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       }
     }));
 
+    if (stale.length) {
+      await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
+    }
+    return { sent, pruned: stale.length };
+  });
+
+export const sendMessagePush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: {
+    threadId: string;
+    body: string;
+    recipientId?: string | null;
+    recipientRoleId?: string | null;
+    isAnonymous?: boolean;
+  }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendWebPush } = await import("./push-server.server");
+
+    // Resolve recipient user ids
+    let recipientIds: string[] = [];
+    if (data.recipientId) {
+      recipientIds = [data.recipientId];
+    } else if (data.recipientRoleId) {
+      const { data: members } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("role_id", data.recipientRoleId)
+        .eq("is_active", true);
+      recipientIds = (members ?? []).map((m) => m.id).filter((id) => id !== context.userId);
+    }
+    if (!recipientIds.length) return { sent: 0 };
+
+    // Sender name (unless anonymous)
+    let senderName = "Someone";
+    if (!data.isAnonymous) {
+      const { data: prof } = await supabaseAdmin
+        .from("profiles").select("full_name, nickname").eq("id", context.userId).maybeSingle();
+      senderName = prof?.nickname || prof?.full_name || "Someone";
+    } else {
+      senderName = "Anonymous";
+    }
+
+    const { data: subs } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .in("user_id", recipientIds);
+    if (!subs?.length) return { sent: 0 };
+
+    const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
+    const payload = {
+      title: `New message from ${senderName}`,
+      body: preview,
+      url: `/thread/${data.threadId}`,
+      tag: `msg-${data.threadId}`,
+    };
+
+    let sent = 0;
+    const stale: string[] = [];
+    await Promise.all(subs.map(async (s) => {
+      try {
+        await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
+        sent++;
+      } catch (e: unknown) {
+        const code = (e as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) stale.push(s.id);
+        else console.warn("msg push fail", code, (e as Error)?.message);
+      }
+    }));
     if (stale.length) {
       await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     }

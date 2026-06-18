@@ -26,12 +26,12 @@ function NewPickupPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tag.trim()) return toast.error("Tag # is required");
+    if (!ro.trim()) return toast.error("RO # is required");
     if (!user) return;
     setBusy(true);
     const { error } = await supabase.from("pickup_requests").insert({
-      tag_number: tag.trim(),
-      ro_number: ro.trim() || null,
+      tag_number: tag.trim() || null,
+      ro_number: ro.trim(),
       advisor_name: advisor.trim() || null,
       car_model: model.trim() || null,
       requested_by: user.id,

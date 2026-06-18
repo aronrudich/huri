@@ -34,9 +34,13 @@ export function NotificationGate() {
   const enable = async () => {
     setBusy(true);
     try {
-      const r = await subscribePush(user.id);
+      const r = await Promise.race<"ok" | "denied" | "unsupported">([
+        subscribePush(user.id),
+        new Promise((resolve) => window.setTimeout(() => resolve("unsupported"), 8000)),
+      ]);
       if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
       if (r === "denied") { toast.error("Permission denied. You can turn them on later from Profile."); setPerm("denied"); return; }
+      toast.message("You can turn on notifications later from Profile.");
       setPerm("unsupported");
     } finally {
       setBusy(false);

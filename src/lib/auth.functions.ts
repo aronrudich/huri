@@ -10,6 +10,8 @@ const emailPasswordSchema = z.object({
 
 const confirmedSignupSchema = emailPasswordSchema.extend({
   fullName: z.string().trim().min(1).max(120),
+  nickname: z.string().trim().max(120).optional(),
+  roleName: z.string().trim().min(1).max(120),
 });
 
 function createAuthClient(key: string) {
@@ -98,14 +100,46 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
 
     const adminClient = createAuthClient(secretKey);
     const targetEmail = data.email.trim().toLowerCase();
+    const fullName = data.fullName.trim();
+    const nickname = data.nickname?.trim() || null;
+    const roleName = data.roleName.trim();
+
+    const ensureProfile = async (userId: string) => {
+      const { data: roleRow, error: roleError } = await adminClient
+        .from("roles")
+        .upsert({ name: roleName }, { onConflict: "name" })
+        .select("id")
+        .maybeSingle();
+      if (roleError) throw new Error("Could not save this role.");
+
+      const { error: profileError } = await adminClient.from("profiles").upsert(
+        {
+          id: userId,
+          full_name: fullName,
+          nickname,
+          email: targetEmail,
+          role_id: roleRow?.id ?? null,
+          role_name: roleName,
+          is_active: true,
+          deactivated_at: null,
+          deactivated_by: null,
+        },
+        { onConflict: "id" },
+      );
+      if (profileError) throw new Error("Could not add this account to Huri people.");
+    };
+
     const created = await adminClient.auth.admin.createUser({
       email: targetEmail,
       password: data.password,
       email_confirm: true,
-      user_metadata: { full_name: data.fullName.trim() },
+      user_metadata: { full_name: fullName },
     });
 
-    if (!created.error) return { userId: created.data.user.id };
+    if (!created.error) {
+      await ensureProfile(created.data.user.id);
+      return { userId: created.data.user.id };
+    }
 
     if (!/already|registered|exists/i.test(created.error.message)) {
       throw new Error(created.error.message);
@@ -136,8 +170,10 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
       if (user) {
         const { error: updateError } = await adminClient.auth.admin.updateUserById(user.id, {
           email_confirm: true,
+          user_metadata: { full_name: fullName },
         });
         if (updateError) throw new Error("Could not confirm this account automatically.");
+        await ensureProfile(user.id);
         return { userId: user.id };
       }
 

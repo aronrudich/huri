@@ -20,9 +20,11 @@ self.addEventListener("push", (event) => {
       icon: "/icon-512.png",
       badge: "/icon-512.png",
       data: { url: payload.url || "/" },
-      vibrate: [200, 100, 200],
+      vibrate: [300, 120, 300, 120, 300],
       tag: payload.tag,
       renotify: true,
+      requireInteraction: true,
+      silent: false,
     }),
   );
 });

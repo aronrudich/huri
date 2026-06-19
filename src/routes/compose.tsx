@@ -30,9 +30,15 @@ function ComposePage() {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase.from("directory").select("id, full_name, nickname, role_name").neq("id", user.id),
+      supabase
+        .from("profiles")
+        .select("id, full_name, nickname, role_name")
+        .eq("is_active", true)
+        .neq("id", user.id)
+        .order("full_name", { ascending: true }),
       supabase.from("roles").select("id, name").in("name", ["Valet", "Advisor", "Technician"]).order("name"),
     ]).then(([p, r]) => {
+      if (p.error) console.error("[compose] people query failed", p.error);
       if (p.data) setPeople(p.data.map((x: any) => ({
         kind: "user",
         id: x.id,

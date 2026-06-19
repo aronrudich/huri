@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Search, Users, User as UserIcon, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { getMessageRecipients } from "@/lib/directory.functions";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/compose")({
@@ -30,22 +31,19 @@ function ComposePage() {
   useEffect(() => {
     if (!user) return;
     Promise.all([
-      supabase
-        .from("profiles")
-        .select("id, full_name, nickname, role_name")
-        .eq("is_active", true)
-        .neq("id", user.id)
-        .order("full_name", { ascending: true }),
+      getMessageRecipients(),
       supabase.from("roles").select("id, name").in("name", ["Valet", "Advisor", "Technician"]).order("name"),
     ]).then(([p, r]) => {
-      if (p.error) console.error("[compose] people query failed", p.error);
-      if (p.data) setPeople(p.data.map((x: any) => ({
+      setPeople(p.map((x) => ({
         kind: "user",
         id: x.id,
-        name: `${x.nickname || x.full_name}${x.role_name ? ` (${x.role_name})` : ""}`,
+        name: `${x.nickname || x.fullName}${x.roleName ? ` (${x.roleName})` : ""}`,
         subtitle: "",
       })));
       if (r.data) setGroups(r.data.map((x: any) => ({ kind: "group", id: x.id, name: `${x.name}s` })));
+    }).catch((error) => {
+      console.error("[compose] people query failed", error);
+      toast.error("Could not load people. Try signing out and back in.");
     });
   }, [user]);
 

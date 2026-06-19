@@ -146,12 +146,15 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     }
 
     const publicClient = createAuthClient(publishableKey);
-    const { error: signInError } = await publicClient.auth.signInWithPassword({
+    const { data: signInData, error: signInError } = await publicClient.auth.signInWithPassword({
       email: targetEmail,
       password: data.password,
     });
 
-    if (!signInError) return { userId: null };
+    if (!signInError) {
+      if (signInData.user?.id) await ensureProfile(signInData.user.id);
+      return { userId: signInData.user?.id ?? null };
+    }
     if (!/email not confirmed/i.test(signInError.message)) {
       throw new Error("That email already has an account. Try signing in instead.");
     }

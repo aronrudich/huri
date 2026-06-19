@@ -90,7 +90,15 @@ function AuthPage() {
 
     setBusy(true);
     try {
-      await createConfirmedAccount({ data: { email: trimmedEmail, password, fullName: fullName.trim() } });
+      await createConfirmedAccount({
+        data: {
+          email: trimmedEmail,
+          password,
+          fullName: fullName.trim(),
+          nickname: nickname.trim(),
+          roleName: finalRole,
+        },
+      });
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
@@ -107,33 +115,6 @@ function AuthPage() {
       setBusy(false);
       return toast.error("Sign-up failed — try again");
     }
-
-    // ensure role exists (idempotent)
-    let { data: roleRow } = await supabase
-      .from("roles")
-      .select("id, name")
-      .eq("name", finalRole)
-      .maybeSingle();
-    if (!roleRow) {
-      const { data: ins } = await supabase
-        .from("roles")
-        .insert({ name: finalRole })
-        .select()
-        .maybeSingle();
-      roleRow = ins;
-    }
-
-    await supabase.from("profiles").upsert(
-      {
-        id: uid,
-        full_name: fullName.trim(),
-        nickname: nickname.trim() || null,
-        email: trimmedEmail,
-        role_id: roleRow?.id ?? null,
-        role_name: finalRole,
-      },
-      { onConflict: "id" },
-    );
 
     setBusy(false);
     toast.success("Welcome to Huri");

@@ -17,6 +17,10 @@ export async function sendWebPush(sub: PushSub, payload: object) {
   return webpush.sendNotification(
     { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
     JSON.stringify(payload),
-    { TTL: 60 },
+    {
+      TTL: 3600,
+      urgency: "high", // iOS/APNs: deliver immediately with alert + sound
+      headers: { Urgency: "high" },
+    },
   );
 }

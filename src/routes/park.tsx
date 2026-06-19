@@ -47,7 +47,7 @@ function ParkPage() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!tag.trim()) return toast.error("Tag # is required");
+    if (!ro.trim()) return toast.error("RO # is required");
     if (!pos.trim()) return toast.error("Spot number is required");
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be a number 1–147");
     if (!user) return;
@@ -78,9 +78,9 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="Tag Number" required value={tag} onChange={setTag} />
+        <Field label="Tag Number" value={tag} onChange={setTag} />
         <Field label="Spot Number (1–147)" required value={pos} onChange={setPos} />
-        <Field label="RO Number" value={ro} onChange={setRo} />
+        <Field label="RO Number" required value={ro} onChange={setRo} />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>

@@ -60,8 +60,8 @@ function NewPickupPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="Tag Number" required value={tag} onChange={setTag} />
-        <Field label="RO Number" value={ro} onChange={setRo} />
+        <Field label="Tag Number" value={tag} onChange={setTag} />
+        <Field label="RO Number" required value={ro} onChange={setRo} />
         <Field label="Advisor Name" value={advisor} onChange={setAdvisor} />
         <Field label="Car Model" value={model} onChange={setModel} />
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">

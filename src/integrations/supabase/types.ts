@@ -230,44 +230,7 @@ export type Database = {
       }
     }
     Views: {
-      directory: {
-        Row: {
-          created_at: string | null
-          full_name: string | null
-          id: string | null
-          is_active: boolean | null
-          nickname: string | null
-          role_id: string | null
-          role_name: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          nickname?: string | null
-          role_id?: string | null
-          role_name?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          full_name?: string | null
-          id?: string | null
-          is_active?: boolean | null
-          nickname?: string | null
-          role_id?: string | null
-          role_name?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "profiles_role_id_fkey"
-            columns: ["role_id"]
-            isOneToOne: false
-            referencedRelation: "roles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
+      [_ in never]: never
     }
     Functions: {
       archive_stale_pickups: { Args: never; Returns: undefined }

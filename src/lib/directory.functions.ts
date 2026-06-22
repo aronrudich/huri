@@ -22,3 +22,17 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
       roleName: person.role_name,
     }));
   });
+
+export const getDirectory = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("id, full_name, nickname, role_name, role_id, is_active");
+
+    if (error) throw error;
+
+    return data ?? [];
+  });

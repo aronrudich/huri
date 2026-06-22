@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
+import { getDirectory } from "@/lib/directory.functions";
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
@@ -57,7 +58,7 @@ function PickupPage() {
       .select("*").neq("status", "completed").order("created_at", { ascending: true })
       .then(({ data }) => setPickups((data as Pickup[]) ?? []));
     loadCars();
-    supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
+    getDirectory().then((data) => {
       const m: Record<string, string> = {};
       data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
       setProfiles(m);

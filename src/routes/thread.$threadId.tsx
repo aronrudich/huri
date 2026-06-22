@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
+import { getDirectory } from "@/lib/directory.functions";
 
 export const Route = createFileRoute("/thread/$threadId")({
   head: () => ({ meta: [{ title: "Thread · Huri" }] }),
@@ -35,7 +36,7 @@ function ThreadPage() {
     if (!user) return;
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => setMsgs((data as Msg[]) ?? []));
-    supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
+    getDirectory().then((data) => {
       const m: Record<string, string> = {};
       data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
       setProfiles(m);

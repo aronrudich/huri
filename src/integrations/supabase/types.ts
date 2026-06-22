@@ -271,7 +271,6 @@ export type Database = {
     }
     Functions: {
       archive_stale_pickups: { Args: never; Returns: undefined }
-      is_manager: { Args: { _uid: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

@@ -84,7 +84,7 @@ function PickupPage() {
         const p = payload.new as Pickup;
         notify(
           "New pickup request",
-          [p.tag_number && `Tag #${p.tag_number}`, p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
+          [p.ro_number && `RO #${p.ro_number}`, p.tag_number && `Tag #${p.tag_number}`, p.advisor_name]
             .filter(Boolean).join(" · ") || "Open Huri",
           "/pickup",
         );

@@ -204,10 +204,10 @@ function PickupPage() {
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
-                      {p.tag_number ? `Tag #${p.tag_number}` : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                      {p.ro_number ? `RO #${p.ro_number}` : p.tag_number ? `Tag #${p.tag_number}` : "Pickup request"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {[car?.car_model ?? p.car_model, p.ro_number && `RO #${p.ro_number}`, p.advisor_name].filter(Boolean).join(" · ")}
+                      {[car?.car_model ?? p.car_model, p.tag_number && `Tag #${p.tag_number}`, p.advisor_name].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                   {p.status === "claimed" ? (

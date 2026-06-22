@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
+import { getDirectory } from "@/lib/directory.functions";
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),

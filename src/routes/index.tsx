@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getDirectory } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
@@ -70,7 +71,7 @@ function InboxPage() {
   // load profiles + roles maps
   useEffect(() => {
     if (!user) return;
-    supabase.from("directory").select("id, full_name, nickname").then(({ data }) => {
+    getDirectory().then((data) => {
       if (data) {
         const m: Record<string, { name: string }> = {};
         data.forEach((p) => { if (p.id) m[p.id] = { name: p.nickname || p.full_name || "" }; });

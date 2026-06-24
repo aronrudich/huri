@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Search, Users, User as UserIcon, EyeOff } from "lucide-react";
+import { ArrowLeft, Search, Users, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
@@ -23,7 +23,6 @@ function ComposePage() {
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Recipient | null>(null);
   const [body, setBody] = useState("");
-  const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -64,8 +63,8 @@ function ComposePage() {
     let thread_id: string;
     const payload: any = {
       body: body.trim(),
-      is_anonymous: anonymous,
-      sender_id: anonymous ? null : user.id,
+      is_anonymous: false,
+      sender_id: user.id,
     };
     if (selected.kind === "group") {
       thread_id = `group:${selected.id}`;
@@ -79,7 +78,7 @@ function ComposePage() {
     const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(anonymous ? "Sent anonymously" : "Sent");
+    toast.success("Sent");
     navigate({ to: "/thread/$threadId", params: { threadId: thread_id }, replace: true });
   };
 
@@ -154,20 +153,6 @@ function ComposePage() {
             <button onClick={() => setSelected(null)} className="text-sm text-primary">Change</button>
           </div>
 
-          <label className="mb-3 flex items-center justify-between rounded-xl bg-background p-3">
-            <span className="flex items-center gap-2 text-sm font-medium">
-              <EyeOff className="h-4 w-4 text-muted-foreground" /> Anonymous mode
-            </span>
-            <input
-              type="checkbox"
-              checked={anonymous}
-              onChange={(e) => setAnonymous(e.target.checked)}
-              className="h-6 w-11 cursor-pointer appearance-none rounded-full bg-muted transition-all checked:bg-primary relative before:absolute before:left-0.5 before:top-0.5 before:h-5 before:w-5 before:rounded-full before:bg-white before:shadow before:transition-all checked:before:left-[1.375rem]"
-            />
-          </label>
-          {anonymous && (
-            <p className="mb-3 px-1 text-xs text-muted-foreground">Your identity will not be attached to this message — even managers and directors cannot see who sent it.</p>
-          )}
 
           <textarea
             autoFocus

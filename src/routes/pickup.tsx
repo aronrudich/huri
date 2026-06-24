@@ -168,7 +168,8 @@ function PickupPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
-                    Tag #{c.tag_number}{c.ro_number && ` · RO #${c.ro_number}`}
+                    {c.ro_number ? `RO #${c.ro_number}` : `Tag #${c.tag_number}`}
+                    {c.ro_number && c.tag_number && ` · Tag #${c.tag_number}`}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${c.lot_position}`}
@@ -207,7 +208,7 @@ function PickupPage() {
                       {p.ro_number ? `RO #${p.ro_number}` : p.tag_number ? `Tag #${p.tag_number}` : "Pickup request"}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {[car?.car_model ?? p.car_model, p.tag_number && `Tag #${p.tag_number}`, p.advisor_name].filter(Boolean).join(" · ")}
+                      {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
                     </p>
                   </div>
                   {p.status === "claimed" ? (
@@ -235,7 +236,7 @@ function PickupPage() {
                         {blockers.map((b, i) => (
                           <span key={b.id}>
                             {i > 0 && " and "}
-                            Spot {b.lot_position} (TAG #{b.tag_number}
+                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : `Tag #${b.tag_number}`}
                             {b.car_model && ` · ${b.car_model}`})
                           </span>
                         ))}

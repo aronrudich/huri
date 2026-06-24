@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send, EyeOff } from "lucide-react";
+import { ArrowLeft, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -27,7 +27,6 @@ function ThreadPage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [body, setBody] = useState("");
-  const [anonymous, setAnonymous] = useState(false);
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -70,8 +69,8 @@ function ThreadPage() {
     const payload: any = {
       thread_id: threadId,
       body: body.trim(),
-      is_anonymous: anonymous,
-      sender_id: anonymous ? null : user.id,
+      is_anonymous: false,
+      sender_id: user.id,
     };
     if (isGroup) payload.recipient_role_id = threadId.slice(6);
     else {
@@ -89,11 +88,10 @@ function ThreadPage() {
         body: body.trim(),
         recipientId: payload.recipient_id ?? null,
         recipientRoleId: payload.recipient_role_id ?? null,
-        isAnonymous: anonymous,
+        isAnonymous: false,
       },
     }).catch((e) => console.warn("msg push failed", e));
     setBody("");
-    setAnonymous(false);
   };
 
   return (

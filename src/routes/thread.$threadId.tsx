@@ -129,16 +129,6 @@ function ThreadPage() {
       </ol>
 
       <div className="sticky bottom-0 border-t border-border bg-background p-3 safe-bottom">
-        <label className="mb-2 flex items-center gap-2 text-xs">
-          <input
-            type="checkbox"
-            checked={anonymous}
-            onChange={(e) => setAnonymous(e.target.checked)}
-            className="h-4 w-4 accent-primary"
-          />
-          <EyeOff className="h-3.5 w-3.5 text-muted-foreground" />
-          Send anonymously
-        </label>
         <div className="flex items-end gap-2">
           <textarea
             rows={1}

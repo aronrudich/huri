@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
-import { Inbox, Car, User, MapPin } from "lucide-react";
+import { Inbox, Car, List, User } from "lucide-react";
 
-export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" }) {
+export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (
     <Link
       to={to}
@@ -17,7 +17,8 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" }) {
     <nav className="fixed bottom-0 left-0 right-0 z-30 flex border-t border-border bg-background/95 backdrop-blur safe-bottom">
       {item("inbox", "/", <Inbox className="h-6 w-6" />, "Inbox")}
       {item("pickup", "/pickup", <Car className="h-6 w-6" />, "Pickup")}
-      {item("lot", "/lot", <MapPin className="h-6 w-6" />, "Lot")}
+      {item("lot", "/lot", <List className="h-6 w-6" />, "Lot")}
+      {item("profile", "/profile", <User className="h-6 w-6" />, "Profile")}
     </nav>
   );
 }
@@ -31,15 +32,22 @@ export function HuriLogo() {
   );
 }
 
-/** Top-right profile button, shown on every main tab header. */
-export function ProfileLink() {
+/** Park + Pickup buttons shown in the top-right corner of every authenticated page. */
+export function TopActions() {
   return (
-    <Link
-      to="/profile"
-      aria-label="Profile"
-      className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary active:scale-95"
-    >
-      <User className="h-5 w-5" />
-    </Link>
+    <div className="flex items-center gap-2">
+      <Link
+        to="/park"
+        className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+      >
+        Park
+      </Link>
+      <Link
+        to="/pickup-new"
+        className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+      >
+        Pickup
+      </Link>
+    </div>
   );
 }

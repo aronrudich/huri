@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Clock, CheckCircle2, AlertTriangle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { BottomBar, HuriLogo, ProfileLink } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
@@ -22,7 +22,7 @@ type Pickup = {
 };
 
 type ParkedCar = {
-  id: string; tag_number: string; ro_number: string | null;
+  id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
 };
 
@@ -31,7 +31,7 @@ function PickupPage() {
   const { user, loading, profile } = useAuth();
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [allCars, setAllCars] = useState<ParkedCar[]>([]);
-  const [carsByTag, setCarsByTag] = useState<Record<string, ParkedCar>>({});
+  const [carsByRo, setCarsByRo] = useState<Record<string, ParkedCar>>({});
   const [carsByPos, setCarsByPos] = useState<Record<string, ParkedCar>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
@@ -41,14 +41,14 @@ function PickupPage() {
   const loadCars = async () => {
     const { data } = await supabase.from("parked_cars").select("*");
     const cars = (data as ParkedCar[]) ?? [];
-    const byTag: Record<string, ParkedCar> = {};
+    const byRo: Record<string, ParkedCar> = {};
     const byPos: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
-      byTag[c.tag_number] = c;
+      if (c.ro_number) byRo[c.ro_number] = c;
       if (c.lot_position && c.lot_position !== "UNKNOWN") byPos[c.lot_position.toUpperCase()] = c;
     });
     setAllCars(cars);
-    setCarsByTag(byTag);
+    setCarsByRo(byRo);
     setCarsByPos(byPos);
   };
 
@@ -84,7 +84,7 @@ function PickupPage() {
         const p = payload.new as Pickup;
         notify(
           "New pickup request",
-          [p.ro_number && `RO #${p.ro_number}`, p.tag_number && `Tag #${p.tag_number}`, p.advisor_name]
+          [p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
             .filter(Boolean).join(" · ") || "Open Huri",
           "/pickup",
         );
@@ -93,14 +93,14 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive after 45min
+  // Auto-archive claimed pickups after 60 minutes
   useEffect(() => {
     const t = setInterval(() => {
       const now = Date.now();
       pickups.forEach((p) => {
-        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() > 45 * 60 * 1000) {
+        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() > 60 * 60 * 1000) {
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then();
-          if (p.tag_number) supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("tag_number", p.tag_number).then();
+          if (p.ro_number) supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("ro_number", p.ro_number).then();
         }
       });
     }, 30000);
@@ -121,12 +121,23 @@ function PickupPage() {
     if (!n) return [];
     return allCars
       .filter((c) =>
-        c.tag_number?.toLowerCase().includes(n) ||
         c.ro_number?.toLowerCase().includes(n) ||
-        c.car_model?.toLowerCase().includes(n),
+        c.car_model?.toLowerCase().includes(n) ||
+        c.lot_position?.toLowerCase().includes(n),
       )
       .slice(0, 8);
   }, [q, allCars]);
+
+  // Sort: unclaimed first (oldest first), then claimed (oldest claim first)
+  const sortedPickups = useMemo(() => {
+    const unclaimed = pickups
+      .filter((p) => p.status === "unclaimed")
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const claimed = pickups
+      .filter((p) => p.status === "claimed")
+      .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
+    return [...unclaimed, ...claimed];
+  }, [pickups]);
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -136,6 +147,7 @@ function PickupPage() {
           <div className="flex-1" />
           <Link to="/park" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Park</Link>
           <Link to="/pickup-new" className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Pickup</Link>
+          <ProfileLink />
         </div>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -160,7 +172,7 @@ function PickupPage() {
             <li key={c.id}>
               <Link
                 to="/park"
-                search={{ tag: c.tag_number }}
+                search={{ ro: c.ro_number ?? undefined }}
                 className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
               >
                 <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
@@ -168,8 +180,7 @@ function PickupPage() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
-                    {c.ro_number ? `RO #${c.ro_number}` : `Tag #${c.tag_number}`}
-                    {c.ro_number && c.tag_number && ` · Tag #${c.tag_number}`}
+                    {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
                     {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${c.lot_position}`}
@@ -183,13 +194,13 @@ function PickupPage() {
       )}
 
       <ul className="space-y-2 px-3">
-        {pickups.length === 0 && (
+        {sortedPickups.length === 0 && (
           <li className="rounded-2xl bg-background px-5 py-12 text-center text-sm text-muted-foreground">
             No active pickups.
           </li>
         )}
-        {pickups.map((p) => {
-          const car = p.tag_number ? carsByTag[p.tag_number] : undefined;
+        {sortedPickups.map((p) => {
+          const car = p.ro_number ? carsByRo[p.ro_number] : undefined;
           const adj = car ? adjacentSpots(car.lot_position) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
@@ -205,7 +216,7 @@ function PickupPage() {
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
-                      {p.ro_number ? `RO #${p.ro_number}` : p.tag_number ? `Tag #${p.tag_number}` : "Pickup request"}
+                      {p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
@@ -236,7 +247,7 @@ function PickupPage() {
                         {blockers.map((b, i) => (
                           <span key={b.id}>
                             {i > 0 && " and "}
-                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : `Tag #${b.tag_number}`}
+                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
                             {b.car_model && ` · ${b.car_model}`})
                           </span>
                         ))}

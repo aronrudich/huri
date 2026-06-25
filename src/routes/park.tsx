@@ -7,12 +7,12 @@ import { HuriLogo } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { isValidSpot } from "@/lib/lot";
 
-type ParkSearch = { tag?: string };
+type ParkSearch = { ro?: string };
 
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
   validateSearch: (s: Record<string, unknown>): ParkSearch => ({
-    tag: typeof s.tag === "string" ? s.tag : undefined,
+    ro: typeof s.ro === "string" ? s.ro : undefined,
   }),
   component: ParkPage,
 });
@@ -20,30 +20,30 @@ export const Route = createFileRoute("/park")({
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { tag: tagParam } = Route.useSearch();
-  const [tag, setTag] = useState(tagParam ?? "");
+  const { ro: roParam } = Route.useSearch();
+  const [ro, setRo] = useState(roParam ?? "");
   const [pos, setPos] = useState("");
-  const [ro, setRo] = useState("");
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [existingId, setExistingId] = useState<string | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!tagParam) return;
-    supabase.from("parked_cars").select("*").eq("tag_number", tagParam).maybeSingle()
+    if (!roParam) return;
+    supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle()
       .then(({ data }) => {
         if (!data) return;
         setEditing(true);
-        setTag(data.tag_number);
+        setExistingId(data.id);
         setRo(data.ro_number ?? "");
         setModel(data.car_model ?? "");
         setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
         setNotes(data.notes ?? "");
       });
-  }, [tagParam]);
+  }, [roParam]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,17 +52,16 @@ function ParkPage() {
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be a number 1–147");
     if (!user) return;
     setBusy(true);
-    const { error } = await supabase.from("parked_cars").upsert(
-      {
-        tag_number: tag.trim(),
-        ro_number: ro.trim() || null,
-        car_model: model.trim() || null,
-        lot_position: pos.trim(),
-        notes: notes.trim() || null,
-        parked_by: user.id,
-      },
-      { onConflict: "tag_number" },
-    );
+    const payload = {
+      ro_number: ro.trim(),
+      car_model: model.trim() || null,
+      lot_position: pos.trim(),
+      notes: notes.trim() || null,
+      parked_by: user.id,
+    };
+    const { error } = existingId
+      ? await supabase.from("parked_cars").update(payload).eq("id", existingId)
+      : await supabase.from("parked_cars").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(editing ? "Car updated" : "Car logged");
@@ -80,7 +79,6 @@ function ParkPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} />
         <Field label="Spot Number (1–147)" required value={pos} onChange={setPos} />
-        <Field label="Tag Number" value={tag} onChange={setTag} />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>

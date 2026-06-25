@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut, Bell, UserX, Shield, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { HuriLogo } from "@/components/BottomBar";
 import { subscribePush, getNotifPref, setNotifPref } from "@/lib/push";
 import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
@@ -95,11 +95,11 @@ function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface pb-32 safe-top">
+    <div className="min-h-screen bg-surface pb-12 safe-top safe-bottom">
       <header className="flex items-center gap-2 px-4 pb-3 pt-4">
+        <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <HuriLogo />
         <div className="flex-1" />
-        <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
 
@@ -238,7 +238,7 @@ function ProfilePage() {
         />
       )}
 
-      <BottomBar active="profile" />
+      
     </div>
   );
 }

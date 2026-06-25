@@ -64,7 +64,7 @@ export type Database = {
           notes: string | null
           parked_by: string | null
           ro_number: string | null
-          tag_number: string
+          tag_number: string | null
           updated_at: string
         }
         Insert: {
@@ -75,7 +75,7 @@ export type Database = {
           notes?: string | null
           parked_by?: string | null
           ro_number?: string | null
-          tag_number: string
+          tag_number?: string | null
           updated_at?: string
         }
         Update: {
@@ -86,7 +86,7 @@ export type Database = {
           notes?: string | null
           parked_by?: string | null
           ro_number?: string | null
-          tag_number?: string
+          tag_number?: string | null
           updated_at?: string
         }
         Relationships: []

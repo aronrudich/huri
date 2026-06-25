@@ -15,14 +15,13 @@ export const Route = createFileRoute("/pickup-new")({
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const [tag, setTag] = useState("");
   const [ro, setRo] = useState("");
-  const [advisor, setAdvisor] = useState("");
   const [model, setModel] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
-  useEffect(() => { if (profile && !advisor) setAdvisor(profile.full_name); }, [profile]);
+
+  const advisorName = profile?.nickname || profile?.full_name || "";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,20 +29,18 @@ function NewPickupPage() {
     if (!user) return;
     setBusy(true);
     const { error } = await supabase.from("pickup_requests").insert({
-      tag_number: tag.trim() || null,
       ro_number: ro.trim(),
-      advisor_name: advisor.trim() || null,
+      advisor_name: advisorName || null,
       car_model: model.trim() || null,
       requested_by: user.id,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    // Fan-out web push to valets (fire & forget; don't block UX)
     sendPickupAlert({
       data: {
-        tag: tag.trim() || null,
-        ro: ro.trim() || null,
-        advisor: advisor.trim() || null,
+        tag: null,
+        ro: ro.trim(),
+        advisor: advisorName || null,
         model: model.trim() || null,
       },
     }).catch((e) => console.warn("push fan-out failed", e));
@@ -60,9 +57,15 @@ function NewPickupPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="Tag Number" value={tag} onChange={setTag} />
-        <Field label="RO Number" required value={ro} onChange={setRo} />
-        <Field label="Advisor Name" value={advisor} onChange={setAdvisor} />
+        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Advisor</label>
+          <input
+            value={advisorName}
+            disabled
+            className="w-full rounded-xl border border-input bg-muted px-3 py-3 text-base text-muted-foreground"
+          />
+        </div>
         <Field label="Car Model" value={model} onChange={setModel} />
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit Request"}
@@ -72,13 +75,13 @@ function NewPickupPage() {
   );
 }
 
-function Field({ label, value, onChange, required }: { label: string; value: string; onChange: (v: string) => void; required?: boolean }) {
+function Field({ label, value, onChange, required, autoFocus }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; autoFocus?: boolean }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {label}{required && <span className="ml-1 text-primary">(Required)</span>}
       </label>
-      <input value={value} onChange={(e) => onChange(e.target.value)} required={required}
+      <input value={value} onChange={(e) => onChange(e.target.value)} required={required} autoFocus={autoFocus}
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
     </div>
   );

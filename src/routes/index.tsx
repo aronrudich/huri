@@ -4,7 +4,7 @@ import { Search, PenSquare } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectory } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar, HuriLogo } from "@/components/BottomBar";
+import { BottomBar, HuriLogo, ProfileLink } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
 
@@ -127,13 +127,7 @@ function InboxPage() {
         title = `${roles[rid] ?? "Group"} (broadcast)`;
       } else {
         const otherId = m.sender_id === user?.id ? m.recipient_id : m.sender_id;
-        if (m.is_anonymous && m.sender_id !== user?.id) {
-          title = "Anonymous";
-        } else if (otherId) {
-          title = profiles[otherId]?.name ?? "Unknown";
-        } else {
-          title = "Anonymous";
-        }
+        title = otherId ? (profiles[otherId]?.name ?? "Unknown") : "Unknown";
       }
       map.set(m.thread_id, {
         thread_id: m.thread_id,
@@ -158,7 +152,7 @@ function InboxPage() {
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="sticky top-0 z-10 bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
-        <div className="mb-3 flex items-center"><HuriLogo /></div>
+        <div className="mb-3 flex items-center gap-2"><HuriLogo /><div className="flex-1" /><ProfileLink /></div>
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input

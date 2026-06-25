@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { HuriLogo } from "@/components/BottomBar";
+import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { isValidSpot } from "@/lib/lot";
 
@@ -73,6 +73,7 @@ function ParkPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <HuriLogo />
         <div className="flex-1" />
+        <TopActions />
         <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 

@@ -4,7 +4,7 @@ import { ArrowLeft, LogOut, Bell, UserX, Shield, Pencil } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { HuriLogo, TopActions } from "@/components/BottomBar";
+import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { subscribePush, getNotifPref, setNotifPref } from "@/lib/push";
 import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";

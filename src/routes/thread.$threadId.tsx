@@ -105,17 +105,15 @@ function ThreadPage() {
       <ol className="flex-1 space-y-2 px-3 py-4">
         {msgs.map((m) => {
           const mine = m.sender_id === user?.id;
-          const senderLabel = m.is_anonymous
-            ? "Anonymous"
-            : m.sender_id ? (profiles[m.sender_id] ?? "Unknown") : "Anonymous";
+          const senderLabel = m.sender_id ? (profiles[m.sender_id] ?? "Unknown") : "Unknown";
           return (
             <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
               <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[15px] ${
                 mine ? "bg-primary text-primary-foreground" : "bg-background"
               }`}>
-                {(!mine && (isGroup || m.is_anonymous)) && (
-                  <p className={`mb-0.5 text-[11px] font-semibold ${m.is_anonymous ? "text-muted-foreground" : "text-primary"}`}>
-                    {senderLabel}{m.is_anonymous && " 🕶"}
+                {!mine && isGroup && (
+                  <p className="mb-0.5 text-[11px] font-semibold text-primary">
+                    {senderLabel}
                   </p>
                 )}
                 <p className="whitespace-pre-wrap leading-snug">{m.body}</p>

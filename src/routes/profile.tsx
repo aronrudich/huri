@@ -239,7 +239,8 @@ function ProfilePage() {
         />
       )}
 
-      
+
+      <BottomBar active="profile" />
     </div>
   );
 }

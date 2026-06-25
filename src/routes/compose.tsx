@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
 import { toast } from "sonner";
+import { HuriLogo, TopActions } from "@/components/BottomBar";
 
 export const Route = createFileRoute("/compose")({
   head: () => ({ meta: [{ title: "Compose · Huri" }] }),
@@ -87,6 +88,7 @@ function ComposePage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 text-center text-base font-semibold">New Message</h1>
+        <TopActions />
         <button
           disabled={!selected || !body.trim() || busy}
           onClick={send}

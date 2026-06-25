@@ -59,7 +59,7 @@ function ThreadPage() {
         const last = msgs[msgs.length - 1] ?? msgs[0];
         if (!last) return "Direct message";
         const otherId = last.sender_id === user?.id ? last.recipient_id : last.sender_id;
-        if (!otherId) return "Anonymous";
+        if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
 

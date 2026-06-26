@@ -72,14 +72,6 @@ function LotPage() {
       (c) => c.ro_number?.toLowerCase().includes(n) || c.car_model?.toLowerCase().includes(n),
     );
   }, [offLot, q]);
-    const n = q.trim().toLowerCase();
-    if (!n) return list;
-    return list.filter(({ spot, car }) =>
-      String(spot).includes(n) ||
-      car?.ro_number?.toLowerCase().includes(n) ||
-      car?.car_model?.toLowerCase().includes(n),
-    );
-  }, [byPos, q]);
 
   const filled = Object.keys(byPos).length;
 
@@ -101,38 +93,84 @@ function LotPage() {
           />
         </div>
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-          {filled} of {MAX_SPOT} spots occupied
+          {filled} of {MAX_SPOT} spots occupied · {offLot.length} off the lot (spot 0)
         </p>
       </header>
 
+      {filteredOffLot.length > 0 && (
+        <>
+          <h2 className="mx-4 mb-1 mt-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Off the lot (spot 0)
+          </h2>
+          <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
+            {filteredOffLot.map((car) => (
+              <li key={car.id}>
+                <Link
+                  to="/park"
+                  search={{ ro: car.ro_number ?? undefined }}
+                  className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
+                >
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-warning/15 text-xs font-bold text-warning">
+                    0
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
+                      {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
+                    </p>
+                    {car.notes && (
+                      <p className="truncate text-xs text-warning">Note: {car.notes}</p>
+                    )}
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
       <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
-        {rows.map(({ spot, car }) => (
-          <li
-            key={spot}
-            className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0"
-          >
-            <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
-              car ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-            }`}>
-              {spot}
-            </div>
-            <div className="min-w-0 flex-1">
+        {rows.map(({ spot, car }) => {
+          const inner = (
+            <>
+              <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
+                car ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
+              }`}>
+                {spot}
+              </div>
+              <div className="min-w-0 flex-1">
+                {car ? (
+                  <>
+                    <p className="truncate text-sm font-semibold">
+                      {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
+                      {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
+                    </p>
+                    {car.notes && (
+                      <p className="truncate text-xs text-warning">Note: {car.notes}</p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Empty</p>
+                )}
+              </div>
+            </>
+          );
+          return (
+            <li key={spot} className="border-b border-border last:border-b-0">
               {car ? (
-                <>
-                  <p className="truncate text-sm font-semibold">
-                    {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
-                    {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
-                  </p>
-                  {car.notes && (
-                    <p className="truncate text-xs text-warning">Note: {car.notes}</p>
-                  )}
-                </>
+                <Link
+                  to="/park"
+                  search={{ ro: car.ro_number ?? undefined }}
+                  className="flex items-center gap-3 px-4 py-3 active:bg-accent"
+                >
+                  {inner}
+                </Link>
               ) : (
-                <p className="text-sm text-muted-foreground">Empty</p>
+                <div className="flex items-center gap-3 px-4 py-3">{inner}</div>
               )}
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
         {rows.length === 0 && (
           <li className="px-4 py-6 text-center text-sm text-muted-foreground">No matches</li>
         )}

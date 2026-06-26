@@ -150,7 +150,7 @@ function ComposePage() {
             </div>
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">To</p>
-              <p className="font-medium">{selected.name}{selected.kind === "group" && " (broadcast)"}</p>
+              <p className="font-medium">{selected.name}{selected.kind === "group" && " (group)"}</p>
             </div>
             <button onClick={() => setSelected(null)} className="text-sm text-primary">Change</button>
           </div>

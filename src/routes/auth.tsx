@@ -46,20 +46,6 @@ function AuthPage() {
   const [otherRole, setOtherRole] = useState("");
 
   useEffect(() => {
-    supabase
-      .from("roles")
-      .select("name")
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          const names = data.map((r) => r.name as string);
-          const merged = Array.from(new Set([...names, "Other"]));
-          setRoles(merged);
-        }
-      });
-  }, []);
-
-  useEffect(() => {
     if (!loading && user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
 

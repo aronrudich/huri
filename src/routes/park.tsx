@@ -49,7 +49,7 @@ function ParkPage() {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!pos.trim()) return toast.error("Spot number is required");
-    if (!isValidSpot(pos.trim())) return toast.error("Spot must be a number 1–147");
+    if (!isValidSpot(pos.trim())) return toast.error("Spot must be a number 0–147 (use 0 if off the lot)");
     if (!user) return;
     setBusy(true);
     const payload = {

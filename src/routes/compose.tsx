@@ -118,7 +118,7 @@ function ComposePage() {
                     <button onClick={() => setSelected(g)} className="flex w-full items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent">
                       <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-accent-foreground"><Users className="h-4 w-4" /></div>
                       <span className="flex-1 text-left text-base font-medium">{g.name}</span>
-                      <span className="text-xs text-muted-foreground">Broadcast</span>
+                      <span className="text-xs text-muted-foreground">Group</span>
                     </button>
                   </li>
                 ))}

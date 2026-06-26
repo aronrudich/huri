@@ -16,7 +16,16 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const DEFAULT_ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "Other"];
+const DEFAULT_ROLES = [
+  "Valet",
+  "Advisor",
+  "Technician",
+  "Shop Foreman",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Other",
+];
 const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";

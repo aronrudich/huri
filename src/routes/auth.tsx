@@ -16,7 +16,16 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const DEFAULT_ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "Other"];
+const DEFAULT_ROLES = [
+  "Valet",
+  "Advisor",
+  "Technician",
+  "Shop Foreman",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Other",
+];
 const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
@@ -26,7 +35,7 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
-  const [roles, setRoles] = useState<string[]>(DEFAULT_ROLES);
+  const roles = DEFAULT_ROLES;
 
   // form fields
   const [email, setEmail] = useState("");
@@ -35,20 +44,6 @@ function AuthPage() {
   const [nickname, setNickname] = useState("");
   const [role, setRole] = useState("Advisor");
   const [otherRole, setOtherRole] = useState("");
-
-  useEffect(() => {
-    supabase
-      .from("roles")
-      .select("name")
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        if (data) {
-          const names = data.map((r) => r.name as string);
-          const merged = Array.from(new Set([...names, "Other"]));
-          setRoles(merged);
-        }
-      });
-  }, []);
 
   useEffect(() => {
     if (!loading && user) navigate({ to: "/", replace: true });

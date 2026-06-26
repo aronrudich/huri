@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
 import { toast } from "sonner";
-import { HuriLogo, TopActions } from "@/components/BottomBar";
+import { HuriLogo } from "@/components/BottomBar";
 
 export const Route = createFileRoute("/compose")({
   head: () => ({ meta: [{ title: "Compose · Huri" }] }),
@@ -88,7 +88,7 @@ function ComposePage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 text-center text-base font-semibold">New Message</h1>
-        <TopActions />
+        
         <button
           disabled={!selected || !body.trim() || busy}
           onClick={send}
@@ -118,7 +118,7 @@ function ComposePage() {
                     <button onClick={() => setSelected(g)} className="flex w-full items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent">
                       <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-accent-foreground"><Users className="h-4 w-4" /></div>
                       <span className="flex-1 text-left text-base font-medium">{g.name}</span>
-                      <span className="text-xs text-muted-foreground">Broadcast</span>
+                      <span className="text-xs text-muted-foreground">Group</span>
                     </button>
                   </li>
                 ))}
@@ -150,7 +150,7 @@ function ComposePage() {
             </div>
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">To</p>
-              <p className="font-medium">{selected.name}{selected.kind === "group" && " (broadcast)"}</p>
+              <p className="font-medium">{selected.name}{selected.kind === "group" && " (group)"}</p>
             </div>
             <button onClick={() => setSelected(null)} className="text-sm text-primary">Change</button>
           </div>

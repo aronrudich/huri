@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
-import { HuriLogo, TopActions } from "@/components/BottomBar";
+
 
 export const Route = createFileRoute("/thread/$threadId")({
   head: () => ({ meta: [{ title: "Thread · Huri" }] }),
@@ -55,7 +55,7 @@ function ThreadPage() {
 
   const isGroup = threadId.startsWith("group:");
   const title = isGroup
-    ? `${roles[threadId.slice(6)] ?? "Group"} (broadcast)`
+    ? `${roles[threadId.slice(6)] ?? "Group"} (group)`
     : (() => {
         const last = msgs[msgs.length - 1] ?? msgs[0];
         if (!last) return "Direct message";
@@ -100,7 +100,7 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
-        <TopActions />
+        <div className="w-8" />
       </header>
 
       <ol className="flex-1 space-y-2 px-3 py-4">

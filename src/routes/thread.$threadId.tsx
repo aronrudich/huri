@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
-import { HuriLogo, TopActions } from "@/components/BottomBar";
+
 
 export const Route = createFileRoute("/thread/$threadId")({
   head: () => ({ meta: [{ title: "Thread · Huri" }] }),

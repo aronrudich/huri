@@ -55,7 +55,7 @@ function ThreadPage() {
 
   const isGroup = threadId.startsWith("group:");
   const title = isGroup
-    ? `${roles[threadId.slice(6)] ?? "Group"} (broadcast)`
+    ? `${roles[threadId.slice(6)] ?? "Group"} (group)`
     : (() => {
         const last = msgs[msgs.length - 1] ?? msgs[0];
         if (!last) return "Direct message";

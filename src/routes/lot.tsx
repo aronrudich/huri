@@ -40,14 +40,38 @@ function LotPage() {
     cars.forEach((c) => {
       if (c.lot_position === "UNKNOWN") return;
       const n = parseInt(c.lot_position, 10);
-      if (!Number.isNaN(n)) m[n] = c;
+      if (!Number.isNaN(n) && n >= 1) m[n] = c;
     });
     return m;
   }, [cars]);
 
+  const offLot = useMemo(
+    () =>
+      cars
+        .filter((c) => c.lot_position === "0")
+        .sort((a, b) => (a.ro_number ?? "").localeCompare(b.ro_number ?? "")),
+    [cars],
+  );
+
   const rows = useMemo(() => {
     const list: { spot: number; car?: ParkedCar }[] = [];
     for (let s = MIN_SPOT; s <= MAX_SPOT; s++) list.push({ spot: s, car: byPos[s] });
+    const n = q.trim().toLowerCase();
+    if (!n) return list;
+    return list.filter(({ spot, car }) =>
+      String(spot).includes(n) ||
+      car?.ro_number?.toLowerCase().includes(n) ||
+      car?.car_model?.toLowerCase().includes(n),
+    );
+  }, [byPos, q]);
+
+  const filteredOffLot = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return offLot;
+    return offLot.filter(
+      (c) => c.ro_number?.toLowerCase().includes(n) || c.car_model?.toLowerCase().includes(n),
+    );
+  }, [offLot, q]);
     const n = q.trim().toLowerCase();
     if (!n) return list;
     return list.filter(({ spot, car }) =>

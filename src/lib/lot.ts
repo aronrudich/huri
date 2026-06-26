@@ -34,7 +34,7 @@ export function parseSpot(raw: string | null | undefined): number | null {
   const t = raw.trim();
   if (!/^[0-9]+$/.test(t)) return null;
   const n = parseInt(t, 10);
-  if (n < MIN_SPOT || n > MAX_SPOT) return null;
+  if (n < 0 || n > MAX_SPOT) return null;
   return n;
 }
 

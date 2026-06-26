@@ -35,7 +35,7 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
-  const [roles, setRoles] = useState<string[]>(DEFAULT_ROLES);
+  const roles = DEFAULT_ROLES;
 
   // form fields
   const [email, setEmail] = useState("");

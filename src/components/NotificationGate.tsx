@@ -19,11 +19,12 @@ export function NotificationGate() {
     if (window.localStorage.getItem("huri.notifications.gate.dismissed") === "yes") {
       setDismissed(true);
     }
-    if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
-      setPerm("unsupported");
-      return;
-    }
-    if (!("Notification" in window)) { setPerm("unsupported"); return; }
+    // Show on any browser (mobile or desktop) that supports web push.
+    const supported =
+      "Notification" in window &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window;
+    if (!supported) { setPerm("unsupported"); return; }
     setPerm(Notification.permission);
   }, [user]);
 

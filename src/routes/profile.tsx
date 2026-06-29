@@ -166,6 +166,14 @@ function ProfilePage() {
             onCheckedChange={toggleNotifs}
           />
         </div>
+        {notifOn && perm === "granted" && (
+          <button
+            onClick={handleSendTest}
+            className="w-full border-t border-border px-4 py-3 text-sm font-semibold text-primary active:bg-accent"
+          >
+            Send test notification
+          </button>
+        )}
       </section>
 
       {isAdmin && (

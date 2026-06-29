@@ -19,11 +19,12 @@ export function NotificationGate() {
     if (window.localStorage.getItem("huri.notifications.gate.dismissed") === "yes") {
       setDismissed(true);
     }
-    if (!window.matchMedia("(hover: none) and (pointer: coarse)").matches) {
-      setPerm("unsupported");
-      return;
-    }
-    if (!("Notification" in window)) { setPerm("unsupported"); return; }
+    // Show on any browser (mobile or desktop) that supports web push.
+    const supported =
+      "Notification" in window &&
+      "serviceWorker" in navigator &&
+      "PushManager" in window;
+    if (!supported) { setPerm("unsupported"); return; }
     setPerm(Notification.permission);
   }, [user]);
 
@@ -60,7 +61,7 @@ export function NotificationGate() {
         </div>
         <h2 className="text-xl font-semibold">Turn on notifications</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Huri needs to alert you the moment a pickup request comes in or a teammate messages you — even when your phone is locked.
+          Huri will alert you the moment a pickup request comes in or a teammate messages you — even when this tab is in the background.
         </p>
         <button
           onClick={enable}

@@ -1,6 +1,42 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+export const sendTestPush = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: Record<string, never>) => d)
+  .handler(async ({ context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendWebPush } = await import("./push-server.server");
+
+    const { data: subs } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .eq("user_id", context.userId);
+    if (!subs?.length) return { sent: 0, pruned: 0 };
+
+    const payload = {
+      title: "Huri test notification",
+      body: "If you see this, push is working on this device.",
+      url: "/",
+      tag: "huri-test",
+    };
+
+    let sent = 0;
+    const stale: string[] = [];
+    await Promise.all(subs.map(async (s) => {
+      try {
+        await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
+        sent++;
+      } catch (e: unknown) {
+        const code = (e as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) stale.push(s.id);
+        else console.warn("test push fail", code, (e as Error)?.message);
+      }
+    }));
+    if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
+    return { sent, pruned: stale.length };
+  });
+
 export const sendPickupAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { tag?: string | null; ro?: string | null; advisor?: string | null; model?: string | null }) => d)

@@ -61,7 +61,7 @@ export function NotificationGate() {
         </div>
         <h2 className="text-xl font-semibold">Turn on notifications</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Huri needs to alert you the moment a pickup request comes in or a teammate messages you — even when your phone is locked.
+          Huri will alert you the moment a pickup request comes in or a teammate messages you — even when this tab is in the background.
         </p>
         <button
           onClick={enable}

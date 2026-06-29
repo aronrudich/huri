@@ -1,41 +1,38 @@
-## Goal
-Make Huri's push notifications work on desktop (Mac/Windows) the same way they work on mobile — so anyone signed in on a laptop gets an OS-level notification (with sound) when a pickup is requested or a message arrives, even when the Huri tab is in the background.
+## Problem
 
-## Why this isn't working today
-Two things in the code currently block desktop:
+Two related bugs in the notification flow:
 
-1. **`NotificationGate.tsx`** only shows the "Allow Notifications" prompt on touch devices (`matchMedia("(hover: none) and (pointer: coarse)")`). Desktop users never see the prompt, so they never grant permission and never get a push subscription created.
-2. **`subscribePush()` in `src/lib/push.ts`** works fine on desktop browsers — the gate is the only thing keeping desktop users out.
+1. **Switch on Profile won't toggle** — `Switch.onCheckedChange` calls `toggleNotifs` → `subscribePush`, which does network/DB work *before* the browser permission state is reflected in React. If the browser silently suppresses the prompt (Chrome's "quieter messaging" UI on desktop), `Notification.requestPermission()` resolves to `"default"`, `subscribePush` returns `"denied"`, and the switch never flips. The user sees nothing happen.
 
-Everything else (service worker, VAPID keys, `sendPickupAlert`, `sendMessagePush`) is already browser-agnostic and will fire to any subscribed endpoint, desktop included.
+2. **Gate modal "Allow Notifications" can falsely give up** — `enable()` wraps `subscribePush` in `Promise.race` with an 8-second timeout. If the user takes longer than 8s to click Allow in the browser prompt, the race resolves as `"unsupported"`, the modal closes, and no subscription is created.
 
-## Changes
+3. **In-app `notify()` is silently a no-op when the tab is focused** — Chrome doesn't display `new Notification()` banners when the tab is focused; only the SW `showNotification` path does. That's why desktop "notifications don't work" even when permission is granted and the user is testing in the same tab.
 
-### 1. `src/components/NotificationGate.tsx`
-- Remove the touch-only check. Show the gate on any browser that supports `Notification` + `serviceWorker` + `PushManager` (Chrome, Edge, Firefox, Brave on Mac/Windows/Linux; Safari only when installed to Dock).
-- Tweak the copy so it reads naturally on desktop too: "Huri will alert you the moment a pickup request comes in or a teammate messages you — even when this tab is in the background."
-- Keep the "Not now" dismiss behavior unchanged.
+## Fix
 
-### 2. `src/components/IOSInstallHint.tsx` (light touch)
-- Leave the iOS hint alone — it's already correctly scoped to iOS Safari.
+### `src/lib/push.ts`
+- Split `subscribePush` into two steps:
+  - `requestNotifPermission()` — synchronous-ish call that ONLY does `Notification.requestPermission()` and returns the result. Called directly from the click handler so the gesture isn't lost.
+  - `registerPushSubscription(userId)` — does the SW registration + DB upsert. Called after permission is granted.
+- Update `notify()` to prefer the active service-worker registration's `showNotification()` (works whether tab is focused or not) and fall back to `new Notification()`.
 
-### 3. Profile page (`src/routes/profile.tsx`) — small addition
-- Under the existing notifications toggle, add a one-line status row showing whether push is currently subscribed on **this device** ("Notifications active on this device" / "Not enabled on this device — tap to enable"). Tapping re-runs `subscribePush()`. This lets a user who dismissed the gate on desktop turn notifications on later without clearing site data.
+### `src/routes/profile.tsx` (`toggleNotifs`)
+- On enable, first call `requestNotifPermission()` directly. Update `perm` state immediately based on the result. If granted, then await `registerPushSubscription` (DB write can happen after the switch flips). If not granted, show a clear toast and keep the switch off.
+- Add an optimistic `setNotifOn(true)` so the switch flips visually the instant permission is granted.
 
-### 4. No backend changes
-`push_subscriptions` already stores one row per endpoint, so the same user signed in on phone + laptop gets two rows and both receive every notification. `sendPickupAlert` and `sendMessagePush` already fan out to all rows for the recipient.
+### `src/components/NotificationGate.tsx` (`enable`)
+- Remove the 8-second `Promise.race` timeout. Call `requestNotifPermission()` directly, then kick off `registerPushSubscription` in the background. Close the gate on `granted` regardless of subscription completion.
+- Add a "Test notification" debug helper visible only while perm === "granted" but no recent activity — optional, helps the user verify end-to-end during the demo.
 
-## What desktop users will see after this ships
-- First login on a laptop → "Allow Notifications" modal → browser permission prompt → granted.
-- A pickup is created → native macOS/Windows notification banner appears with sound, even if Huri is in another tab or minimized (browser must be running).
-- A message arrives → same banner, with sender name and preview.
-- Clicking the banner focuses/opens the Huri tab on the right page.
+### Add a small "Send test notification" button on Profile
+- Below the switch, when notifications are on, show a "Send test" button. It posts to a new server function `sendTestPush(userId)` that calls `sendWebPush` against the user's own subscriptions. Confirms the full SW → OS-banner path works on the current device. Critical for the demo since in-tab `new Notification()` never shows on desktop Chrome when the tab is focused.
 
-## Browser support notes (for your awareness, not code)
-- Chrome, Edge, Firefox, Brave, Opera on Mac/Windows/Linux: full support, works in background.
-- Safari on macOS: only supports web push when the site is added to the Dock (Safari → File → Add to Dock). Without that, Safari desktop users will get the in-app toast but no OS banner. We can add a "Safari users: add Huri to your Dock" hint later if needed — flag if you want that now.
+### `src/lib/push.functions.ts`
+- Add `sendTestPush` server function (requires auth, sends a "Huri test notification" web push to all of the calling user's `push_subscriptions` rows).
 
-## Out of scope
-- Email fallback (you picked browser push only).
-- Native desktop app / Electron wrapper.
-- Changing who receives what — every user already gets the notifications relevant to their role.
+## What stays the same
+- VAPID keys, `public/sw.js`, message/pickup push payloads, and the existing `sendMessagePush` / pickup notification flow are unchanged.
+
+## Verification
+- On desktop Chrome at `huri.lovable.app/profile`: toggle flips immediately on permission grant; "Send test" produces an OS-level banner with sound even with the tab focused.
+- Toggling off pauses future pushes (already wired via `notif_pref`).

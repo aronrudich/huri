@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { subscribePush } from "@/lib/push";
+import { requestNotifPermission, registerPushSubscription, setNotifPref } from "@/lib/push";
 import { toast } from "sonner";
 
 /**
@@ -19,7 +19,6 @@ export function NotificationGate() {
     if (window.localStorage.getItem("huri.notifications.gate.dismissed") === "yes") {
       setDismissed(true);
     }
-    // Show on any browser (mobile or desktop) that supports web push.
     const supported =
       "Notification" in window &&
       "serviceWorker" in navigator &&
@@ -30,22 +29,27 @@ export function NotificationGate() {
 
   if (!user) return null;
   if (dismissed) return null;
-  if (perm !== "default") return null; // granted, denied, or unsupported → no block
+  if (perm !== "default") return null;
 
   const enable = async () => {
     setBusy(true);
-    try {
-      const r = await Promise.race<"ok" | "denied" | "unsupported">([
-        subscribePush(user.id),
-        new Promise<"unsupported">((resolve) => window.setTimeout(() => resolve("unsupported"), 8000)),
-      ]);
-      if (r === "ok") { toast.success("Notifications enabled"); setPerm("granted"); return; }
-      if (r === "denied") { toast.error("Permission denied. You can turn them on later from Profile."); setPerm("denied"); return; }
-      toast.message("You can turn on notifications later from Profile.");
-      setPerm("unsupported");
-    } finally {
-      setBusy(false);
+    // Direct, synchronous-from-click call so the browser prompt actually shows.
+    const result = await requestNotifPermission();
+    setBusy(false);
+    if (result === "granted") {
+      setNotifPref(true);
+      setPerm("granted");
+      toast.success("Notifications enabled");
+      // Subscribe in the background — switch already flipped.
+      void registerPushSubscription(user.id);
+      return;
     }
+    if (result === "denied") {
+      toast.error("Permission denied. You can enable later from Profile.");
+      setPerm("denied");
+      return;
+    }
+    toast.message("You can turn on notifications later from Profile.");
   };
 
   const skip = () => {

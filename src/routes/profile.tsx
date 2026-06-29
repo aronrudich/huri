@@ -5,7 +5,9 @@ import { ArrowLeft, LogOut, Bell, UserX, Shield, Pencil } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { subscribePush, getNotifPref, setNotifPref } from "@/lib/push";
+import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref } from "@/lib/push";
+import { useServerFn } from "@tanstack/react-start";
+import { sendTestPush } from "@/lib/push.functions";
 import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
@@ -57,18 +59,37 @@ function ProfilePage() {
     navigate({ to: "/auth", replace: true });
   };
 
+  const sendTest = useServerFn(sendTestPush);
+
   const toggleNotifs = async (on: boolean) => {
     if (!user) return;
     if (on) {
       if (perm !== "granted") {
-        const r = await subscribePush(user.id);
-        if (r === "ok") { setPerm("granted"); setNotifOn(true); setNotifPref(true); toast.success("Notifications on"); return; }
-        if (r === "denied") return toast.error("Permission denied — enable in browser settings");
+        // Direct call from the click — no awaits before requestPermission().
+        const result = await requestNotifPermission();
+        if (result === "granted") {
+          setPerm("granted"); setNotifOn(true); setNotifPref(true);
+          toast.success("Notifications on");
+          void registerPushSubscription(user.id);
+          return;
+        }
+        if (result === "denied") return toast.error("Permission denied — enable in browser settings");
         return toast.error("Push not supported on this device");
       }
       setNotifPref(true); setNotifOn(true); toast.success("Notifications on");
+      void registerPushSubscription(user.id);
     } else {
       setNotifPref(false); setNotifOn(false); toast.message("Notifications paused");
+    }
+  };
+
+  const handleSendTest = async () => {
+    try {
+      const r = await sendTest({ data: {} });
+      if (r.sent > 0) toast.success(`Test sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`);
+      else toast.error("No active push subscriptions on this device yet. Toggle off/on and try again.");
+    } catch (e) {
+      toast.error((e as Error).message);
     }
   };
 
@@ -145,6 +166,14 @@ function ProfilePage() {
             onCheckedChange={toggleNotifs}
           />
         </div>
+        {notifOn && perm === "granted" && (
+          <button
+            onClick={handleSendTest}
+            className="w-full border-t border-border px-4 py-3 text-sm font-semibold text-primary active:bg-accent"
+          >
+            Send test notification
+          </button>
+        )}
       </section>
 
       {isAdmin && (

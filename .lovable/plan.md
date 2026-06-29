@@ -1,82 +1,41 @@
-# Polished Huri Explainer Video (v2)
+## Goal
+Make Huri's push notifications work on desktop (Mac/Windows) the same way they work on mobile — so anyone signed in on a laptop gets an OS-level notification (with sound) when a pickup is requested or a message arrives, even when the Huri tab is in the background.
 
-A ~2 minute downloadable MP4, rendered with Remotion, narrated by ElevenLabs "Brian" (calm, professional male), with on-screen visuals timed to each script beat. Saves to `/mnt/documents/huri-explainer-v2.mp4`. The existing v1 file stays untouched.
+## Why this isn't working today
+Two things in the code currently block desktop:
 
-## Polished narration script (~290 words, ~2:00 at calm pace)
+1. **`NotificationGate.tsx`** only shows the "Allow Notifications" prompt on touch devices (`matchMedia("(hover: none) and (pointer: coarse)")`). Desktop users never see the prompt, so they never grant permission and never get a push subscription created.
+2. **`subscribePush()` in `src/lib/push.ts`** works fine on desktop browsers — the gate is the only thing keeping desktop users out.
 
-1. **Opener (orient the viewer)**
-   "Huri is built for dealership service departments — valets, advisors, and technicians, all on one app."
+Everything else (service worker, VAPID keys, `sendPickupAlert`, `sendMessagePush`) is already browser-agnostic and will fire to any subscribed endpoint, desktop included.
 
-2. **Messages**
-   "Huri opens to a message board, like Slack for the service drive. Send a direct message to anyone on the team — or message a whole group: valets, advisors, or technicians. Everyone in the department is reachable, instantly."
+## Changes
 
-3. **Pickup queue (the car tab)**
-   "The car tab holds the pickup list. The moment an advisor or a technician submits a pickup, every valet gets a notification on their phone."
+### 1. `src/components/NotificationGate.tsx`
+- Remove the touch-only check. Show the gate on any browser that supports `Notification` + `serviceWorker` + `PushManager` (Chrome, Edge, Firefox, Brave on Mac/Windows/Linux; Safari only when installed to Dock).
+- Tweak the copy so it reads naturally on desktop too: "Huri will alert you the moment a pickup request comes in or a teammate messages you — even when this tab is in the background."
+- Keep the "Not now" dismiss behavior unchanged.
 
-4. **Spot, blocking, and the one-trip win**
-   "Huri shows the exact spot the car is parked in. And if other cars are blocking it in, Huri shows which cars — by RO number. The lot is laid out three deep: spot one in front, two in the middle, three in back. So spot three can be blocked by one and two. Now the valet grabs every key they need and makes one trip — not three."
+### 2. `src/components/IOSInstallHint.tsx` (light touch)
+- Leave the iOS hint alone — it's already correctly scoped to iOS Safari.
 
-5. **Queue ordering and claim flow**
-   "The oldest unclaimed pickups float to the top. Tap claim, and the status flips to in progress and drops down the list. Completed pickups disappear automatically, so the queue stays clean."
+### 3. Profile page (`src/routes/profile.tsx`) — small addition
+- Under the existing notifications toggle, add a one-line status row showing whether push is currently subscribed on **this device** ("Notifications active on this device" / "Not enabled on this device — tap to enable"). Tapping re-runs `subscribePush()`. This lets a user who dismissed the gate on desktop turn notifications on later without clearing site data.
 
-6. **Top-right buttons: Park and Pickup**
-   "Two buttons live in the top-right on every screen. Advisors hit Pickup for customer cars. Technicians hit Pickup to have a car pulled into their bay. Park is for logging a car into its spot — just enter the RO number and the spot number."
+### 4. No backend changes
+`push_subscriptions` already stores one row per endpoint, so the same user signed in on phone + laptop gets two rows and both receive every notification. `sendPickupAlert` and `sendMessagePush` already fan out to all rows for the recipient.
 
-7. **Spot 0**
-   "Moving a car off the lot but not for a customer? Set the spot to zero. When it comes back, whoever parks it enters the new spot."
+## What desktop users will see after this ships
+- First login on a laptop → "Allow Notifications" modal → browser permission prompt → granted.
+- A pickup is created → native macOS/Windows notification banner appears with sound, even if Huri is in another tab or minimized (browser must be running).
+- A message arrives → same banner, with sender name and preview.
+- Clicking the banner focuses/opens the Huri tab on the right page.
 
-8. **Lot tab**
-   "The lot tab shows every spot and the car in it. Tap any spot to pull up that car's info or update it."
-
-9. **Profile tab**
-   "The profile tab is where each user updates their info — and toggles notifications off when they're not on shift."
-
-10. **The problem Huri solves**
-    "Today, customer pickups take too long. Valets wander lot to lot, find the car blocked in, walk back across the street for more keys, then walk back again. Advisors hand-write tickets at the key station. Everyone is constantly hunting each other down."
-
-11. **Closing**
-    "Huri turns the pickup list digital. One trip, the right keys, the right car — and a customer who isn't left waiting in the service drive. Huri. Built for the service drive."
-
-## Scenes (matched 1:1 to the narration)
-
-| # | Scene | Length | Visual |
-|---|---|---|---|
-| 1 | **Intro / opener** | ~7s | Huri logo + tagline "built for dealership service departments" |
-| 2 | **Messages** | ~12s | Phone mock of Inbox; group chips (Valets / Advisors / Technicians) animate in |
-| 3 | **Pickup notification** | ~9s | Advisor phone submitting pickup → wipe → valet phone with push notification dropping in |
-| 4 | **Spot + blocking diagram** | ~17s | Phone mock of pickup card showing "Spot 6 · Blocked by Spot 4, Spot 5" + a clean animated 3x3 row diagram (front/middle/back labeled, arrows showing 1→2→3 blocking). RO numbers visible. |
-| 5 | **Queue ordering + claim** | ~12s | Pickup queue with 3 cards; top card animates "Claim" tap, badge flips to "In Progress", card slides down |
-| 6 | **Park & Pickup buttons** | ~14s | Phone with the top-right buttons highlighted; quick toggle between Advisor pickup form, Technician pickup form, and Park form (RO + spot fields filling) |
-| 7 | **Spot 0** | ~9s | Car icon leaving spot 12 → spot indicator flips to "0 — off the lot" → returns and flips to a new spot |
-| 8 | **Lot tab** | ~9s | Scrolling list of spots with cars; tap on a row opens a quick detail card |
-| 9 | **Profile** | ~7s | Profile screen with notifications toggle flipping off (grey) then on (blue) |
-| 10 | **The problem (today)** | ~15s | Stylized animation: tiny valet figure walking across two lots, finding car blocked, walking back, walking back again — amber accent for "wasted trips" |
-| 11 | **Closing** | ~9s | Huri logo + "Built for the service drive" + `huri.lovable.app` |
-
-Total ≈ 120 seconds at 30 fps = 3600 frames.
-
-## Visual system (same look as v1, refined)
-
-- Palette: Huri blue `#2F6BFF`, near-black `#0B1220`, soft surface `#F5F7FB`, amber accent `#F5A524` (used only on the "blocked" + "today's problem" beats).
-- Type: Space Grotesk for big display, Inter for UI mocks (already loaded in the v1 project).
-- Motion: spring entrances (damping 18), wipe + fade transitions, captions sync each script line.
-- All phone mocks use the Huri-branded shell already in `remotion/src/components/Phone.tsx`.
-- Pacing tuned for Brian's calm delivery — generous holds on the diagram and the "problem today" scene.
-
-## Technical approach
-
-- Reuse the existing `remotion/` project. Add new scenes in `remotion/src/scenes/v2/` so v1 stays intact.
-- New `Root.tsx` composition id: `main-v2` (1920×1080, 30 fps).
-- Generate voiceover once via Lovable AI Gateway TTS using ElevenLabs voice `Brian` (`nPczCjzI2devNBz1zQrb`) at speed 0.95 for a calm pace; save to `remotion/public/audio/vo-v2.mp3`.
-- Compute total duration from the audio length so visuals stay in sync.
-- Render via `scripts/render-remotion.mjs` (chrome-for-testing, concurrency 1, `muted: false`).
-- Output: `/mnt/documents/huri-explainer-v2.mp4`, surfaced as a download artifact.
+## Browser support notes (for your awareness, not code)
+- Chrome, Edge, Firefox, Brave, Opera on Mac/Windows/Linux: full support, works in background.
+- Safari on macOS: only supports web push when the site is added to the Dock (Safari → File → Add to Dock). Without that, Safari desktop users will get the in-app toast but no OS banner. We can add a "Safari users: add Huri to your Dock" hint later if needed — flag if you want that now.
 
 ## Out of scope
-
-- No changes to the Huri app itself.
-- No in-app video player.
-- English only.
-- v1 file (`huri-explainer.mp4`) is left in place.
-
-If you want me to swap any wording, change the order, or cut/extend a scene, tell me before I build and I'll adjust.
+- Email fallback (you picked browser push only).
+- Native desktop app / Electron wrapper.
+- Changing who receives what — every user already gets the notifications relevant to their role.

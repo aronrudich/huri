@@ -19,7 +19,6 @@ export type Database = {
           body: string
           created_at: string
           id: string
-          is_anonymous: boolean
           recipient_id: string | null
           recipient_role_id: string | null
           sender_id: string | null
@@ -29,7 +28,6 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
-          is_anonymous?: boolean
           recipient_id?: string | null
           recipient_role_id?: string | null
           sender_id?: string | null
@@ -39,7 +37,6 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
-          is_anonymous?: boolean
           recipient_id?: string | null
           recipient_role_id?: string | null
           sender_id?: string | null

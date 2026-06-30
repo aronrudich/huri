@@ -64,7 +64,7 @@ function ComposePage() {
     let thread_id: string;
     const payload: any = {
       body: body.trim(),
-      is_anonymous: false,
+      
       sender_id: user.id,
     };
     if (selected.kind === "group") {

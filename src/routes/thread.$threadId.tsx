@@ -17,7 +17,7 @@ export const Route = createFileRoute("/thread/$threadId")({
 type Msg = {
   id: string; thread_id: string; sender_id: string | null;
   recipient_id: string | null; recipient_role_id: string | null;
-  body: string; is_anonymous: boolean; created_at: string;
+  body: string; created_at: string;
 };
 
 function ThreadPage() {
@@ -70,7 +70,7 @@ function ThreadPage() {
     const payload: any = {
       thread_id: threadId,
       body: body.trim(),
-      is_anonymous: false,
+      
       sender_id: user.id,
     };
     if (isGroup) payload.recipient_role_id = threadId.slice(6);

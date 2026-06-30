@@ -35,7 +35,6 @@ type Msg = {
   recipient_id: string | null;
   recipient_role_id: string | null;
   body: string;
-  is_anonymous: boolean;
   created_at: string;
 };
 

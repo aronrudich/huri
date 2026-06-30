@@ -42,10 +42,14 @@ function ProfilePage() {
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
   useEffect(() => {
-    if (typeof window !== "undefined" && "Notification" in window) setPerm(Notification.permission);
-    else setPerm("unsupported");
+    if (typeof window === "undefined" || !("Notification" in window)) { setPerm("unsupported"); return; }
+    // Desktop notifications disabled for now — show as unsupported on non-touch devices.
+    const isTouch = window.matchMedia?.("(pointer: coarse)").matches;
+    if (!isTouch) { setPerm("unsupported"); return; }
+    setPerm(Notification.permission);
     setNotifOn(getNotifPref());
   }, []);
+
 
   useEffect(() => {
     if (!isAdmin) return;

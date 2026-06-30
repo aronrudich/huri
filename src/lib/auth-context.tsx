@@ -12,6 +12,9 @@ export type Profile = {
   is_active?: boolean;
   deactivated_at?: string | null;
   deactivated_by?: string | null;
+  is_owner?: boolean;
+  status?: "pending" | "approved";
+  pending_role_name?: string | null;
 };
 
 type Ctx = {

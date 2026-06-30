@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { ensureServiceWorker } from "@/lib/push";
 import { NotificationGate } from "@/components/NotificationGate";
 import { IOSInstallHint } from "@/components/IOSInstallHint";
+import { PendingGate } from "@/components/PendingGate";
 
 function NotFoundComponent() {
   return (
@@ -117,6 +118,7 @@ function RootComponent() {
         <Outlet />
         <NotificationGate />
         <IOSInstallHint />
+        <PendingGate />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

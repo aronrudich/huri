@@ -1,11 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
-
-const ROLES = ["Advisor", "Technician", "Valet", "Manager", "Director", "General Manager"];
-type RoleRow = { id: string; name: string };
 
 type Props = {
   profile: Profile;
@@ -20,8 +17,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   // info
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
-  const [role, setRole] = useState(profile.role_name);
-  const [roleRows, setRoleRows] = useState<RoleRow[]>([]);
 
   // email
   const [newEmail, setNewEmail] = useState(profile.email);
@@ -30,11 +25,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
 
-  useEffect(() => {
-    supabase.from("roles").select("id, name").order("created_at", { ascending: true }).then(({ data }) => {
-      if (data?.length) setRoleRows(data as RoleRow[]);
-    });
-  }, []);
 
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");

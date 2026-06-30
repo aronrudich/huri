@@ -24,8 +24,12 @@ export function NotificationGate() {
       "serviceWorker" in navigator &&
       "PushManager" in window;
     if (!supported) { setPerm("unsupported"); return; }
+    // Desktop notifications disabled for now — only prompt on touch devices.
+    const isTouch = window.matchMedia?.("(pointer: coarse)").matches;
+    if (!isTouch) { setDismissed(true); return; }
     setPerm(Notification.permission);
   }, [user]);
+
 
   if (!user) return null;
   if (dismissed) return null;

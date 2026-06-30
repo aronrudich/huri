@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
+import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
@@ -112,7 +113,8 @@ function AuthPage() {
     }
 
     setBusy(false);
-    toast.success("Welcome to Huri");
+    toast.success("Account created — waiting for approval");
+    try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
     subscribePush(uid);
     navigate({ to: "/", replace: true });
   };

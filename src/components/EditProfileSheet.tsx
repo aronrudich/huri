@@ -41,12 +41,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
-      .update({
-        full_name: fullName.trim(),
-        nickname: nickname.trim() || null,
-        role_id: roleRows.find((r) => r.name === role)?.id ?? profile.role_id,
-        role_name: role,
-      })
+      .update({ full_name: fullName.trim(), nickname: nickname.trim() || null })
       .eq("id", profile.id);
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -112,11 +107,9 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
             <Field label="Nickname">
               <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
             </Field>
-            <Field label="Role">
-              <select value={role} onChange={(e) => setRole(e.target.value)} className="input">
-                {Array.from(new Set([...(roleRows.length ? roleRows.map((r) => r.name) : ROLES), profile.role_name])).map((r) => <option key={r} value={r}>{r}</option>)}
-              </select>
-            </Field>
+            <p className="text-xs text-muted-foreground">
+              To change your role, close this and tap "Request role change" — the owner has to approve it.
+            </p>
             <PrimaryBtn busy={busy} onClick={saveInfo}>Save changes</PrimaryBtn>
           </div>
         )}

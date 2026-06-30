@@ -121,6 +121,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           role_id: roleRow?.id ?? null,
           role_name: roleName,
           is_active: true,
+          status: "pending",
           deactivated_at: null,
           deactivated_by: null,
         },

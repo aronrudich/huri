@@ -142,9 +142,12 @@ export type Database = {
           full_name: string
           id: string
           is_active: boolean
+          is_owner: boolean
           nickname: string | null
+          pending_role_name: string | null
           role_id: string | null
           role_name: string
+          status: string
         }
         Insert: {
           created_at?: string
@@ -154,9 +157,12 @@ export type Database = {
           full_name: string
           id: string
           is_active?: boolean
+          is_owner?: boolean
           nickname?: string | null
+          pending_role_name?: string | null
           role_id?: string | null
           role_name: string
+          status?: string
         }
         Update: {
           created_at?: string
@@ -166,9 +172,12 @@ export type Database = {
           full_name?: string
           id?: string
           is_active?: boolean
+          is_owner?: boolean
           nickname?: string | null
+          pending_role_name?: string | null
           role_id?: string | null
           role_name?: string
+          status?: string
         }
         Relationships: [
           {

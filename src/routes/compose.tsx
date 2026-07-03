@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Users, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
+import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { HuriLogo } from "@/components/BottomBar";
 
@@ -79,6 +80,15 @@ function ComposePage() {
     const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
+    sendMessagePush({
+      data: {
+        threadId: thread_id,
+        body: body.trim(),
+        recipientId: payload.recipient_id ?? null,
+        recipientRoleId: payload.recipient_role_id ?? null,
+        isAnonymous: false,
+      },
+    }).catch((e) => console.warn("msg push failed", e));
     toast.success("Sent");
     navigate({ to: "/thread/$threadId", params: { threadId: thread_id }, replace: true });
   };

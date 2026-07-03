@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Users, User as UserIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
+import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { HuriLogo } from "@/components/BottomBar";
 

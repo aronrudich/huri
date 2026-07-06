@@ -19,6 +19,7 @@ export const Route = createFileRoute("/auth")({
 
 const DEFAULT_ROLES = [
   "Valet",
+  "Valet & Parts",
   "Advisor",
   "Technician",
   "Shop Foreman",

@@ -11,7 +11,7 @@ type Props = {
   onSaved: (newRole: string) => void;
 };
 
-const FALLBACK = ["Advisor", "Technician", "Valet", "Manager", "Director", "General Manager"];
+const FALLBACK = ["Advisor", "Technician", "Valet", "Valet & Parts", "Manager", "Director", "General Manager"];
 
 export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose, onSaved }: Props) {
   const [roles, setRoles] = useState<string[]>(FALLBACK);

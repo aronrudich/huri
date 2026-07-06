@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Inbox, Car, List, User } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (

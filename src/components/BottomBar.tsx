@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { Inbox, Car, List, User } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (
@@ -32,10 +33,20 @@ export function HuriLogo() {
   );
 }
 
-/** Park + Pickup buttons shown in the top-right corner of every authenticated page. */
+/** Park + Pickup buttons shown in the top-right corner of every authenticated page. Techs also see Parts. */
 export function TopActions() {
+  const { profile } = useAuth();
+  const isTech = profile?.role_name === "Technician";
   return (
     <div className="flex items-center gap-2">
+      {isTech && (
+        <Link
+          to="/parts"
+          className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+        >
+          Parts
+        </Link>
+      )}
       <Link
         to="/park"
         className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"

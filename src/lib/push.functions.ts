@@ -47,7 +47,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("role_name", "Valet")
+      .in("role_name", ["Valet", "Valet & Parts"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
@@ -149,5 +149,47 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     if (stale.length) {
       await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     }
+    return { sent, pruned: stale.length };
+  });
+
+export const sendPartsAlert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { techName?: string | null }) => d)
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendWebPush } = await import("./push-server.server");
+
+    const { data: recipients, error: rErr } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("role_name", "Valet & Parts")
+      .eq("is_active", true);
+    if (rErr) throw rErr;
+    if (!recipients?.length) return { sent: 0 };
+
+    const { data: subs } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .in("user_id", recipients.map((r) => r.id));
+    if (!subs?.length) return { sent: 0 };
+
+    const body = data.techName
+      ? `${data.techName} needs parts brought to their bay.`
+      : "A technician needs parts brought to their bay.";
+    const payload = { title: "Parts request", body, url: "/", tag: "parts" };
+
+    let sent = 0;
+    const stale: string[] = [];
+    await Promise.all(subs.map(async (s) => {
+      try {
+        await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
+        sent++;
+      } catch (e: unknown) {
+        const code = (e as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) stale.push(s.id);
+        else console.warn("parts push fail", code, (e as Error)?.message);
+      }
+    }));
+    if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     return { sent, pruned: stale.length };
   });

@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
 import { Route as PickupRouteImport } from './routes/pickup'
+import { Route as PartsRouteImport } from './routes/parts'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as LotRouteImport } from './routes/lot'
 import { Route as ComposeRouteImport } from './routes/compose'
@@ -32,6 +33,11 @@ const PickupNewRoute = PickupNewRouteImport.update({
 const PickupRoute = PickupRouteImport.update({
   id: '/pickup',
   path: '/pickup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartsRoute = PartsRouteImport.update({
+  id: '/parts',
+  path: '/parts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkRoute = ParkRouteImport.update({
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
@@ -141,6 +153,7 @@ export interface RootRouteChildren {
   ComposeRoute: typeof ComposeRoute
   LotRoute: typeof LotRoute
   ParkRoute: typeof ParkRoute
+  PartsRoute: typeof PartsRoute
   PickupRoute: typeof PickupRoute
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/pickup'
       fullPath: '/pickup'
       preLoaderRoute: typeof PickupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parts': {
+      id: '/parts'
+      path: '/parts'
+      fullPath: '/parts'
+      preLoaderRoute: typeof PartsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/park': {
@@ -221,6 +241,7 @@ const rootRouteChildren: RootRouteChildren = {
   ComposeRoute: ComposeRoute,
   LotRoute: LotRoute,
   ParkRoute: ParkRoute,
+  PartsRoute: PartsRoute,
   PickupRoute: PickupRoute,
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,

@@ -47,7 +47,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
-      .eq("role_name", "Valet")
+      .in("role_name", ["Valet", "Valet & Parts"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };

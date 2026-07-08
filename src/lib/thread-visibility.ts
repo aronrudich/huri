@@ -1,15 +1,13 @@
-const HIDDEN_THREADS_KEY = "huri:hiddenThreads";
+const HIDDEN_THREADS_KEY = "huri:hiddenThreadCutoffs";
+const LEGACY_HIDDEN_THREADS_KEY = "huri:hiddenThreads";
 
 export type ThreadCutoffs = Record<string, string>;
 
 export function loadThreadCutoffs(): ThreadCutoffs {
   if (typeof window === "undefined") return {};
   try {
+    window.localStorage.removeItem(LEGACY_HIDDEN_THREADS_KEY);
     const parsed = JSON.parse(window.localStorage.getItem(HIDDEN_THREADS_KEY) || "{}");
-    if (Array.isArray(parsed)) {
-      const now = new Date().toISOString();
-      return Object.fromEntries(parsed.map((threadId) => [String(threadId), now]));
-    }
     if (!parsed || typeof parsed !== "object") return {};
     return Object.fromEntries(
       Object.entries(parsed).filter((entry): entry is [string, string] => typeof entry[1] === "string"),

@@ -266,40 +266,6 @@ function PickupPage() {
                     Claim
                   </button>
                 ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                      <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
-                    </span>
-                  )}
-                </div>
-
-                {car && (
-                  <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
-                    <p>
-                      <span className="text-muted-foreground">Parked at:</span>{" "}
-                      <span className="font-semibold">
-                        {car.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${car.lot_position}`}
-                      </span>
-                    </p>
-                    {blockers.length > 0 && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                        {blockers.map((b, i) => (
-                          <span key={b.id}>
-                            {i > 0 && " and "}
-                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
-                            {b.car_model && ` · ${b.car_model}`})
-                          </span>
-                        ))}
-                      </p>
-                    )}
-                  </div>
-                )}
-
-                {p.status === "unclaimed" ? (
-                  <button onClick={() => claim(p)} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98]">
-                    Claim
-                  </button>
-                ) : (
                   <p className="text-xs text-muted-foreground">
                     Claimed by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
                     {p.claimed_at && ` · ${formatDistanceToNow(new Date(p.claimed_at), { addSuffix: true })}`}

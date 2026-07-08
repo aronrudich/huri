@@ -29,7 +29,7 @@ export const Route = createFileRoute("/profile")({
 });
 
 const ROLE_OPTIONS = [
-  "Valet", "Advisor", "Technician", "Shop Foreman",
+  "Valet", "Valet & Parts", "Advisor", "Technician", "Shop Foreman",
   "Service Manager", "Service Director", "General Manager", "Manager", "Other",
 ];
 

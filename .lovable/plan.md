@@ -1,59 +1,46 @@
-# Approval & Account Control System
+## Answers to your questions first
 
-## What you'll get
+- **Desktop and mobile are the same app.** One codebase, one database. Anything I change ships to both instantly. Push notifications are the only thing that's mobile-only (iOS/Android home-screen PWA) — everything else is identical.
+- **Group chats today are shared** (one "Valets" chat everyone drops into). You want per-starter threads — I'll rebuild that below.
 
-1. **You become the Owner.** Your account (`aron@oremor.net`) gets a new permanent role flag — `is_owner = true` — separate from job role. Job role changes to **Manager**. The Owner power can later be transferred to anyone else with one click.
-2. **No one gets in without your approval.** When a new person signs up, their account is created in a `pending` state. They immediately see a full-screen popup: *"Waiting for approval from the dealership owner. You'll get in as soon as Aron approves you."* They cannot message, park, pickup, or view the lot until approved.
-3. **Role changes require approval too.** Anyone can request a role change from their profile. Their role stays the same until you approve. Shows "Pending: Technician" next to their current role.
-4. **Owner Approvals tab.** A new tab inside your profile, visible only to the Owner, listing every pending item (new signups + role-change requests) with one-tap **Approve** / **Deny** buttons.
-5. **You get notified instantly.** Every new signup or role-change request fires a push notification to your phone.
-6. **Removal = full deletion.** When someone is removed (by you) or leaves voluntarily, their auth account + profile + messages + push subscriptions are **deleted from the database**. They can sign up again with the same email, but they'll be `pending` again.
-7. **Search & open anyone.** From your profile (Owner only), a search box lets you find any active employee by name and tap into their mini-profile, where you can change role or remove them.
-8. **Transfer ownership.** Owner-only button: "Transfer ownership to…" — pick any active employee, confirm, and they become Owner; you lose the powers immediately.
+## Plan
 
-## Technical details
+### 1. Add "Valet & Parts" to the role picker (DB fix)
+The code already lists it in the fallback, but the `roles` table in the DB doesn't have a row for it — so when the sheet loads DB roles, the fallback is overridden. Insert the missing row via migration:
+```
+INSERT INTO public.roles (name) VALUES ('Valet & Parts') ON CONFLICT (name) DO NOTHING;
+```
 
-### Database changes (one migration)
-- `profiles`: add `is_owner BOOLEAN DEFAULT false`, `status TEXT DEFAULT 'pending' CHECK status IN ('pending','approved')`, `pending_role_name TEXT NULL`.
-- New `pending_approvals` view (or just query profiles directly) — actually no view needed; simple queries.
-- Backfill: set every existing profile to `status = 'approved'`. Set `is_owner = true` for `aron@oremor.net` and `role_name = 'Manager'`.
-- RLS: tighten directory/messages/parked_cars/pickup_requests so only `status='approved'` profiles are visible to others and can write. Owner bypasses via `is_owner` check.
-- `has_role`-style helper: `public.is_owner(uuid)` SECURITY DEFINER.
+### 2. Red styling for tech-originated alerts
+Two sources count as "tech-originated": pickup requests submitted by a Technician, and Parts requests (which are Tech-only by definition).
 
-### Account lifecycle
-- `createConfirmedAccount` server fn: new profiles start `status='pending'`, then notify the Owner via push.
-- New `approveAccount(userId)` / `denyAccount(userId)` Owner-only server fns.
-- New `requestRoleChange(newRole)` (any user) → writes to `pending_role_name`, notifies Owner.
-- New `approveRoleChange(userId)` / `denyRoleChange(userId)` Owner-only.
-- `removeEmployee` and `leaveDealership` switch from soft-deactivate to **hard delete**: `supabaseAdmin.auth.admin.deleteUser(id)` (cascades clean up profile, messages, push subs via existing FKs / explicit cleanup).
-- `transferOwnership(newOwnerId)` Owner-only fn.
+- **DB:** add `source_role text` column on `pickup_requests`, stamped at insert with the submitter's `role_name`. Backfill existing rows to `'Advisor'`.
+- **Pickup list card (`src/routes/pickup.tsx`):** if `source_role === 'Technician'`, swap the card accent — red border, red "Claim" button, red status pill, red warning banner — instead of blue/neutral. Everything else stays blue.
+- **Push notifications:** add a `variant: 'tech' | 'default'` field to the push payload. Service worker (`public/sw.js`) reads it and sets a red badge/icon for tech pickups and all Parts alerts. Notification title gets a 🔧 prefix so it's obvious at a glance on lock screen even before the icon renders.
+- Blue stays the default for everything else (advisor pickups, messages, system).
 
-### UI changes
-- **Auth screen / signup success**: full-screen "Waiting for approval" gate. Polls profile status; auto-enters when approved.
-- **Auth context**: if `profile.status === 'pending'` → render PendingGate, block all routes.
-- **Profile page (Owner only)**: new "Approvals (N)" section at top showing pending signups + role requests with Approve/Deny. New "Find employee" search. New "Transfer ownership" button at bottom.
-- **Profile page (everyone)**: "Request role change" button next to current role; shows "Pending: X" badge while waiting.
-- Removes Director-as-admin logic — replaced entirely by `is_owner`. Existing roster + remove still works for Owner.
+### 3. Group chat model — per-starter threads
+Right now `thread_id = "group:{roleId}"` means every employee shares one Valets chat. Switch to **one thread per (starter, targetRole)** so each employee has their own private group with the Valets, and the Valets end up with many parallel Valet-group threads (one per employee who's messaged them).
 
-### Notifications
-- Reuses existing `sendMessagePush` pipeline; new helper `notifyOwner(title, body)` queries owners and pushes.
+- **Thread key:** `group:{roleId}:{starterUserId}` — the person who first composed to that group owns the thread.
+- **Visibility rules (RLS + inbox query):**
+  - The starter always sees their thread.
+  - Members of `roleId` see the thread only if it has messages (i.e., they've been messaged in it).
+  - Non-members / non-starters see nothing.
+- **Notifications:**
+  - Starter sends → notify only members of `roleId` (unchanged behavior, already scoped).
+  - A member replies → notify only the starter (not other members of the role). Implemented in `sendMessagePush` by checking whether the sender is a member of the thread's target role and, if so, routing the push to `starterUserId` only.
+- **Inbox list (`src/routes/index.tsx`):** label these threads as e.g. "Valets (group) · started by Alex" for members, and "Valets (group)" for the starter. Old shared `group:{roleId}` threads: migrated to `group:{roleId}:{originalSenderId}` using the earliest message's sender.
+- **Compose (`src/routes/compose.tsx`)** and **thread view (`src/routes/thread.$threadId.tsx`)**: update the thread-id builder and the group-parsing (`threadId.slice(6)` → parse `roleId` and `starterId` from the new format).
 
-### Files touched
-- 1 migration (schema + backfill + RLS + helper fn)
-- `src/lib/auth.functions.ts` (pending status on signup, owner notify)
-- `src/lib/admin.functions.ts` *(new)* — approve/deny/transfer/delete fns
-- `src/lib/auth-context.tsx` (expose `status`, `is_owner`)
-- `src/components/PendingGate.tsx` *(new)*
-- `src/routes/__root.tsx` or `_authenticated/route.tsx` (mount PendingGate)
-- `src/routes/profile.tsx` (Approvals section, search, transfer, role request)
-- `src/components/ChangeRoleSheet.tsx` (used by Owner — direct change, no approval needed for Owner)
-- `src/components/RequestRoleSheet.tsx` *(new)* — for normal users
+### 4. Technical notes (skip if not interested)
+- New pickup column: `ALTER TABLE public.pickup_requests ADD COLUMN source_role text;`
+- Backfill: `UPDATE public.pickup_requests SET source_role = 'Advisor' WHERE source_role IS NULL;`
+- New RLS SELECT policy on `messages`: allow read if `sender_id = auth.uid()` OR `recipient_id = auth.uid()` OR (`recipient_role_id IN (my roles)` AND `thread_id` starts with `group:{that role}:`) OR (`thread_id` = `group:*:auth.uid()`).
+- Service worker: read `data.variant` from the push JSON, pick red vs. blue icon/badge PNGs (I'll generate two 192px badges).
+- No changes to auth, approval flow, or lot logic.
 
-## Confirmations before I build
+### What I will NOT touch
+- Approval/pending system, owner powers, spot-blocking math, Park form, video assets, `_authenticated` layout, auto-generated Supabase files.
 
-1. **You = the only initial Owner.** I'll hard-code `aron@oremor.net` in the migration to flip `is_owner=true` and `role_name='Manager'`. ✅
-2. **Hard delete on removal/leave** — gone from auth + database, must re-signup. ✅
-3. **Role changes are pending until you approve** — current role stays active in the meantime. ✅
-4. **You get push notifications for every approval needed** (uses your existing mobile push setup). ✅
-
-Reply "go" and I'll ship it.
+Ready to build on your go-ahead.

@@ -119,11 +119,21 @@ function InboxPage() {
     const map = new Map<string, ThreadSummary>();
     for (const m of messages) {
       if (map.has(m.thread_id)) continue;
-      const isGroup = m.thread_id.startsWith("group:");
+      const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
+      const isGroup = !!groupMatch;
       let title: string;
-      if (isGroup) {
-        const rid = m.thread_id.slice(6);
-        title = `${roles[rid] ?? "Group"} (broadcast)`;
+      if (groupMatch) {
+        const [, rid, starterId] = groupMatch;
+        const roleName = roles[rid] ?? "Group";
+        if (starterId === user?.id) {
+          title = `${roleName} (group)`;
+        } else {
+          const starterName = profiles[starterId]?.name ?? "someone";
+          title = `${roleName} (group) · ${starterName}`;
+        }
+      } else if (m.thread_id.startsWith("group:")) {
+        // legacy fallback
+        title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {
         const otherId = m.sender_id === user?.id ? m.recipient_id : m.sender_id;
         title = otherId ? (profiles[otherId]?.name ?? "Unknown") : "Unknown";

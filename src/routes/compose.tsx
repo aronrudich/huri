@@ -69,7 +69,7 @@ function ComposePage() {
       sender_id: user.id,
     };
     if (selected.kind === "group") {
-      thread_id = `group:${selected.id}`;
+      thread_id = `group:${selected.id}:${user.id}`;
       payload.recipient_role_id = selected.id;
     } else {
       const ids = [user.id, selected.id].sort();

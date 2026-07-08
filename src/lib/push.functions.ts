@@ -19,6 +19,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
       body: "If you see this, push is working on this device.",
       url: "/",
       tag: "huri-test",
+      variant: "default",
     };
 
     let sent = 0;
@@ -39,7 +40,13 @@ export const sendTestPush = createServerFn({ method: "POST" })
 
 export const sendPickupAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { tag?: string | null; ro?: string | null; advisor?: string | null; model?: string | null }) => d)
+  .inputValidator((d: {
+    tag?: string | null;
+    ro?: string | null;
+    advisor?: string | null;
+    model?: string | null;
+    sourceRole?: string | null;
+  }) => d)
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
@@ -59,10 +66,17 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     if (sErr) throw sErr;
     if (!subs?.length) return { sent: 0 };
 
+    const isTech = data.sourceRole === "Technician";
     const body =
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
-    const payload = { title: "New pickup request", body, url: "/pickup", tag: "pickup" };
+    const payload = {
+      title: isTech ? "🔧 Tech pickup request" : "New pickup request",
+      body,
+      url: "/pickup",
+      tag: "pickup",
+      variant: isTech ? "tech" : "default",
+    };
 
     let sent = 0;
     const stale: string[] = [];
@@ -98,9 +112,28 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 
     // Resolve recipient user ids
     let recipientIds: string[] = [];
+
+    // Per-starter group thread format: group:{roleId}:{starterId}
+    const groupMatch = data.threadId.match(/^group:([^:]+):([^:]+)$/);
+
     if (data.recipientId) {
       recipientIds = [data.recipientId];
+    } else if (groupMatch) {
+      const [, roleId, starterId] = groupMatch;
+      if (context.userId === starterId) {
+        // Starter → notify all members of the role (except starter)
+        const { data: members } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("role_id", roleId)
+          .eq("is_active", true);
+        recipientIds = (members ?? []).map((m) => m.id).filter((id) => id !== context.userId);
+      } else {
+        // Member reply → notify only the starter
+        recipientIds = [starterId];
+      }
     } else if (data.recipientRoleId) {
+      // Legacy fallback
       const { data: members } = await supabaseAdmin
         .from("profiles")
         .select("id")
@@ -110,15 +143,13 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     }
     if (!recipientIds.length) return { sent: 0 };
 
-    // Sender name (unless anonymous)
+    // Sender name + role
     let senderName = "Someone";
-    if (!data.isAnonymous) {
-      const { data: prof } = await supabaseAdmin
-        .from("profiles").select("full_name, nickname").eq("id", context.userId).maybeSingle();
-      senderName = prof?.nickname || prof?.full_name || "Someone";
-    } else {
-      senderName = "Anonymous";
-    }
+    let senderRole: string | null = null;
+    const { data: prof } = await supabaseAdmin
+      .from("profiles").select("full_name, nickname, role_name").eq("id", context.userId).maybeSingle();
+    senderName = prof?.nickname || prof?.full_name || "Someone";
+    senderRole = prof?.role_name ?? null;
 
     const { data: subs } = await supabaseAdmin
       .from("push_subscriptions")
@@ -127,11 +158,13 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     if (!subs?.length) return { sent: 0 };
 
     const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
+    const isTech = senderRole === "Technician";
     const payload = {
-      title: `New message from ${senderName}`,
+      title: `${isTech ? "🔧 " : ""}New message from ${senderName}`,
       body: preview,
       url: `/thread/${data.threadId}`,
       tag: `msg-${data.threadId}`,
+      variant: isTech ? "tech" : "default",
     };
 
     let sent = 0;
@@ -176,7 +209,13 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
     const body = data.techName
       ? `${data.techName} needs parts brought to their bay.`
       : "A technician needs parts brought to their bay.";
-    const payload = { title: "Parts request", body, url: "/", tag: "parts" };
+    const payload = {
+      title: "🔧 Parts request",
+      body,
+      url: "/",
+      tag: "parts",
+      variant: "tech",
+    };
 
     let sent = 0;
     const stale: string[] = [];

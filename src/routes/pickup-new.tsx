@@ -28,11 +28,13 @@ function NewPickupPage() {
     if (!ro.trim()) return toast.error("RO # is required");
     if (!user) return;
     setBusy(true);
+    const sourceRole = profile?.role_name ?? null;
     const { error } = await supabase.from("pickup_requests").insert({
       ro_number: ro.trim(),
       advisor_name: advisorName || null,
       car_model: model.trim() || null,
       requested_by: user.id,
+      source_role: sourceRole,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -42,6 +44,7 @@ function NewPickupPage() {
         ro: ro.trim(),
         advisor: advisorName || null,
         model: model.trim() || null,
+        sourceRole,
       },
     }).catch((e) => console.warn("push fan-out failed", e));
     toast.success("Pickup submitted");

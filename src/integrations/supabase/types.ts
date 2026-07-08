@@ -99,6 +99,7 @@ export type Database = {
           id: string
           requested_by: string | null
           ro_number: string | null
+          source_role: string | null
           status: string
           tag_number: string | null
         }
@@ -112,6 +113,7 @@ export type Database = {
           id?: string
           requested_by?: string | null
           ro_number?: string | null
+          source_role?: string | null
           status?: string
           tag_number?: string | null
         }
@@ -125,6 +127,7 @@ export type Database = {
           id?: string
           requested_by?: string | null
           ro_number?: string | null
+          source_role?: string | null
           status?: string
           tag_number?: string | null
         }

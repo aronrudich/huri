@@ -53,9 +53,13 @@ function ThreadPage() {
     return () => { supabase.removeChannel(chan); };
   }, [threadId, user]);
 
-  const isGroup = threadId.startsWith("group:");
+  const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
+  const isGroup = !!groupMatch;
+  const groupRoleId = groupMatch?.[1] ?? null;
+  const groupStarterId = groupMatch?.[2] ?? null;
+
   const title = isGroup
-    ? `${roles[threadId.slice(6)] ?? "Group"} (group)`
+    ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
     : (() => {
         const last = msgs[msgs.length - 1] ?? msgs[0];
         if (!last) return "Direct message";
@@ -70,10 +74,9 @@ function ThreadPage() {
     const payload: any = {
       thread_id: threadId,
       body: body.trim(),
-      
       sender_id: user.id,
     };
-    if (isGroup) payload.recipient_role_id = threadId.slice(6);
+    if (isGroup) payload.recipient_role_id = groupRoleId;
     else {
       // dm:uuid1:uuid2  → other id
       const parts = threadId.split(":");

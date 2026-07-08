@@ -19,6 +19,7 @@ type Pickup = {
   id: string; tag_number: string | null; ro_number: string | null;
   advisor_name: string | null; car_model: string | null; status: string;
   claimed_by: string | null; claimed_at: string | null; created_at: string;
+  source_role: string | null;
 };
 
 type ParkedCar = {
@@ -202,8 +203,14 @@ function PickupPage() {
           const adj = car ? adjacentSpots(car.lot_position) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
+          const isTech = p.source_role === "Technician";
           return (
-            <li key={p.id} className="overflow-hidden rounded-2xl bg-background">
+            <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${isTech ? "ring-2 ring-destructive" : ""}`}>
+              {isTech && (
+                <div className="bg-destructive px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-destructive-foreground">
+                  Technician request
+                </div>
+              )}
               {flagged && (
                 <div className="flex items-start gap-2 bg-warning/15 px-4 py-2 text-warning-foreground">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
@@ -225,7 +232,7 @@ function PickupPage() {
                       <CheckCircle2 className="h-3 w-3" /> In Progress
                     </span>
                   ) : (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
                       <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
                     </span>
                   )}
@@ -255,7 +262,7 @@ function PickupPage() {
                 )}
 
                 {p.status === "unclaimed" ? (
-                  <button onClick={() => claim(p)} className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98]">
+                  <button onClick={() => claim(p)} className={`w-full rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                     Claim
                   </button>
                 ) : (

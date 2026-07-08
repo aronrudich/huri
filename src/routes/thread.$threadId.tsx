@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
+import { isMessageAfterCutoff, loadThreadCutoffs } from "@/lib/thread-visibility";
 
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -27,6 +28,7 @@ function ThreadPage() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
+  const [threadCutoffs] = useState(() => loadThreadCutoffs());
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -57,11 +59,15 @@ function ThreadPage() {
   const isGroup = !!groupMatch;
   const groupRoleId = groupMatch?.[1] ?? null;
   const groupStarterId = groupMatch?.[2] ?? null;
+  const visibleMsgs = useMemo(
+    () => msgs.filter((m) => isMessageAfterCutoff(m.created_at, threadCutoffs[threadId])),
+    [msgs, threadCutoffs, threadId],
+  );
 
   const title = isGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
     : (() => {
-        const last = msgs[msgs.length - 1] ?? msgs[0];
+        const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
         if (!last) return "Direct message";
         const otherId = last.sender_id === user?.id ? last.recipient_id : last.sender_id;
         if (!otherId) return "Unknown";
@@ -107,7 +113,7 @@ function ThreadPage() {
       </header>
 
       <ol className="flex-1 space-y-2 px-3 py-4">
-        {msgs.map((m) => {
+        {visibleMsgs.map((m) => {
           const mine = m.sender_id === user?.id;
           const senderLabel = m.sender_id ? (profiles[m.sender_id] ?? "Unknown") : "Unknown";
           return (

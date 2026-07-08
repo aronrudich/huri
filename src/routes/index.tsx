@@ -7,16 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
-
-const HIDDEN_KEY = "huri:hiddenThreads";
-const loadHidden = (): Set<string> => {
-  if (typeof window === "undefined") return new Set();
-  try { return new Set(JSON.parse(localStorage.getItem(HIDDEN_KEY) || "[]")); }
-  catch { return new Set(); }
-};
-const saveHidden = (s: Set<string>) => {
-  if (typeof window !== "undefined") localStorage.setItem(HIDDEN_KEY, JSON.stringify([...s]));
-};
+import { isMessageAfterCutoff, loadThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -54,13 +45,12 @@ function InboxPage() {
   const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [hidden, setHidden] = useState<Set<string>>(() => loadHidden());
+  const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
-  const hideThread = (tid: string) => {
-    const next = new Set(hidden);
-    next.add(tid);
-    setHidden(next);
-    saveHidden(next);
+  const hideThread = (tid: string, latestAt: string) => {
+    const next = { ...threadCutoffs, [tid]: latestAt };
+    setThreadCutoffs(next);
+    saveThreadCutoffs(next);
   };
 
   useEffect(() => {
@@ -118,6 +108,7 @@ function InboxPage() {
   const threads = useMemo<ThreadSummary[]>(() => {
     const map = new Map<string, ThreadSummary>();
     for (const m of messages) {
+      if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
       const isGroup = !!groupMatch;
@@ -146,13 +137,13 @@ function InboxPage() {
         isGroup,
       });
     }
-    let arr = Array.from(map.values()).filter((t) => !hidden.has(t.thread_id));
+    let arr = Array.from(map.values());
     if (q.trim()) {
       const needle = q.toLowerCase();
       arr = arr.filter((t) => t.title.toLowerCase().includes(needle) || t.preview.toLowerCase().includes(needle));
     }
     return arr;
-  }, [messages, profiles, roles, user, q, hidden]);
+  }, [messages, profiles, roles, user, q, threadCutoffs]);
 
   if (loading || !user) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
@@ -181,7 +172,7 @@ function InboxPage() {
         )}
         {threads.map((t) => (
           <li key={t.thread_id}>
-            <SwipeRow onDelete={() => hideThread(t.thread_id)}>
+            <SwipeRow onDelete={() => hideThread(t.thread_id, t.at)}>
               <Link
                 to="/thread/$threadId"
                 params={{ threadId: t.thread_id }}

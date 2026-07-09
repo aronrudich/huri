@@ -206,7 +206,8 @@ function PickupPage() {
           </li>
         )}
         {sortedPickups.map((p) => {
-          const car = p.ro_number ? carsByRo[p.ro_number] : undefined;
+          const isParts = p.kind === "parts";
+          const car = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
           const adj = car ? adjacentSpots(car.lot_position) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
@@ -215,7 +216,7 @@ function PickupPage() {
             <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${isTech ? "ring-2 ring-destructive" : ""}`}>
               {isTech && (
                 <div className="bg-destructive px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-destructive-foreground">
-                  Technician request
+                  {isParts ? "🚨 Parts request" : "🚨 Technician pickup"}
                 </div>
               )}
               {flagged && (
@@ -228,11 +229,20 @@ function PickupPage() {
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
-                      {p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                      {isParts
+                        ? `Parts needed at ${p.advisor_name ?? "technician"}'s bay`
+                        : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                      {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
-                    </p>
+                    {!isParts && (
+                      <p className="text-sm text-muted-foreground">
+                        {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
+                      </p>
+                    )}
+                    {isParts && (
+                      <p className="text-sm text-muted-foreground">
+                        Bring parts from the parts department to the tech.
+                      </p>
+                    )}
                   </div>
                   {p.status === "claimed" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
@@ -245,7 +255,7 @@ function PickupPage() {
                   )}
                 </div>
 
-                {car && (
+                {!isParts && car && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Parked at:</span>{" "}
@@ -270,11 +280,11 @@ function PickupPage() {
 
                 {p.status === "unclaimed" ? (
                   <button onClick={() => claim(p)} className={`w-full rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
-                    Claim
+                    {isParts ? "On it" : "Claim"}
                   </button>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Claimed by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
+                    {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
                     {p.claimed_at && ` · ${formatDistanceToNow(new Date(p.claimed_at), { addSuffix: true })}`}
                   </p>
                 )}

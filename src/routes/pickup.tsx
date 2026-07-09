@@ -140,10 +140,10 @@ function PickupPage() {
   const sortedPickups = useMemo(() => {
     const unclaimed = visiblePickups
       .filter((p) => p.status === "unclaimed")
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
-      .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
+      .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
     return [...unclaimed, ...claimed];
   }, [visiblePickups]);
 

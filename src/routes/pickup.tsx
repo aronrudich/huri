@@ -19,7 +19,7 @@ type Pickup = {
   id: string; tag_number: string | null; ro_number: string | null;
   advisor_name: string | null; car_model: string | null; status: string;
   claimed_by: string | null; claimed_at: string | null; created_at: string;
-  source_role: string | null;
+  source_role: string | null; kind: string | null;
 };
 
 type ParkedCar = {

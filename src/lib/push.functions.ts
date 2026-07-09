@@ -71,7 +71,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
     const payload = {
-      title: isTech ? "🔧 Tech pickup request" : "New pickup request",
+      title: isTech ? "🚨 Tech pickup request" : "New pickup request",
       body,
       url: "/pickup",
       tag: "pickup",

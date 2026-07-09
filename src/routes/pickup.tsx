@@ -129,16 +129,23 @@ function PickupPage() {
       .slice(0, 8);
   }, [q, allCars]);
 
+  // Parts requests are visible ONLY to the Valet & Parts employee.
+  const canSeeParts = profile?.role_name === "Valet & Parts";
+  const visiblePickups = useMemo(
+    () => pickups.filter((p) => (p.kind === "parts" ? canSeeParts : true)),
+    [pickups, canSeeParts],
+  );
+
   // Sort: unclaimed first (oldest first), then claimed (oldest claim first)
   const sortedPickups = useMemo(() => {
-    const unclaimed = pickups
+    const unclaimed = visiblePickups
       .filter((p) => p.status === "unclaimed")
       .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const claimed = pickups
+    const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
     return [...unclaimed, ...claimed];
-  }, [pickups]);
+  }, [visiblePickups]);
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">

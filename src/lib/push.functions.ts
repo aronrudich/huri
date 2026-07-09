@@ -71,7 +71,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
     const payload = {
-      title: isTech ? "🔧 Tech pickup request" : "New pickup request",
+      title: isTech ? "🚨 Tech pickup request" : "New pickup request",
       body,
       url: "/pickup",
       tag: "pickup",
@@ -160,7 +160,7 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
     const isTech = senderRole === "Technician";
     const payload = {
-      title: `${isTech ? "🔧 " : ""}New message from ${senderName}`,
+      title: `${isTech ? "🚨 " : "💬 "}${senderName}`,
       body: preview,
       url: `/thread/${data.threadId}`,
       tag: `msg-${data.threadId}`,
@@ -188,9 +188,18 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { techName?: string | null }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
+
+    // Insert a parts request into the pickup queue so Valet & Parts can see it in the list.
+    await supabaseAdmin.from("pickup_requests").insert({
+      kind: "parts",
+      source_role: "Technician",
+      advisor_name: data.techName ?? null,
+      requested_by: context.userId,
+      status: "unclaimed",
+    });
 
     const { data: recipients, error: rErr } = await supabaseAdmin
       .from("profiles")
@@ -210,9 +219,9 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       ? `${data.techName} needs parts brought to their bay.`
       : "A technician needs parts brought to their bay.";
     const payload = {
-      title: "🔧 Parts request",
+      title: "🚨 Parts request",
       body,
-      url: "/",
+      url: "/pickup",
       tag: "parts",
       variant: "tech",
     };

@@ -1,0 +1,1 @@
+ALTER TABLE public.pickup_requests ADD COLUMN IF NOT EXISTS kind TEXT NOT NULL DEFAULT 'pickup';

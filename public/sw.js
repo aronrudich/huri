@@ -1,4 +1,7 @@
 // Huri Service Worker — push notifications only (no app-shell cache)
+// v3 — always uses server-provided title/body; falls back to descriptive text.
+const SW_VERSION = "huri-sw-v3";
+
 self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
@@ -8,25 +11,35 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("push", (event) => {
-  let payload = { title: "Huri", body: "New activity", url: "/" };
-  try {
-    if (event.data) payload = { ...payload, ...event.data.json() };
-  } catch (_) {
-    if (event.data) payload.body = event.data.text();
+  let payload = {
+    title: "Huri",
+    body: "You have a new notification",
+    url: "/",
+  };
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      payload = { ...payload, ...parsed };
+    } catch (_) {
+      try {
+        const text = event.data.text();
+        if (text) payload.body = text;
+      } catch (_) {}
+    }
   }
-  event.waitUntil(
-    self.registration.showNotification(payload.title, {
-      body: payload.body,
-      icon: "/icon-512.png",
-      badge: "/icon-512.png",
-      data: { url: payload.url || "/" },
-      vibrate: [300, 120, 300, 120, 300],
-      tag: payload.tag,
-      renotify: true,
-      requireInteraction: true,
-      silent: false,
-    }),
-  );
+  const title = payload.title || "Huri";
+  const options = {
+    body: payload.body || "Tap to open Huri",
+    icon: "/icon-512.png",
+    badge: "/icon-512.png",
+    data: { url: payload.url || "/" },
+    vibrate: [300, 120, 300, 120, 300],
+    tag: payload.tag,
+    renotify: true,
+    requireInteraction: true,
+    silent: false,
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
 });
 
 self.addEventListener("notificationclick", (event) => {

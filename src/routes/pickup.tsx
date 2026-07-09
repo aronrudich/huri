@@ -212,7 +212,6 @@ function PickupPage() {
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
           const isTech = p.source_role === "Technician";
-          return (
           const ringClass = isParts
             ? "ring-2 ring-warning"
             : isTech

@@ -160,7 +160,7 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
     const isTech = senderRole === "Technician";
     const payload = {
-      title: `${isTech ? "🔧 " : ""}New message from ${senderName}`,
+      title: `${isTech ? "🚨 " : "💬 "}${senderName}`,
       body: preview,
       url: `/thread/${data.threadId}`,
       tag: `msg-${data.threadId}`,

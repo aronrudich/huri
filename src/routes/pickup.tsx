@@ -165,7 +165,7 @@ function PickupPage() {
           />
         </div>
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-          {pickups.filter((p) => p.status === "unclaimed").length} unclaimed · tap a search result to edit a car
+          {visiblePickups.filter((p) => p.status === "unclaimed").length} unclaimed · tap a search result to edit a car
         </p>
       </header>
 

@@ -97,6 +97,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
+          kind: string
           requested_by: string | null
           ro_number: string | null
           source_role: string | null
@@ -111,6 +112,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          kind?: string
           requested_by?: string | null
           ro_number?: string | null
           source_role?: string | null
@@ -125,6 +127,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
+          kind?: string
           requested_by?: string | null
           ro_number?: string | null
           source_role?: string | null

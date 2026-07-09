@@ -213,10 +213,26 @@ function PickupPage() {
           const flagged = car?.notes && car.notes.trim().length > 0;
           const isTech = p.source_role === "Technician";
           return (
-            <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${isTech ? "ring-2 ring-destructive" : ""}`}>
-              {isTech && (
-                <div className="bg-destructive px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-destructive-foreground">
-                  {isParts ? "🚨 Parts request" : "🚨 Technician pickup"}
+          const ringClass = isParts
+            ? "ring-2 ring-warning"
+            : isTech
+              ? "ring-2 ring-destructive"
+              : "ring-2 ring-primary";
+          const headerBar = isParts
+            ? "bg-warning text-warning-foreground"
+            : isTech
+              ? "bg-destructive text-destructive-foreground"
+              : null;
+          const headerLabel = isParts
+            ? "🔧 Parts request"
+            : isTech
+              ? "🚨 Technician pickup"
+              : null;
+          return (
+            <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${ringClass}`}>
+              {headerBar && (
+                <div className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}>
+                  {headerLabel}
                 </div>
               )}
               {flagged && (
@@ -230,17 +246,12 @@ function PickupPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
                       {isParts
-                        ? `Parts needed at ${p.advisor_name ?? "technician"}'s bay`
+                        ? `Parts for ${p.advisor_name ?? "technician"}`
                         : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     {!isParts && (
                       <p className="text-sm text-muted-foreground">
                         {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                    {isParts && (
-                      <p className="text-sm text-muted-foreground">
-                        Bring parts from the parts department to the tech.
                       </p>
                     )}
                   </div>

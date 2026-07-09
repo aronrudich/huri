@@ -188,9 +188,18 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { techName?: string | null }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
+
+    // Insert a parts request into the pickup queue so Valet & Parts can see it in the list.
+    await supabaseAdmin.from("pickup_requests").insert({
+      kind: "parts",
+      source_role: "Technician",
+      advisor_name: data.techName ?? null,
+      requested_by: context.userId,
+      status: "unclaimed",
+    });
 
     const { data: recipients, error: rErr } = await supabaseAdmin
       .from("profiles")
@@ -210,9 +219,9 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       ? `${data.techName} needs parts brought to their bay.`
       : "A technician needs parts brought to their bay.";
     const payload = {
-      title: "🔧 Parts request",
+      title: "🚨 Parts request",
       body,
-      url: "/",
+      url: "/pickup",
       tag: "parts",
       variant: "tech",
     };

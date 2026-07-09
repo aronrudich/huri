@@ -140,10 +140,10 @@ function PickupPage() {
   const sortedPickups = useMemo(() => {
     const unclaimed = visiblePickups
       .filter((p) => p.status === "unclaimed")
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
-      .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
+      .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
     return [...unclaimed, ...claimed];
   }, [visiblePickups]);
 
@@ -212,11 +212,26 @@ function PickupPage() {
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = car?.notes && car.notes.trim().length > 0;
           const isTech = p.source_role === "Technician";
+          const ringClass = isParts
+            ? "ring-2 ring-warning"
+            : isTech
+              ? "ring-2 ring-destructive"
+              : "ring-2 ring-primary";
+          const headerBar = isParts
+            ? "bg-warning text-warning-foreground"
+            : isTech
+              ? "bg-destructive text-destructive-foreground"
+              : null;
+          const headerLabel = isParts
+            ? "🔧 Parts request"
+            : isTech
+              ? "🚨 Technician pickup"
+              : null;
           return (
-            <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${isTech ? "ring-2 ring-destructive" : ""}`}>
-              {isTech && (
-                <div className="bg-destructive px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-destructive-foreground">
-                  {isParts ? "🚨 Parts request" : "🚨 Technician pickup"}
+            <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${ringClass}`}>
+              {headerBar && (
+                <div className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}>
+                  {headerLabel}
                 </div>
               )}
               {flagged && (
@@ -230,17 +245,12 @@ function PickupPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
                       {isParts
-                        ? `Parts needed at ${p.advisor_name ?? "technician"}'s bay`
+                        ? `Parts for ${p.advisor_name ?? "technician"}`
                         : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     {!isParts && (
                       <p className="text-sm text-muted-foreground">
                         {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
-                      </p>
-                    )}
-                    {isParts && (
-                      <p className="text-sm text-muted-foreground">
-                        Bring parts from the parts department to the tech.
                       </p>
                     )}
                   </div>
@@ -279,7 +289,7 @@ function PickupPage() {
                 )}
 
                 {p.status === "unclaimed" ? (
-                  <button onClick={() => claim(p)} className={`w-full rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                  <button onClick={() => claim(p)} className={`w-full rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                     {isParts ? "On it" : "Claim"}
                   </button>
                 ) : (

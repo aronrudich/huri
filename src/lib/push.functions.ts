@@ -120,18 +120,16 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       recipientIds = [data.recipientId];
     } else if (groupMatch) {
       const [, roleId, starterId] = groupMatch;
-      if (context.userId === starterId) {
-        // Starter → notify all members of the role (except starter)
-        const { data: members } = await supabaseAdmin
-          .from("profiles")
-          .select("id")
-          .eq("role_id", roleId)
-          .eq("is_active", true);
-        recipientIds = (members ?? []).map((m) => m.id).filter((id) => id !== context.userId);
-      } else {
-        // Member reply → notify only the starter
-        recipientIds = [starterId];
-      }
+      // Notify everyone in the group (all role members + starter), except the sender
+      const { data: members } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("role_id", roleId)
+        .eq("is_active", true);
+      const ids = new Set<string>((members ?? []).map((m) => m.id));
+      ids.add(starterId);
+      ids.delete(context.userId);
+      recipientIds = Array.from(ids);
     } else if (data.recipientRoleId) {
       // Legacy fallback
       const { data: members } = await supabaseAdmin

@@ -211,6 +211,21 @@ function AuthPage() {
               />
 
               <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Dealership</label>
+                <select
+                  value={dealershipId}
+                  onChange={(e) => setDealershipId(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
+                >
+                  {dealerships.length === 0 && <option value="">Loading…</option>}
+                  {dealerships.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+
+              <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>
                 <select
                   value={role}

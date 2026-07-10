@@ -126,11 +126,13 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           status: "pending",
           deactivated_at: null,
           deactivated_by: null,
+          dealership_id: data.dealershipId,
         },
         { onConflict: "id" },
       );
       if (profileError) throw new Error("Could not add this account to Huri people.");
     };
+
 
     const created = await adminClient.auth.admin.createUser({
       email: targetEmail,

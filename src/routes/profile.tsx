@@ -216,7 +216,8 @@ function ProfilePage() {
         </section>
       )}
 
-      {isOwner && (
+      {isAdmin && (
+
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <span className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" /> Approvals</span>

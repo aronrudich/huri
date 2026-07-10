@@ -297,14 +297,17 @@ function ProfilePage() {
                 </div>
                 {!emp.is_owner && (
                   <>
-                    <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
-                      <ArrowRightLeft className="h-4 w-4" />
-                    </button>
+                    {isOwner && (
+                      <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </button>
+                    )}
                     <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </>
                 )}
+
               </li>
             ))}
             {filtered.length === 0 && <li className="px-4 py-6 text-center text-xs text-muted-foreground">No matches.</li>}

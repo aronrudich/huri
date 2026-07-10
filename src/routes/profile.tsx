@@ -274,7 +274,7 @@ function ProfilePage() {
         )}
       </section>
 
-      {isOwner && (
+      {isAdmin && (
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Crown className="h-4 w-4 text-amber-500" /> Roster ({staff.filter((e) => e.id !== user?.id).length})

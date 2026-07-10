@@ -79,10 +79,23 @@ function InboxPage() {
   // load messages relevant to me
   useEffect(() => {
     if (!user || !profile) return;
-    const myRole = profile.role_id;
-    const filter = myRole
-      ? `recipient_id.eq.${user.id},sender_id.eq.${user.id},recipient_role_id.eq.${myRole}`
-      : `recipient_id.eq.${user.id},sender_id.eq.${user.id}`;
+    // Include our own role; if we're Valet & Parts, also include the Valet role id.
+    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
+    const myRoleIds = new Set<string>();
+    if (profile.role_id) myRoleIds.add(profile.role_id);
+    if (profile.role_name === "Valet & Parts" && valetRoleId) myRoleIds.add(valetRoleId);
+
+    const parts = [
+      `recipient_id.eq.${user.id}`,
+      `sender_id.eq.${user.id}`,
+      // Group threads that we started (as anyone with any role): group:*:<myId>
+      `thread_id.like.group:*:${user.id}`,
+    ];
+    if (myRoleIds.size) {
+      parts.push(`recipient_role_id.in.(${Array.from(myRoleIds).join(",")})`);
+    }
+    const filter = parts.join(",");
+
     supabase
       .from("messages")
       .select("*")
@@ -95,15 +108,19 @@ function InboxPage() {
       .channel("inbox-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
         const m = payload.new as Msg;
+        const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
+        const iStarted = !!groupMatch && groupMatch[2] === user.id;
         const mine =
           m.recipient_id === user.id ||
           m.sender_id === user.id ||
-          (myRole && m.recipient_role_id === myRole);
+          (m.recipient_role_id && myRoleIds.has(m.recipient_role_id)) ||
+          iStarted;
         if (mine) setMessages((prev) => [m, ...prev]);
       })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [user, profile]);
+  }, [user, profile, roles]);
+
 
   const threads = useMemo<ThreadSummary[]>(() => {
     const map = new Map<string, ThreadSummary>();

@@ -12,7 +12,9 @@ const confirmedSignupSchema = emailPasswordSchema.extend({
   fullName: z.string().trim().min(1).max(120),
   nickname: z.string().trim().max(120).optional(),
   roleName: z.string().trim().min(1).max(120),
+  dealershipId: z.string().uuid(),
 });
+
 
 function createAuthClient(key: string) {
   const url =

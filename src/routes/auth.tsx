@@ -98,6 +98,7 @@ function AuthPage() {
     }
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
+    if (!dealershipId) return toast.error("Please pick your dealership");
 
     setBusy(true);
     try {
@@ -108,8 +109,10 @@ function AuthPage() {
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
+          dealershipId,
         },
       });
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,

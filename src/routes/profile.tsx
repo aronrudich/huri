@@ -77,23 +77,24 @@ function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!isOwner) return;
+    if (!isAdmin) return;
     supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner")
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
-  }, [isOwner]);
+  }, [isAdmin]);
 
   const loadPending = async () => {
     try { const r = await fetchPending({}); setPending(r as typeof pending); }
     catch (e) { console.warn(e); }
   };
   useEffect(() => {
-    if (!isOwner) return;
+    if (!isAdmin) return;
     loadPending();
     const t = setInterval(loadPending, 15000);
     return () => clearInterval(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner]);
+  }, [isAdmin]);
+
 
   const logout = async () => { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
 

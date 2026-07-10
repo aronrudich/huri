@@ -47,13 +47,18 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     model?: string | null;
     sourceRole?: string | null;
   }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
+
+    const { data: caller } = await supabaseAdmin
+      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
+    if (!caller?.dealership_id) return { sent: 0 };
 
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
+      .eq("dealership_id", caller.dealership_id)
       .in("role_name", ["Valet", "Valet & Parts"])
       .eq("is_active", true);
     if (vErr) throw vErr;
@@ -65,6 +70,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .in("user_id", valets.map((v) => v.id));
     if (sErr) throw sErr;
     if (!subs?.length) return { sent: 0 };
+
 
     const isTech = data.sourceRole === "Technician";
     const body =

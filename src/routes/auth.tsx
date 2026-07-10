@@ -32,12 +32,16 @@ const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(me
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
 
+type Dealership = { id: string; name: string };
+
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
   const roles = DEFAULT_ROLES;
+  const [dealerships, setDealerships] = useState<Dealership[]>([]);
+  const [dealershipId, setDealershipId] = useState<string>("");
 
   // form fields
   const [email, setEmail] = useState("");
@@ -48,8 +52,18 @@ function AuthPage() {
   const [otherRole, setOtherRole] = useState("");
 
   useEffect(() => {
+    supabase.from("dealerships").select("id, name").order("name").then(({ data }) => {
+      if (data && data.length) {
+        setDealerships(data as Dealership[]);
+        setDealershipId((prev) => prev || data[0].id);
+      }
+    });
+  }, []);
+
+  useEffect(() => {
     if (!loading && user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
+
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +98,7 @@ function AuthPage() {
     }
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
+    if (!dealershipId) return toast.error("Please pick your dealership");
 
     setBusy(true);
     try {
@@ -94,8 +109,10 @@ function AuthPage() {
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
+          dealershipId,
         },
       });
+
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
@@ -192,6 +209,21 @@ function AuthPage() {
                 required
                 autoComplete="new-password"
               />
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Dealership</label>
+                <select
+                  value={dealershipId}
+                  onChange={(e) => setDealershipId(e.target.value)}
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
+                >
+                  {dealerships.length === 0 && <option value="">Loading…</option>}
+                  {dealerships.map((d) => (
+                    <option key={d.id} value={d.id}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>

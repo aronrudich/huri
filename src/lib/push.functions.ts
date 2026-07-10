@@ -47,13 +47,18 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     model?: string | null;
     sourceRole?: string | null;
   }) => d)
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
+
+    const { data: caller } = await supabaseAdmin
+      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
+    if (!caller?.dealership_id) return { sent: 0 };
 
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
+      .eq("dealership_id", caller.dealership_id)
       .in("role_name", ["Valet", "Valet & Parts"])
       .eq("is_active", true);
     if (vErr) throw vErr;
@@ -65,6 +70,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .in("user_id", valets.map((v) => v.id));
     if (sErr) throw sErr;
     if (!subs?.length) return { sent: 0 };
+
 
     const isTech = data.sourceRole === "Technician";
     const body =
@@ -110,6 +116,25 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
+    const { data: caller } = await supabaseAdmin
+      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
+    if (!caller?.dealership_id) return { sent: 0 };
+
+    // Helper: expand a role_id to include Valet & Parts users when the role is Valet.
+    const membersForRole = async (roleId: string) => {
+      const { data: roleRow } = await supabaseAdmin
+        .from("roles").select("name").eq("id", roleId).maybeSingle();
+      const roleNames = roleRow?.name === "Valet" ? ["Valet", "Valet & Parts"] : null;
+      let q = supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .eq("dealership_id", caller.dealership_id)
+        .eq("is_active", true);
+      q = roleNames ? q.in("role_name", roleNames) : q.eq("role_id", roleId);
+      const { data: members } = await q;
+      return (members ?? []).map((m) => m.id);
+    };
+
     // Resolve recipient user ids
     let recipientIds: string[] = [];
 
@@ -120,26 +145,16 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       recipientIds = [data.recipientId];
     } else if (groupMatch) {
       const [, roleId, starterId] = groupMatch;
-      // Notify everyone in the group (all role members + starter), except the sender
-      const { data: members } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("role_id", roleId)
-        .eq("is_active", true);
-      const ids = new Set<string>((members ?? []).map((m) => m.id));
+      const ids = new Set<string>(await membersForRole(roleId));
       ids.add(starterId);
       ids.delete(context.userId);
       recipientIds = Array.from(ids);
     } else if (data.recipientRoleId) {
-      // Legacy fallback
-      const { data: members } = await supabaseAdmin
-        .from("profiles")
-        .select("id")
-        .eq("role_id", data.recipientRoleId)
-        .eq("is_active", true);
-      recipientIds = (members ?? []).map((m) => m.id).filter((id) => id !== context.userId);
+      const ids = await membersForRole(data.recipientRoleId);
+      recipientIds = ids.filter((id) => id !== context.userId);
     }
     if (!recipientIds.length) return { sent: 0 };
+
 
     // Sender name + role
     let senderName = "Someone";
@@ -190,6 +205,10 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
+    const { data: caller } = await supabaseAdmin
+      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
+    if (!caller?.dealership_id) return { sent: 0 };
+
     // Insert a parts request into the pickup queue so Valet & Parts can see it in the list.
     await supabaseAdmin.from("pickup_requests").insert({
       kind: "parts",
@@ -197,15 +216,18 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       advisor_name: data.techName ?? null,
       requested_by: context.userId,
       status: "unclaimed",
+      dealership_id: caller.dealership_id,
     });
 
     const { data: recipients, error: rErr } = await supabaseAdmin
       .from("profiles")
       .select("id")
+      .eq("dealership_id", caller.dealership_id)
       .eq("role_name", "Valet & Parts")
       .eq("is_active", true);
     if (rErr) throw rErr;
     if (!recipients?.length) return { sent: 0 };
+
 
     const { data: subs } = await supabaseAdmin
       .from("push_subscriptions")

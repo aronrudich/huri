@@ -52,6 +52,9 @@ function ProfilePage() {
   const [roleReqOpen, setRoleReqOpen] = useState(false);
 
   const isOwner = !!profile?.is_owner;
+  const ADMIN_ROLES = ["Manager", "Service Manager", "Service Director", "General Manager", "Director"];
+  const isAdmin = isOwner || (profile ? ADMIN_ROLES.includes(profile.role_name) : false);
+
 
   const fetchPending = useServerFn(listPendingApprovals);
   const approveAcc = useServerFn(approveAccount);
@@ -74,23 +77,24 @@ function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!isOwner) return;
+    if (!isAdmin) return;
     supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner")
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
-  }, [isOwner]);
+  }, [isAdmin]);
 
   const loadPending = async () => {
     try { const r = await fetchPending({}); setPending(r as typeof pending); }
     catch (e) { console.warn(e); }
   };
   useEffect(() => {
-    if (!isOwner) return;
+    if (!isAdmin) return;
     loadPending();
     const t = setInterval(loadPending, 15000);
     return () => clearInterval(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOwner]);
+  }, [isAdmin]);
+
 
   const logout = async () => { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
 
@@ -212,7 +216,8 @@ function ProfilePage() {
         </section>
       )}
 
-      {isOwner && (
+      {isAdmin && (
+
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <span className="flex items-center gap-2"><Crown className="h-4 w-4 text-amber-500" /> Approvals</span>
@@ -269,7 +274,7 @@ function ProfilePage() {
         )}
       </section>
 
-      {isOwner && (
+      {isAdmin && (
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Crown className="h-4 w-4 text-amber-500" /> Roster ({staff.filter((e) => e.id !== user?.id).length})
@@ -292,14 +297,17 @@ function ProfilePage() {
                 </div>
                 {!emp.is_owner && (
                   <>
-                    <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
-                      <ArrowRightLeft className="h-4 w-4" />
-                    </button>
+                    {isOwner && (
+                      <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
+                        <ArrowRightLeft className="h-4 w-4" />
+                      </button>
+                    )}
                     <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </>
                 )}
+
               </li>
             ))}
             {filtered.length === 0 && <li className="px-4 py-6 text-center text-xs text-muted-foreground">No matches.</li>}

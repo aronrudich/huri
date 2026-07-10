@@ -14,10 +14,32 @@ export type Database = {
   }
   public: {
     Tables: {
+      dealerships: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
           created_at: string
+          dealership_id: string
           id: string
           recipient_id: string | null
           recipient_role_id: string | null
@@ -27,6 +49,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          dealership_id?: string
           id?: string
           recipient_id?: string | null
           recipient_role_id?: string | null
@@ -36,6 +59,7 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          dealership_id?: string
           id?: string
           recipient_id?: string | null
           recipient_role_id?: string | null
@@ -43,6 +67,13 @@ export type Database = {
           thread_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_recipient_role_id_fkey"
             columns: ["recipient_role_id"]
@@ -56,6 +87,7 @@ export type Database = {
         Row: {
           car_model: string | null
           created_at: string
+          dealership_id: string
           id: string
           lot_position: string
           notes: string | null
@@ -67,6 +99,7 @@ export type Database = {
         Insert: {
           car_model?: string | null
           created_at?: string
+          dealership_id?: string
           id?: string
           lot_position?: string
           notes?: string | null
@@ -78,6 +111,7 @@ export type Database = {
         Update: {
           car_model?: string | null
           created_at?: string
+          dealership_id?: string
           id?: string
           lot_position?: string
           notes?: string | null
@@ -86,7 +120,15 @@ export type Database = {
           tag_number?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "parked_cars_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pickup_requests: {
         Row: {
@@ -96,6 +138,7 @@ export type Database = {
           claimed_by: string | null
           completed_at: string | null
           created_at: string
+          dealership_id: string
           id: string
           kind: string
           requested_by: string | null
@@ -111,6 +154,7 @@ export type Database = {
           claimed_by?: string | null
           completed_at?: string | null
           created_at?: string
+          dealership_id?: string
           id?: string
           kind?: string
           requested_by?: string | null
@@ -126,6 +170,7 @@ export type Database = {
           claimed_by?: string | null
           completed_at?: string | null
           created_at?: string
+          dealership_id?: string
           id?: string
           kind?: string
           requested_by?: string | null
@@ -134,13 +179,22 @@ export type Database = {
           status?: string
           tag_number?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pickup_requests_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
           created_at: string
           deactivated_at: string | null
           deactivated_by: string | null
+          dealership_id: string
           email: string
           full_name: string
           id: string
@@ -156,6 +210,7 @@ export type Database = {
           created_at?: string
           deactivated_at?: string | null
           deactivated_by?: string | null
+          dealership_id?: string
           email: string
           full_name: string
           id: string
@@ -171,6 +226,7 @@ export type Database = {
           created_at?: string
           deactivated_at?: string | null
           deactivated_by?: string | null
+          dealership_id?: string
           email?: string
           full_name?: string
           id?: string
@@ -183,6 +239,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_role_id_fkey"
             columns: ["role_id"]

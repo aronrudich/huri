@@ -52,6 +52,9 @@ function ProfilePage() {
   const [roleReqOpen, setRoleReqOpen] = useState(false);
 
   const isOwner = !!profile?.is_owner;
+  const ADMIN_ROLES = ["Manager", "Service Manager", "Service Director", "General Manager", "Director"];
+  const isAdmin = isOwner || (profile ? ADMIN_ROLES.includes(profile.role_name) : false);
+
 
   const fetchPending = useServerFn(listPendingApprovals);
   const approveAcc = useServerFn(approveAccount);

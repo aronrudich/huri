@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION private.is_approved(uuid), private.is_owner(uuid), private.is_admin(uuid), private.is_manager(uuid), private.dealership_of(uuid), private.user_in_role_group(uuid, uuid) TO authenticated;

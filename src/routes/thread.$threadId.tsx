@@ -36,8 +36,16 @@ function ThreadPage() {
 
   useEffect(() => {
     if (!user) return;
+    const markRead = async () => {
+      await supabase
+        .from("messages")
+        .update({ read_at: new Date().toISOString() })
+        .eq("thread_id", threadId)
+        .is("read_at", null)
+        .neq("sender_id", user.id);
+    };
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
-      .then(({ data }) => setMsgs((data as Msg[]) ?? []));
+      .then(({ data }) => { setMsgs((data as Msg[]) ?? []); void markRead(); });
     getDirectory().then((data) => {
       const m: Record<string, string> = {};
       data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
@@ -50,7 +58,9 @@ function ThreadPage() {
     });
     const chan = supabase.channel(`thread-${threadId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
-        (p) => setMsgs((prev) => [...prev, p.new as Msg]))
+        (p) => { setMsgs((prev) => [...prev, p.new as Msg]); void markRead(); })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
+        (p) => { const upd = p.new as Msg; setMsgs((prev) => prev.map((m) => m.id === upd.id ? upd : m)); })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
   }, [threadId, user]);

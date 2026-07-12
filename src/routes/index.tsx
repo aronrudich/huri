@@ -129,8 +129,13 @@ function InboxPage() {
 
   const threads = useMemo<ThreadSummary[]>(() => {
     const map = new Map<string, ThreadSummary>();
+    const unreadByThread = new Map<string, boolean>();
     for (const m of messages) {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
+      // Track unread: any message not from me with no read_at
+      if (m.sender_id !== user?.id && !m.read_at) {
+        unreadByThread.set(m.thread_id, true);
+      }
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
       const isGroup = !!groupMatch;
@@ -145,7 +150,6 @@ function InboxPage() {
           title = `${roleName} (group) · ${starterName}`;
         }
       } else if (m.thread_id.startsWith("group:")) {
-        // legacy fallback
         title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {
         const otherId = m.sender_id === user?.id ? m.recipient_id : m.sender_id;
@@ -159,7 +163,7 @@ function InboxPage() {
         isGroup,
       });
     }
-    let arr = Array.from(map.values());
+    let arr = Array.from(map.values()).map((t) => ({ ...t, unread: unreadByThread.get(t.thread_id) === true }));
     if (q.trim()) {
       const needle = q.toLowerCase();
       arr = arr.filter((t) => t.title.toLowerCase().includes(needle) || t.preview.toLowerCase().includes(needle));

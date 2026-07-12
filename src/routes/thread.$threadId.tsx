@@ -18,7 +18,7 @@ export const Route = createFileRoute("/thread/$threadId")({
 type Msg = {
   id: string; thread_id: string; sender_id: string | null;
   recipient_id: string | null; recipient_role_id: string | null;
-  body: string; created_at: string;
+  body: string; created_at: string; read_at?: string | null;
 };
 
 function ThreadPage() {

@@ -84,6 +84,13 @@ function ProfilePage() {
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!profile?.dealership_id) { setDealershipName(""); return; }
+    supabase.from("dealerships").select("name").eq("id", profile.dealership_id).maybeSingle()
+      .then(({ data }) => setDealershipName((data as { name?: string } | null)?.name ?? ""));
+  }, [profile?.dealership_id]);
+
+
   const loadPending = async () => {
     try { const r = await fetchPending({}); setPending(r as typeof pending); }
     catch (e) { console.warn(e); }

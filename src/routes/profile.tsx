@@ -50,6 +50,7 @@ function ProfilePage() {
   const [transferTo, setTransferTo] = useState<Employee | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
+  const [dealershipName, setDealershipName] = useState<string>("");
 
   const isOwner = !!profile?.is_owner;
   const ADMIN_ROLES = ["Manager", "Service Manager", "Service Director", "General Manager", "Director"];

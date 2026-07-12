@@ -27,6 +27,7 @@ type Msg = {
   recipient_role_id: string | null;
   body: string;
   created_at: string;
+  read_at?: string | null;
 };
 
 type ThreadSummary = {
@@ -117,6 +118,10 @@ function InboxPage() {
           iStarted;
         if (mine) setMessages((prev) => [m, ...prev]);
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const upd = payload.new as Msg;
+        setMessages((prev) => prev.map((m) => m.id === upd.id ? upd : m));
+      })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
   }, [user, profile, roles]);
@@ -124,8 +129,13 @@ function InboxPage() {
 
   const threads = useMemo<ThreadSummary[]>(() => {
     const map = new Map<string, ThreadSummary>();
+    const unreadByThread = new Map<string, boolean>();
     for (const m of messages) {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
+      // Track unread: any message not from me with no read_at
+      if (m.sender_id !== user?.id && !m.read_at) {
+        unreadByThread.set(m.thread_id, true);
+      }
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
       const isGroup = !!groupMatch;
@@ -140,7 +150,6 @@ function InboxPage() {
           title = `${roleName} (group) · ${starterName}`;
         }
       } else if (m.thread_id.startsWith("group:")) {
-        // legacy fallback
         title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {
         const otherId = m.sender_id === user?.id ? m.recipient_id : m.sender_id;
@@ -154,7 +163,7 @@ function InboxPage() {
         isGroup,
       });
     }
-    let arr = Array.from(map.values());
+    let arr = Array.from(map.values()).map((t) => ({ ...t, unread: unreadByThread.get(t.thread_id) === true }));
     if (q.trim()) {
       const needle = q.toLowerCase();
       arr = arr.filter((t) => t.title.toLowerCase().includes(needle) || t.preview.toLowerCase().includes(needle));
@@ -193,19 +202,23 @@ function InboxPage() {
               <Link
                 to="/thread/$threadId"
                 params={{ threadId: t.thread_id }}
-                className="flex items-start gap-3 px-5 py-3 active:bg-accent"
+                className="flex items-start gap-2 px-3 py-3 active:bg-accent"
               >
+                <span
+                  aria-label={t.unread ? "Unread" : undefined}
+                  className={`mt-4 h-2 w-2 shrink-0 rounded-full ${t.unread ? "bg-primary" : "bg-transparent"}`}
+                />
                 <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
                   {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-base font-semibold">{t.title}</p>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <p className={`truncate text-base ${t.unread ? "font-bold" : "font-semibold"}`}>{t.title}</p>
+                    <span className={`shrink-0 text-xs ${t.unread ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                       {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
                     </span>
                   </div>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
+                  <p className={`line-clamp-2 text-sm ${t.unread ? "font-medium text-foreground" : "text-muted-foreground"}`}>{t.preview}</p>
                 </div>
               </Link>
             </SwipeRow>

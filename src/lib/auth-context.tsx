@@ -15,6 +15,7 @@ export type Profile = {
   is_owner?: boolean;
   status?: "pending" | "approved";
   pending_role_name?: string | null;
+  dealership_id?: string | null;
 };
 
 type Ctx = {

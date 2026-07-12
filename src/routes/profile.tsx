@@ -50,6 +50,7 @@ function ProfilePage() {
   const [transferTo, setTransferTo] = useState<Employee | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
+  const [dealershipName, setDealershipName] = useState<string>("");
 
   const isOwner = !!profile?.is_owner;
   const ADMIN_ROLES = ["Manager", "Service Manager", "Service Director", "General Manager", "Director"];
@@ -82,6 +83,13 @@ function ProfilePage() {
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
   }, [isAdmin]);
+
+  useEffect(() => {
+    if (!profile?.dealership_id) { setDealershipName(""); return; }
+    supabase.from("dealerships").select("name").eq("id", profile.dealership_id).maybeSingle()
+      .then(({ data }) => setDealershipName((data as { name?: string } | null)?.name ?? ""));
+  }, [profile?.dealership_id]);
+
 
   const loadPending = async () => {
     try { const r = await fetchPending({}); setPending(r as typeof pending); }
@@ -206,6 +214,7 @@ function ProfilePage() {
             </button>
           </div>
           <Row label="Email" value={profile.email} />
+          {dealershipName && <Row label="Dealership" value={dealershipName} />}
           <button
             onClick={() => setRoleReqOpen(true)}
             className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-sm font-medium text-primary active:bg-accent"

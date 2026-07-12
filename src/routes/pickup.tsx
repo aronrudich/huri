@@ -94,7 +94,7 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive claimed pickups after 60 minutes
+  // Auto-archive claimed pickups/parts after 60 minutes
   useEffect(() => {
     const t = setInterval(() => {
       const now = Date.now();

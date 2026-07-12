@@ -41,6 +41,7 @@ export type Database = {
           created_at: string
           dealership_id: string
           id: string
+          read_at: string | null
           recipient_id: string | null
           recipient_role_id: string | null
           sender_id: string | null
@@ -51,6 +52,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          read_at?: string | null
           recipient_id?: string | null
           recipient_role_id?: string | null
           sender_id?: string | null
@@ -61,6 +63,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          read_at?: string | null
           recipient_id?: string | null
           recipient_role_id?: string | null
           sender_id?: string | null

@@ -214,6 +214,7 @@ function ProfilePage() {
             </button>
           </div>
           <Row label="Email" value={profile.email} />
+          {dealershipName && <Row label="Dealership" value={dealershipName} />}
           <button
             onClick={() => setRoleReqOpen(true)}
             className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-sm font-medium text-primary active:bg-accent"

@@ -118,6 +118,10 @@ function InboxPage() {
           iStarted;
         if (mine) setMessages((prev) => [m, ...prev]);
       })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const upd = payload.new as Msg;
+        setMessages((prev) => prev.map((m) => m.id === upd.id ? upd : m));
+      })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
   }, [user, profile, roles]);

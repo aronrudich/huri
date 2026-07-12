@@ -27,6 +27,7 @@ type Msg = {
   recipient_role_id: string | null;
   body: string;
   created_at: string;
+  read_at?: string | null;
 };
 
 type ThreadSummary = {

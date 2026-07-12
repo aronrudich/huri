@@ -202,19 +202,23 @@ function InboxPage() {
               <Link
                 to="/thread/$threadId"
                 params={{ threadId: t.thread_id }}
-                className="flex items-start gap-3 px-5 py-3 active:bg-accent"
+                className="flex items-start gap-2 px-3 py-3 active:bg-accent"
               >
+                <span
+                  aria-label={t.unread ? "Unread" : undefined}
+                  className={`mt-4 h-2 w-2 shrink-0 rounded-full ${t.unread ? "bg-primary" : "bg-transparent"}`}
+                />
                 <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
                   {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
-                    <p className="truncate text-base font-semibold">{t.title}</p>
-                    <span className="shrink-0 text-xs text-muted-foreground">
+                    <p className={`truncate text-base ${t.unread ? "font-bold" : "font-semibold"}`}>{t.title}</p>
+                    <span className={`shrink-0 text-xs ${t.unread ? "font-semibold text-foreground" : "text-muted-foreground"}`}>
                       {formatDistanceToNow(new Date(t.at), { addSuffix: false })}
                     </span>
                   </div>
-                  <p className="line-clamp-2 text-sm text-muted-foreground">{t.preview}</p>
+                  <p className={`line-clamp-2 text-sm ${t.unread ? "font-medium text-foreground" : "text-muted-foreground"}`}>{t.preview}</p>
                 </div>
               </Link>
             </SwipeRow>

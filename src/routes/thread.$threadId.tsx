@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
-import { isMessageAfterCutoff, loadThreadCutoffs } from "@/lib/thread-visibility";
+import { isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -28,22 +28,26 @@ function ThreadPage() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
-  const [threadCutoffs] = useState(() => loadThreadCutoffs());
+  const [threadCutoffs, setThreadCutoffs] = useState(() => loadThreadCutoffs());
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const bottomRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
     if (!user) return;
     const markRead = async () => {
+      const readAt = new Date().toISOString();
+      setMsgs((prev) => prev.map((m) => (m.thread_id === threadId && m.sender_id !== user.id && !m.read_at ? { ...m, read_at: readAt } : m)));
       await supabase
         .from("messages")
-        .update({ read_at: new Date().toISOString() })
+        .update({ read_at: readAt })
         .eq("thread_id", threadId)
         .is("read_at", null)
         .neq("sender_id", user.id);
     };
+    loadThreadCutoffsForUser(user.id).then(setThreadCutoffs);
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => { setMsgs((data as Msg[]) ?? []); void markRead(); });
     getDirectory().then((data) => {
@@ -114,6 +118,12 @@ function ThreadPage() {
     setBody("");
   };
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      bottomRef.current?.scrollIntoView({ block: "end" });
+    });
+  }, [visibleMsgs.length]);
+
   return (
     <div className="flex min-h-screen flex-col bg-surface safe-top">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
@@ -144,6 +154,7 @@ function ThreadPage() {
             </li>
           );
         })}
+        <div ref={bottomRef} />
       </ol>
 
       <div className="sticky bottom-0 border-t border-border bg-background p-3 safe-bottom">

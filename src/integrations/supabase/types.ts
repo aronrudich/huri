@@ -306,6 +306,27 @@ export type Database = {
         }
         Relationships: []
       }
+      thread_hides: {
+        Row: {
+          dealership_id: string
+          hidden_at: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          dealership_id?: string
+          hidden_at?: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          dealership_id?: string
+          hidden_at?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

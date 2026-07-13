@@ -10,6 +10,8 @@ import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 
+const CLAIM_HIDE_MS = 60 * 60 * 1000;
+
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
   component: PickupPage,
@@ -55,9 +57,12 @@ function PickupPage() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("pickup_requests")
-      .select("*").neq("status", "completed").order("created_at", { ascending: true })
-      .then(({ data }) => setPickups((data as Pickup[]) ?? []));
+    const loadPickups = () => {
+      supabase.from("pickup_requests")
+        .select("*").neq("status", "completed").order("created_at", { ascending: false })
+        .then(({ data }) => setPickups((data as Pickup[]) ?? []));
+    };
+    loadPickups();
     loadCars();
     getDirectory().then((data) => {
       const m: Record<string, string> = {};
@@ -67,9 +72,7 @@ function PickupPage() {
 
     const chan = supabase.channel("pickup-queue")
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
-        supabase.from("pickup_requests").select("*").neq("status", "completed")
-          .order("created_at", { ascending: true })
-          .then(({ data }) => setPickups((data as Pickup[]) ?? []));
+        loadPickups();
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, () => loadCars())
       .subscribe();
@@ -96,14 +99,18 @@ function PickupPage() {
 
   // Auto-archive claimed pickups/parts after 60 minutes
   useEffect(() => {
-    const t = setInterval(() => {
+    const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
-        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() > 60 * 60 * 1000) {
+        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then();
           if (p.ro_number) supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("ro_number", p.ro_number).then();
         }
       });
+    };
+    archiveExpired();
+    const t = setInterval(() => {
+      archiveExpired();
     }, 30000);
     return () => clearInterval(t);
   }, [pickups]);
@@ -132,7 +139,13 @@ function PickupPage() {
   // Parts requests are visible ONLY to the Valet & Parts employee.
   const canSeeParts = profile?.role_name === "Valet & Parts";
   const visiblePickups = useMemo(
-    () => pickups.filter((p) => (p.kind === "parts" ? canSeeParts : true)),
+    () => pickups.filter((p) => {
+      if (p.kind === "parts" && !canSeeParts) return false;
+      if (p.status === "claimed" && p.claimed_at) {
+        return Date.now() - new Date(p.claimed_at).getTime() < CLAIM_HIDE_MS;
+      }
+      return true;
+    }),
     [pickups, canSeeParts],
   );
 

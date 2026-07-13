@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
-import { isMessageAfterCutoff, loadThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
+import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -49,14 +49,40 @@ function InboxPage() {
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
   const hideThread = (tid: string, latestAt: string) => {
-    const next = { ...threadCutoffs, [tid]: latestAt };
+    if (!user) return;
+    const next = mergeThreadCutoffs(threadCutoffs, { [tid]: latestAt });
     setThreadCutoffs(next);
     saveThreadCutoffs(next);
+    hideThreadForUser(user.id, tid, latestAt).catch((error) => {
+      console.warn("[inbox] failed to sync deleted thread", error);
+    });
   };
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    if (!user) return;
+    loadThreadCutoffsForUser(user.id).then(setThreadCutoffs);
+    const chan = supabase
+      .channel(`thread-hides-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "thread_hides", filter: `user_id=eq.${user.id}` },
+        (payload) => {
+          const row = (payload.new || payload.old) as { thread_id?: string; hidden_at?: string };
+          if (!row.thread_id || !row.hidden_at) return;
+          setThreadCutoffs((prev) => {
+            const next = mergeThreadCutoffs(prev, { [row.thread_id!]: row.hidden_at! });
+            saveThreadCutoffs(next);
+            return next;
+          });
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(chan); };
+  }, [user]);
 
   // load profiles + roles maps
   useEffect(() => {
@@ -132,10 +158,6 @@ function InboxPage() {
     const unreadByThread = new Map<string, boolean>();
     for (const m of messages) {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
-      // Track unread: any message not from me with no read_at
-      if (m.sender_id !== user?.id && !m.read_at) {
-        unreadByThread.set(m.thread_id, true);
-      }
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
       const isGroup = !!groupMatch;
@@ -162,6 +184,12 @@ function InboxPage() {
         at: m.created_at,
         isGroup,
       });
+    }
+    for (const m of messages) {
+      if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
+      if (m.sender_id !== user?.id && !m.read_at) {
+        unreadByThread.set(m.thread_id, true);
+      }
     }
     let arr = Array.from(map.values()).map((t) => ({ ...t, unread: unreadByThread.get(t.thread_id) === true }));
     if (q.trim()) {

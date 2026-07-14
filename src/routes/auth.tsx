@@ -141,12 +141,10 @@ function AuthPage() {
     <div className="min-h-screen bg-surface safe-top safe-bottom">
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-3xl bg-primary text-3xl font-bold text-primary-foreground">
-            H
-          </div>
-          <h1 className="text-3xl font-semibold tracking-tight">Huri</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Service-lane coordination</p>
+          <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-14 w-auto" />
+          <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
         </div>
+
 
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <div className="mb-6 flex rounded-full bg-muted p-1 text-sm font-medium">

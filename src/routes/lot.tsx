@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { MAX_SPOT, MIN_SPOT } from "@/lib/lot";
+import { spotsForLot, lotOf, type LotId } from "@/lib/lot";
 
 export const Route = createFileRoute("/lot")({
   head: () => ({ meta: [{ title: "Lot · Huri" }] }),
@@ -21,6 +21,7 @@ function LotPage() {
   const { user, loading } = useAuth();
   const [cars, setCars] = useState<ParkedCar[]>([]);
   const [q, setQ] = useState("");
+  const [tab, setTab] = useState<LotId>("lot2");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -36,11 +37,10 @@ function LotPage() {
   }, [user]);
 
   const byPos = useMemo(() => {
-    const m: Record<number, ParkedCar> = {};
+    const m: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
-      if (c.lot_position === "UNKNOWN") return;
-      const n = parseInt(c.lot_position, 10);
-      if (!Number.isNaN(n) && n >= 1) m[n] = c;
+      if (!c.lot_position || c.lot_position === "UNKNOWN") return;
+      m[c.lot_position.toUpperCase()] = c;
     });
     return m;
   }, [cars]);
@@ -53,27 +53,29 @@ function LotPage() {
     [cars],
   );
 
+  const spots = useMemo(() => spotsForLot(tab), [tab]);
+
   const rows = useMemo(() => {
-    const list: { spot: number; car?: ParkedCar }[] = [];
-    for (let s = MIN_SPOT; s <= MAX_SPOT; s++) list.push({ spot: s, car: byPos[s] });
+    const list = spots.map((s) => ({ spot: s, car: byPos[s] }));
     const n = q.trim().toLowerCase();
     if (!n) return list;
     return list.filter(({ spot, car }) =>
-      String(spot).includes(n) ||
+      spot.toLowerCase().includes(n) ||
       car?.ro_number?.toLowerCase().includes(n) ||
       car?.car_model?.toLowerCase().includes(n),
     );
-  }, [byPos, q]);
+  }, [spots, byPos, q]);
 
   const filteredOffLot = useMemo(() => {
+    if (tab !== "lot2") return [];
     const n = q.trim().toLowerCase();
     if (!n) return offLot;
     return offLot.filter(
       (c) => c.ro_number?.toLowerCase().includes(n) || c.car_model?.toLowerCase().includes(n),
     );
-  }, [offLot, q]);
+  }, [offLot, q, tab]);
 
-  const filled = Object.keys(byPos).length;
+  const filled = spots.filter((s) => byPos[s]).length;
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -83,6 +85,21 @@ function LotPage() {
           <div className="flex-1" />
           <TopActions />
         </div>
+
+        <div className="mb-3 flex gap-2">
+          {(["lot1", "lot2"] as LotId[]).map((id) => (
+            <button
+              key={id}
+              onClick={() => setTab(id)}
+              className={`flex-1 rounded-xl py-2 text-sm font-semibold ${
+                tab === id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {id === "lot1" ? "Lot 1" : "Lot 2"}
+            </button>
+          ))}
+        </div>
+
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -93,7 +110,8 @@ function LotPage() {
           />
         </div>
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-          {filled} of {MAX_SPOT} spots occupied · {offLot.length} off the lot (spot 0)
+          {filled} of {spots.length} spots occupied
+          {tab === "lot2" && ` · ${offLot.length} off the lot (spot 0)`}
         </p>
       </header>
 

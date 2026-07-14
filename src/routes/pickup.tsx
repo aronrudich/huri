@@ -137,7 +137,7 @@ function PickupPage() {
   }, [q, allCars]);
 
   // Parts requests are visible ONLY to the Valet & Parts employee.
-  const canSeeParts = profile?.role_name === "Valet & Parts";
+  const canSeeParts = profile?.role_name === "Valet & Parts" || profile?.role_name === "Technician";
   const visiblePickups = useMemo(
     () => pickups.filter((p) => {
       if (p.kind === "parts" && !canSeeParts) return false;

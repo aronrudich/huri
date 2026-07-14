@@ -1,85 +1,93 @@
-// Lot helpers — spots are integers 1..147 stored as text, or 'UNKNOWN'.
-// The lot is a long N–S strip with 3 rows (49 spots per row) running along
-// the ~245 m strip at GPS 34.0507391,-117.5423977 (Ontario, CA).
+// Lot helpers — Huri supports multiple lots per dealership.
 //
-// Spot numbering, per the spec, runs 1..147 sequentially:
-//   Row 1 (west column):  spots   1..49   (1 at the north end → 49 at the south end)
-//   Row 2 (middle column): spots  50..98
-//   Row 3 (east column):  spots  99..147
+// Lot 1 (Ontario JCD): spots C1..C36.
+//   C1..C10 are single spots (no blocker logic).
+//   C11..C36 are stacked in pairs: odd blocks even.
+//     C11 blocks C12, C13 blocks C14, ... , C35 blocks C36.
 //
-// Adjacency for "blocker" logic is purely numeric (n-1, n+1) per the example
-// in the spec where spot 83 is blocked by 82 and 84.
+// Lot 2 (Ontario JCD, "the main lot"): spots 1..147 in 3-deep rows.
+//   Row groups: (1,2,3), (4,5,6), ..., (145,146,147). Front→back.
+//   1 blocks 2, 2 blocks 3, etc.
+//
+// A raw spot string is one of: "UNKNOWN", "0" (off the lot, Lot 2 only),
+// "1".."147" (Lot 2), or "C1".."C36" (Lot 1). Stored uppercase.
+
+export type LotId = "lot1" | "lot2";
 
 export const MIN_SPOT = 1;
-export const MAX_SPOT = 147;
+export const MAX_SPOT = 147; // Lot 2
 export const ROWS = 3;
-export const SPOTS_PER_ROW = 49; // 49 * 3 = 147
+export const SPOTS_PER_ROW = 49;
 
-// Anchor at the geometric center of the lot strip.
-export const LOT_COORDS = { lat: 34.0507391, lng: -117.5423977 };
+export const LOT1_MIN = 1;
+export const LOT1_MAX = 36;
 
-// Stall geometry (approximate, measured against satellite imagery of the strip):
-//   - 5.5 m long  (N–S, along latitude)   →  ~4.95e-5 deg lat per spot
-//   - 2.7 m wide  (E–W, along longitude)  →  ~2.93e-5 deg lng per row at lat 34°
-const METERS_PER_DEG_LAT = 111_320;
-const METERS_PER_DEG_LNG_AT_34 = 92_290; // 111320 * cos(34°)
-const SPOT_LENGTH_M = 5.5;
-const SPOT_WIDTH_M = 2.7;
-
-const D_LAT_PER_SPOT = SPOT_LENGTH_M / METERS_PER_DEG_LAT;
-const D_LNG_PER_ROW = SPOT_WIDTH_M / METERS_PER_DEG_LNG_AT_34;
-
-export function parseSpot(raw: string | null | undefined): number | null {
+/** Normalize a raw spot string to canonical uppercase form, or null if invalid. */
+export function normalizeSpot(raw: string | null | undefined): string | null {
   if (!raw) return null;
-  const t = raw.trim();
-  if (!/^[0-9]+$/.test(t)) return null;
-  const n = parseInt(t, 10);
-  if (n < 0 || n > MAX_SPOT) return null;
-  return n;
+  const t = raw.trim().toUpperCase();
+  if (t === "UNKNOWN") return "UNKNOWN";
+  if (/^C[0-9]+$/.test(t)) {
+    const n = parseInt(t.slice(1), 10);
+    return n >= LOT1_MIN && n <= LOT1_MAX ? t : null;
+  }
+  if (/^[0-9]+$/.test(t)) {
+    const n = parseInt(t, 10);
+    return n >= 0 && n <= MAX_SPOT ? t : null;
+  }
+  return null;
 }
 
 export function isValidSpot(raw: string): boolean {
-  return parseSpot(raw) !== null;
+  return normalizeSpot(raw) !== null;
 }
 
-/** Blocker spots within the same group of 3 (front→back).
- *  Groups: (1,2,3), (4,5,6), ... Position 0 (front) blocks nothing in front of it.
- *  Position 1 (middle) is blocked by position 0.
- *  Position 2 (back) is blocked by positions 0 and 1. */
+/** Which lot a spot belongs to, or null for UNKNOWN/off-lot. */
+export function lotOf(raw: string | null | undefined): LotId | null {
+  const n = normalizeSpot(raw);
+  if (!n || n === "UNKNOWN" || n === "0") return null;
+  return n.startsWith("C") ? "lot1" : "lot2";
+}
+
+/** Parse just the numeric part of a spot; only useful for Lot 2. */
+export function parseSpot(raw: string | null | undefined): number | null {
+  const t = normalizeSpot(raw);
+  if (!t || t === "UNKNOWN") return null;
+  if (t.startsWith("C")) return null;
+  const n = parseInt(t, 10);
+  return Number.isFinite(n) ? n : null;
+}
+
+/** Spots that would block the given spot from leaving.
+ *  Lot 1: pairs (C11,C12), (C13,C14), ... — odd blocks even.
+ *          C1..C10 have no blockers.
+ *  Lot 2: (n-1)%3 blockers within its group of 3. */
 export function adjacentSpots(raw: string | null | undefined): string[] {
-  const n = parseSpot(raw);
-  if (n === null) return [];
+  const t = normalizeSpot(raw);
+  if (!t || t === "UNKNOWN" || t === "0") return [];
+  if (t.startsWith("C")) {
+    const n = parseInt(t.slice(1), 10);
+    if (n < 11) return []; // singles
+    // Even C-spot is the "back" one; the odd one before it blocks it.
+    if (n % 2 === 0) return [`C${n - 1}`];
+    return [];
+  }
+  const n = parseInt(t, 10);
+  if (n < 1) return [];
   const posInGroup = (n - 1) % 3; // 0=front, 1=middle, 2=back
   const out: string[] = [];
   for (let i = 1; i <= posInGroup; i++) out.push(String(n - i));
   return out;
 }
 
-/** Return { row, col } for a spot. Row is 1..3 (west→east). Col is 1..49 (north→south). */
-export function spotRowCol(spot: number): { row: number; col: number } {
-  const zero = spot - 1;
-  const row = Math.floor(zero / SPOTS_PER_ROW) + 1;        // 1..3
-  const col = (zero % SPOTS_PER_ROW) + 1;                  // 1..49
-  return { row, col };
-}
-
-/** Lat/lng for the exact center of a given spot (1..147). */
-export function spotToCoords(raw: string | number | null | undefined):
-  { lat: number; lng: number } | null {
-  const n = typeof raw === "number" ? raw : parseSpot(raw ?? null);
-  if (n === null || n < MIN_SPOT || n > MAX_SPOT) return null;
-  const { row, col } = spotRowCol(n);
-  // Center the grid on LOT_COORDS so col 25 / row 2 ≈ anchor.
-  const colOffset = col - (SPOTS_PER_ROW + 1) / 2; // -24..+24
-  const rowOffset = row - (ROWS + 1) / 2;          // -1, 0, +1
-  return {
-    lat: LOT_COORDS.lat + colOffset * D_LAT_PER_SPOT,
-    lng: LOT_COORDS.lng + rowOffset * D_LNG_PER_ROW,
-  };
-}
-
-/** Google Maps satellite embed URL. If `spot` is given, drops a pin on that exact stall. */
-export function satelliteEmbedUrl(spot?: string | number | null): string {
-  const c = spot != null ? spotToCoords(spot) ?? LOT_COORDS : LOT_COORDS;
-  return `https://maps.google.com/maps?q=${c.lat},${c.lng}&z=20&t=k&output=embed`;
+/** Ordered list of all spot labels for a given lot. */
+export function spotsForLot(lot: LotId): string[] {
+  if (lot === "lot1") {
+    const out: string[] = [];
+    for (let i = LOT1_MIN; i <= LOT1_MAX; i++) out.push(`C${i}`);
+    return out;
+  }
+  const out: string[] = [];
+  for (let i = MIN_SPOT; i <= MAX_SPOT; i++) out.push(String(i));
+  return out;
 }

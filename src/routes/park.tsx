@@ -49,7 +49,7 @@ function ParkPage() {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!pos.trim()) return toast.error("Spot number is required");
-    if (!isValidSpot(pos.trim())) return toast.error("Spot must be a number 0–147 (use 0 if off the lot)");
+    if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, 0 (off the lot), or C1–C36 (Lot 1)");
     if (!user) return;
     setBusy(true);
     const payload = {
@@ -79,7 +79,7 @@ function ParkPage() {
 
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} />
-        <Field label="Spot Number (0–147, 0 = off the lot)" required value={pos} onChange={setPos} />
+        <Field label="Spot Number (Lot 2: 0–147, 0 = off the lot · Lot 1: C1–C36)" required value={pos} onChange={setPos} />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>

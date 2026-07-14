@@ -6,6 +6,7 @@ import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
+import huriLogo from "@/assets/huri-logo.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

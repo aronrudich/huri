@@ -66,6 +66,21 @@ function LotPage() {
     );
   }, [spots, byPos, q]);
 
+  // Cross-lot search: if the query matches a car in the other lot but not the current one, auto-switch tabs.
+  useEffect(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return;
+    const matches = (c: ParkedCar) =>
+      c.lot_position?.toLowerCase().includes(n) ||
+      c.ro_number?.toLowerCase().includes(n) ||
+      c.car_model?.toLowerCase().includes(n);
+    const inCurrent = cars.some((c) => matches(c) && lotOf(c.lot_position) === tab);
+    if (inCurrent) return;
+    const other: LotId = tab === "lot1" ? "lot2" : "lot1";
+    const inOther = cars.some((c) => matches(c) && lotOf(c.lot_position) === other);
+    if (inOther) setTab(other);
+  }, [q, cars, tab]);
+
   const filteredOffLot = useMemo(() => {
     if (tab !== "lot2") return [];
     const n = q.trim().toLowerCase();

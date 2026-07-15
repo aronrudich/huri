@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Inbox, Car, List, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import huriLogo from "@/assets/huri-logo.jpg.asset.json";
+import huriLogo from "@/assets/huri-logo.png.asset.json";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (

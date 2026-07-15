@@ -1,29 +1,22 @@
-## Problem
+I’m sorry — you’re right that the Home Screen icon still looks off. I can’t add credits to your account from here, but you should contact Lovable support/billing about the wasted-credit concern; I’ll keep this fix narrowly focused so no extra work is done.
 
-The last security fix revoked `EXECUTE` on the `SECURITY DEFINER` helpers, including the `private.*` ones used inside RLS policies (`private.is_approved`, `private.dealership_of`, `private.is_owner`, `private.user_in_role_group`, plus `private.is_admin` / `private.is_manager`). RLS policies execute as the calling role (`authenticated`), so when those helpers can't be executed, every policy silently evaluates to false and the app looks wiped: no messages, no cars, no pickups, no profiles, no dealership.
+Plan to fix the icon properly:
 
-The `private` schema is not exposed through the Data API, so granting `EXECUTE` to `authenticated` on those helpers restores the app without re-opening the original finding (which was about `public.*` definers being reachable via PostgREST).
+1. Use your latest uploaded blue car icon as the source.
+2. Regenerate every app icon from scratch instead of tweaking the existing files:
+   - `apple-touch-icon.png` at 180×180 for iPhone Home Screen
+   - `icon-192.png` for Android/PWA
+   - `icon-512.png` for Android/PWA
+   - `icon-1024.png` if the project keeps the high-res source
+   - `favicon.png`
+3. Crop based on the actual white car silhouette, not the full rectangular image. This removes the extra empty space that has been throwing off the centering.
+4. Place the car silhouette on a perfect square blue canvas so the car’s visible bounding box is centered horizontally and vertically.
+5. Make the car larger while keeping safe padding so iOS rounded corners do not cut it off.
+6. Remove the faint horizontal artifact visible near the bottom of the current icon files.
+7. Confirm the site references the correct icons:
+   - `apple-touch-icon` points to the new 180×180 car icon
+   - favicon link points to the blue car icon
+   - manifest icons point to the regenerated Android/PWA icons
+8. Visually verify the final generated icons before saying it is fixed.
 
-## Fix (one migration)
-
-Restore `EXECUTE` on the `private.*` RLS helpers to `authenticated`, and keep everything else locked down:
-
-```sql
-GRANT EXECUTE ON FUNCTION
-  private.is_approved(uuid),
-  private.is_owner(uuid),
-  private.is_admin(uuid),
-  private.is_manager(uuid),
-  private.dealership_of(uuid),
-  private.user_in_role_group(uuid, uuid)
-TO authenticated;
-```
-
-`private.is_active_employee` already has this grant. `public.*` definer functions stay revoked (they were the actual finding).
-
-## Verification
-
-- Reload the app, confirm inbox, pickup queue, lot, and profile all show data again.
-- Re-run the linter to confirm the original findings are still resolved.
-
-No client code changes.
+After this is implemented, you will still need to delete Huri from the iPhone Home Screen and re-add it, because iOS aggressively caches old Home Screen icons.

@@ -58,7 +58,7 @@ function ParkPage() {
     const { data: existing } = await supabase
       .from("parked_cars")
       .select("id, lot_position, car_model")
-      .eq("ro_number", normalizedRo)
+      .ilike("ro_number", normalizedRo)
       .maybeSingle();
     if (existing && existing.id !== existingId) {
       const existingSpot = existing.lot_position?.toUpperCase();

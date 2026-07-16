@@ -55,24 +55,22 @@ function ParkPage() {
     const normalizedRo = ro.trim();
     const normalizedPos = pos.trim().toUpperCase();
     let targetId = existingId;
-    let existingRoSpot: string | null = null;
-    if (!targetId) {
-      const { data: existing } = await supabase
-        .from("parked_cars")
-        .select("id, lot_position, car_model")
-        .eq("ro_number", normalizedRo)
-        .maybeSingle();
-      if (existing) {
-        targetId = existing.id;
-        existingRoSpot = existing.lot_position;
-        if (existing.lot_position && existing.lot_position !== normalizedPos) {
-          const model = existing.car_model ? ` (${existing.car_model})` : "";
-          const ok = window.confirm(
-            `RO #${normalizedRo} is already logged in Spot ${existing.lot_position}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
-          );
-          if (!ok) return;
-        }
+    const { data: existing } = await supabase
+      .from("parked_cars")
+      .select("id, lot_position, car_model")
+      .eq("ro_number", normalizedRo)
+      .maybeSingle();
+    if (existing && existing.id !== existingId) {
+      if (existing.lot_position && existing.lot_position !== normalizedPos) {
+        const model = existing.car_model ? ` (${existing.car_model})` : "";
+        const ok = window.confirm(
+          `RO #${normalizedRo} is already logged in Spot ${existing.lot_position}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
+        );
+        if (!ok) return;
       }
+      targetId = existing.id;
+    } else if (existing) {
+        targetId = existing.id;
     }
     // Only enforce uniqueness for designated spots — spot 0 means "off the lot" and can have many cars.
     if (normalizedPos !== "0" && normalizedPos !== "UNKNOWN") {
@@ -81,7 +79,7 @@ function ParkPage() {
         .select("id, ro_number, car_model")
         .eq("lot_position", normalizedPos)
         .maybeSingle();
-      if (occupant && occupant.id !== existingId) {
+      if (occupant && occupant.id !== targetId) {
         const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
         const model = occupant.car_model ? ` (${occupant.car_model})` : "";
         const ok = window.confirm(

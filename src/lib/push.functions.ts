@@ -124,7 +124,9 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     const membersForRole = async (roleId: string) => {
       const { data: roleRow } = await supabaseAdmin
         .from("roles").select("name").eq("id", roleId).maybeSingle();
-      const roleNames = roleRow?.name === "Valet" ? ["Valet", "Valet & Parts"] : null;
+      let roleNames: string[] | null = null;
+      if (roleRow?.name === "Valet") roleNames = ["Valet", "Valet & Parts"];
+      else if (roleRow?.name === "Technician") roleNames = ["Technician", "Shop Foreman"];
       let q = supabaseAdmin
         .from("profiles")
         .select("id")

@@ -52,7 +52,28 @@ function ParkPage() {
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, 0 (off the lot), or C1–C36 (Lot 1)");
     if (!user) return;
 
+    const normalizedRo = ro.trim();
     const normalizedPos = pos.trim().toUpperCase();
+    let targetId = existingId;
+    let existingRoSpot: string | null = null;
+    if (!targetId) {
+      const { data: existing } = await supabase
+        .from("parked_cars")
+        .select("id, lot_position, car_model")
+        .eq("ro_number", normalizedRo)
+        .maybeSingle();
+      if (existing) {
+        targetId = existing.id;
+        existingRoSpot = existing.lot_position;
+        if (existing.lot_position && existing.lot_position !== normalizedPos) {
+          const model = existing.car_model ? ` (${existing.car_model})` : "";
+          const ok = window.confirm(
+            `RO #${normalizedRo} is already logged in Spot ${existing.lot_position}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
+          );
+          if (!ok) return;
+        }
+      }
+    }
     // Only enforce uniqueness for designated spots — spot 0 means "off the lot" and can have many cars.
     if (normalizedPos !== "0" && normalizedPos !== "UNKNOWN") {
       const { data: occupant } = await supabase
@@ -74,19 +95,12 @@ function ParkPage() {
 
     setBusy(true);
     const payload = {
-      ro_number: ro.trim(),
+      ro_number: normalizedRo,
       car_model: model.trim() || null,
       lot_position: normalizedPos,
       notes: notes.trim() || null,
       parked_by: user.id,
     };
-    // If not editing but a car with this RO# already exists, update it — Park doubles as an updater.
-    let targetId = existingId;
-    if (!targetId) {
-      const { data: existing } = await supabase
-        .from("parked_cars").select("id").eq("ro_number", ro.trim()).maybeSingle();
-      if (existing) targetId = existing.id;
-    }
     const { error } = targetId
       ? await supabase.from("parked_cars").update(payload).eq("id", targetId)
       : await supabase.from("parked_cars").insert(payload);

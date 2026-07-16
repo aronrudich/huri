@@ -118,8 +118,19 @@ function PickupPage() {
 
   const claim = async (p: Pickup) => {
     if (!user) return;
+    const liveCar = p.ro_number ? carsByRo[p.ro_number] : undefined;
+    const snapshotSpot = liveCar?.lot_position ?? p.lot_position ?? "UNKNOWN";
+    const snapshotModel = liveCar?.car_model ?? p.car_model ?? null;
+    const snapshotNotes = liveCar?.notes ?? p.car_notes ?? null;
     const { error } = await supabase
-      .from("pickup_requests").update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
+      .from("pickup_requests").update({
+        status: "claimed",
+        claimed_by: user.id,
+        claimed_at: new Date().toISOString(),
+        lot_position: snapshotSpot,
+        car_model: snapshotModel,
+        car_notes: snapshotNotes,
+      })
       .eq("id", p.id).eq("status", "unclaimed");
     if (error) return toast.error(error.message);
     // Free the spot as soon as the pickup is claimed — the car is on its way out.
@@ -226,11 +237,16 @@ function PickupPage() {
         )}
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
-          const car = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
-          // Fall back to the spot/notes snapshot on the pickup itself so the
-          // spot info stays visible after the car is freed from the lot on claim.
-          const effectiveSpot = car?.lot_position ?? p.lot_position ?? null;
-          const effectiveNotes = car?.notes ?? p.car_notes ?? null;
+          const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
+          // Claimed pickups must keep showing the saved spot snapshot even after
+          // the live parked_cars row is deleted to free the spot in the lot list.
+          const displayCar = p.status === "claimed" ? undefined : liveCar;
+          const effectiveSpot = !isParts
+            ? p.status === "claimed"
+              ? (p.lot_position ?? "UNKNOWN")
+              : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
+            : null;
+          const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const flagged = effectiveNotes && effectiveNotes.trim().length > 0;
@@ -273,7 +289,7 @@ function PickupPage() {
                     </p>
                     {!isParts && (
                       <p className="text-sm text-muted-foreground">
-                        {[car?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
+                        {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
                       </p>
                     )}
                   </div>

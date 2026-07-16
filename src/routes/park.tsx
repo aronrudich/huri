@@ -51,11 +51,32 @@ function ParkPage() {
     if (!pos.trim()) return toast.error("Spot number is required");
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, 0 (off the lot), or C1–C36 (Lot 1)");
     if (!user) return;
+
+    const normalizedPos = pos.trim().toUpperCase();
+    // Only enforce uniqueness for designated spots — spot 0 means "off the lot" and can have many cars.
+    if (normalizedPos !== "0" && normalizedPos !== "UNKNOWN") {
+      const { data: occupant } = await supabase
+        .from("parked_cars")
+        .select("id, ro_number, car_model")
+        .eq("lot_position", normalizedPos)
+        .maybeSingle();
+      if (occupant && occupant.id !== existingId) {
+        const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
+        const model = occupant.car_model ? ` (${occupant.car_model})` : "";
+        const ok = window.confirm(
+          `Spot ${normalizedPos} already has ${label}${model} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car will be removed from that spot.`,
+        );
+        if (!ok) return;
+        // Free the previously listed car from that spot.
+        await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("id", occupant.id);
+      }
+    }
+
     setBusy(true);
     const payload = {
       ro_number: ro.trim(),
       car_model: model.trim() || null,
-      lot_position: pos.trim(),
+      lot_position: normalizedPos,
       notes: notes.trim() || null,
       parked_by: user.id,
     };

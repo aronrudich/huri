@@ -121,6 +121,11 @@ function PickupPage() {
       .from("pickup_requests").update({ status: "claimed", claimed_by: user.id, claimed_at: new Date().toISOString() })
       .eq("id", p.id).eq("status", "unclaimed");
     if (error) return toast.error(error.message);
+    // Free the spot as soon as the pickup is claimed — the car is on its way out.
+    // The pickup card keeps showing RO / model / advisor from the pickup record itself.
+    if (p.ro_number) {
+      await supabase.from("parked_cars").delete().eq("ro_number", p.ro_number);
+    }
     toast.success("Claimed");
   };
 

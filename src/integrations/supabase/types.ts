@@ -137,6 +137,7 @@ export type Database = {
         Row: {
           advisor_name: string | null
           car_model: string | null
+          car_notes: string | null
           claimed_at: string | null
           claimed_by: string | null
           completed_at: string | null
@@ -144,6 +145,7 @@ export type Database = {
           dealership_id: string
           id: string
           kind: string
+          lot_position: string | null
           requested_by: string | null
           ro_number: string | null
           source_role: string | null
@@ -153,6 +155,7 @@ export type Database = {
         Insert: {
           advisor_name?: string | null
           car_model?: string | null
+          car_notes?: string | null
           claimed_at?: string | null
           claimed_by?: string | null
           completed_at?: string | null
@@ -160,6 +163,7 @@ export type Database = {
           dealership_id?: string
           id?: string
           kind?: string
+          lot_position?: string | null
           requested_by?: string | null
           ro_number?: string | null
           source_role?: string | null
@@ -169,6 +173,7 @@ export type Database = {
         Update: {
           advisor_name?: string | null
           car_model?: string | null
+          car_notes?: string | null
           claimed_at?: string | null
           claimed_by?: string | null
           completed_at?: string | null
@@ -176,6 +181,7 @@ export type Database = {
           dealership_id?: string
           id?: string
           kind?: string
+          lot_position?: string | null
           requested_by?: string | null
           ro_number?: string | null
           source_role?: string | null

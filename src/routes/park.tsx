@@ -112,6 +112,24 @@ function ParkPage() {
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
         </button>
+        {editing && existingId && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              if (!window.confirm("Delete this car from the lot? The spot will be freed.")) return;
+              setBusy(true);
+              const { error } = await supabase.from("parked_cars").delete().eq("id", existingId);
+              setBusy(false);
+              if (error) return toast.error(error.message);
+              toast.success("Car deleted");
+              navigate({ to: "/pickup", replace: true });
+            }}
+            className="w-full rounded-xl border border-destructive bg-background py-3 text-base font-semibold text-destructive disabled:opacity-60"
+          >
+            Delete Car
+          </button>
+        )}
       </form>
     </div>
   );

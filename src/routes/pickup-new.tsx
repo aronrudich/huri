@@ -29,12 +29,20 @@ function NewPickupPage() {
     if (!user) return;
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
+    // Snapshot the car's current spot + notes so valets can still find it after the spot is freed on claim.
+    const { data: car } = await supabase
+      .from("parked_cars")
+      .select("lot_position, car_model, notes")
+      .eq("ro_number", ro.trim())
+      .maybeSingle();
     const { error } = await supabase.from("pickup_requests").insert({
       ro_number: ro.trim(),
       advisor_name: advisorName || null,
-      car_model: model.trim() || null,
+      car_model: model.trim() || car?.car_model || null,
       requested_by: user.id,
       source_role: sourceRole,
+      lot_position: car?.lot_position ?? null,
+      car_notes: car?.notes ?? null,
     });
     setBusy(false);
     if (error) return toast.error(error.message);

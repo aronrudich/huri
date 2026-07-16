@@ -52,7 +52,28 @@ function ParkPage() {
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, 0 (off the lot), or C1–C36 (Lot 1)");
     if (!user) return;
 
+    const normalizedRo = ro.trim();
     const normalizedPos = pos.trim().toUpperCase();
+    let targetId = existingId;
+    const { data: existing } = await supabase
+      .from("parked_cars")
+      .select("id, lot_position, car_model")
+      .ilike("ro_number", normalizedRo)
+      .maybeSingle();
+    if (existing && existing.id !== existingId) {
+      const existingSpot = existing.lot_position?.toUpperCase();
+      const shouldConfirmExistingRo = existingSpot && existingSpot !== "0" && normalizedPos !== "0" && existingSpot !== normalizedPos;
+      if (shouldConfirmExistingRo) {
+        const model = existing.car_model ? ` (${existing.car_model})` : "";
+        const ok = window.confirm(
+          `RO #${normalizedRo} is already logged in Spot ${existingSpot}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
+        );
+        if (!ok) return;
+      }
+      targetId = existing.id;
+    } else if (existing) {
+        targetId = existing.id;
+    }
     // Only enforce uniqueness for designated spots — spot 0 means "off the lot" and can have many cars.
     if (normalizedPos !== "0" && normalizedPos !== "UNKNOWN") {
       const { data: occupant } = await supabase
@@ -60,7 +81,7 @@ function ParkPage() {
         .select("id, ro_number, car_model")
         .eq("lot_position", normalizedPos)
         .maybeSingle();
-      if (occupant && occupant.id !== existingId) {
+      if (occupant && occupant.id !== targetId) {
         const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
         const model = occupant.car_model ? ` (${occupant.car_model})` : "";
         const ok = window.confirm(
@@ -74,19 +95,12 @@ function ParkPage() {
 
     setBusy(true);
     const payload = {
-      ro_number: ro.trim(),
+      ro_number: normalizedRo,
       car_model: model.trim() || null,
       lot_position: normalizedPos,
       notes: notes.trim() || null,
       parked_by: user.id,
     };
-    // If not editing but a car with this RO# already exists, update it — Park doubles as an updater.
-    let targetId = existingId;
-    if (!targetId) {
-      const { data: existing } = await supabase
-        .from("parked_cars").select("id").eq("ro_number", ro.trim()).maybeSingle();
-      if (existing) targetId = existing.id;
-    }
     const { error } = targetId
       ? await supabase.from("parked_cars").update(payload).eq("id", targetId)
       : await supabase.from("parked_cars").insert(payload);

@@ -1,22 +1,31 @@
-I’m sorry — you’re right that the Home Screen icon still looks off. I can’t add credits to your account from here, but you should contact Lovable support/billing about the wasted-credit concern; I’ll keep this fix narrowly focused so no extra work is done.
+Plan:
 
-Plan to fix the icon properly:
+1. Make claimed pickup cards keep showing location info
+   - When someone presses Claim, Huri will first capture the car’s current spot, model, and notes from the lot record.
+   - Then it will mark the pickup as In Progress with that saved spot/model/notes on the pickup request itself.
+   - Only after saving that snapshot will it remove the car from the active lot list, so the spot becomes open in the List tab.
+   - The pickup card will continue showing Parked at: Spot X after claim, using the saved pickup snapshot instead of the now-deleted lot record.
+   - For older claimed pickups that already lost their spot data, the card will still show a location row as Spot unknown instead of hiding the location area entirely.
 
-1. Use your latest uploaded blue car icon as the source.
-2. Regenerate every app icon from scratch instead of tweaking the existing files:
-   - `apple-touch-icon.png` at 180×180 for iPhone Home Screen
-   - `icon-192.png` for Android/PWA
-   - `icon-512.png` for Android/PWA
-   - `icon-1024.png` if the project keeps the high-res source
-   - `favicon.png`
-3. Crop based on the actual white car silhouette, not the full rectangular image. This removes the extra empty space that has been throwing off the centering.
-4. Place the car silhouette on a perfect square blue canvas so the car’s visible bounding box is centered horizontally and vertically.
-5. Make the car larger while keeping safe padding so iOS rounded corners do not cut it off.
-6. Remove the faint horizontal artifact visible near the bottom of the current icon files.
-7. Confirm the site references the correct icons:
-   - `apple-touch-icon` points to the new 180×180 car icon
-   - favicon link points to the blue car icon
-   - manifest icons point to the regenerated Android/PWA icons
-8. Visually verify the final generated icons before saying it is fixed.
+2. Adjust pickup card display logic
+   - Unclaimed pickups: show the latest live lot info when the car still exists in the lot.
+   - Claimed/In Progress pickups: show the saved snapshot from the pickup request so the valet still knows where the car was when it was claimed.
+   - Keep showing RO#, model, advisor, notes, and blockers when available.
 
-After this is implemented, you will still need to delete Huri from the iPhone Home Screen and re-add it, because iOS aggressively caches old Home Screen icons.
+3. Add RO# duplicate protection in Park
+   - If a user enters an RO# that already exists in another spot, Huri will warn them before updating it.
+   - The warning will explain the RO# is already logged somewhere else and ask them to confirm moving/updating that same RO#.
+   - This prevents the same RO# from accidentally existing in more than one parking spot.
+
+4. Strengthen spot duplicate protection in Park
+   - If a user enters a designated spot that already has a different RO# in it, Huri will warn them and require confirmation.
+   - If confirmed, the existing car in that spot will be freed/moved out of that spot before saving the new car.
+   - Spot 0 stays exempt: multiple cars can be in spot 0, and no duplicate-spot confirmation is needed for spot 0.
+
+5. Preserve the intended update behavior
+   - Pressing Park with an existing RO# will update that car’s info instead of creating a duplicate row.
+   - Re-parking a car from spot 0 into a real spot will not require a spot-0 conflict confirmation, but it will still warn if the new real spot is occupied by another car.
+
+Files expected to change:
+- `src/routes/pickup.tsx`
+- `src/routes/park.tsx`

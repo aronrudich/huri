@@ -80,8 +80,15 @@ function ParkPage() {
       notes: notes.trim() || null,
       parked_by: user.id,
     };
-    const { error } = existingId
-      ? await supabase.from("parked_cars").update(payload).eq("id", existingId)
+    // If not editing but a car with this RO# already exists, update it — Park doubles as an updater.
+    let targetId = existingId;
+    if (!targetId) {
+      const { data: existing } = await supabase
+        .from("parked_cars").select("id").eq("ro_number", ro.trim()).maybeSingle();
+      if (existing) targetId = existing.id;
+    }
+    const { error } = targetId
+      ? await supabase.from("parked_cars").update(payload).eq("id", targetId)
       : await supabase.from("parked_cars").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
@@ -112,6 +119,24 @@ function ParkPage() {
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
         </button>
+        {editing && existingId && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              if (!window.confirm("Delete this car from the lot? The spot will be freed.")) return;
+              setBusy(true);
+              const { error } = await supabase.from("parked_cars").delete().eq("id", existingId);
+              setBusy(false);
+              if (error) return toast.error(error.message);
+              toast.success("Car deleted");
+              navigate({ to: "/pickup", replace: true });
+            }}
+            className="w-full rounded-xl border border-destructive bg-background py-3 text-base font-semibold text-destructive disabled:opacity-60"
+          >
+            Delete Car
+          </button>
+        )}
       </form>
     </div>
   );

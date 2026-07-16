@@ -22,6 +22,7 @@ type Pickup = {
   advisor_name: string | null; car_model: string | null; status: string;
   claimed_by: string | null; claimed_at: string | null; created_at: string;
   source_role: string | null; kind: string | null;
+  lot_position: string | null; car_notes: string | null;
 };
 
 type ParkedCar = {
@@ -226,9 +227,13 @@ function PickupPage() {
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
           const car = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
-          const adj = car ? adjacentSpots(car.lot_position) : [];
+          // Fall back to the spot/notes snapshot on the pickup itself so the
+          // spot info stays visible after the car is freed from the lot on claim.
+          const effectiveSpot = car?.lot_position ?? p.lot_position ?? null;
+          const effectiveNotes = car?.notes ?? p.car_notes ?? null;
+          const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
-          const flagged = car?.notes && car.notes.trim().length > 0;
+          const flagged = effectiveNotes && effectiveNotes.trim().length > 0;
           const isTech = p.source_role === "Technician";
           const ringClass = isParts
             ? "ring-2 ring-warning"
@@ -255,7 +260,7 @@ function PickupPage() {
               {flagged && (
                 <div className="flex items-start gap-2 bg-warning/15 px-4 py-2 text-warning-foreground">
                   <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                  <p className="text-xs font-medium"><span className="font-bold">Note:</span> {car!.notes}</p>
+                  <p className="text-xs font-medium"><span className="font-bold">Note:</span> {effectiveNotes}</p>
                 </div>
               )}
               <div className="px-4 py-3">
@@ -283,12 +288,12 @@ function PickupPage() {
                   )}
                 </div>
 
-                {!isParts && car && (
+                {!isParts && effectiveSpot && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Parked at:</span>{" "}
                       <span className="font-semibold">
-                        {car.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${car.lot_position}`}
+                        {effectiveSpot === "UNKNOWN" ? "Spot unknown" : `Spot ${effectiveSpot}`}
                       </span>
                     </p>
                     {blockers.length > 0 && (

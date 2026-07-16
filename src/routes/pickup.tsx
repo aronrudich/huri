@@ -122,17 +122,20 @@ function PickupPage() {
     const snapshotSpot = liveCar?.lot_position ?? p.lot_position ?? "UNKNOWN";
     const snapshotModel = liveCar?.car_model ?? p.car_model ?? null;
     const snapshotNotes = liveCar?.notes ?? p.car_notes ?? null;
+    const claimedAt = new Date().toISOString();
+    const claimedSnapshot = {
+      status: "claimed",
+      claimed_by: user.id,
+      claimed_at: claimedAt,
+      lot_position: snapshotSpot,
+      car_model: snapshotModel,
+      car_notes: snapshotNotes,
+    };
     const { error } = await supabase
-      .from("pickup_requests").update({
-        status: "claimed",
-        claimed_by: user.id,
-        claimed_at: new Date().toISOString(),
-        lot_position: snapshotSpot,
-        car_model: snapshotModel,
-        car_notes: snapshotNotes,
-      })
+      .from("pickup_requests").update(claimedSnapshot)
       .eq("id", p.id).eq("status", "unclaimed");
     if (error) return toast.error(error.message);
+    setPickups((current) => current.map((item) => item.id === p.id ? { ...item, ...claimedSnapshot } : item));
     // Free the spot as soon as the pickup is claimed — the car is on its way out.
     // The pickup card keeps showing RO / model / advisor from the pickup record itself.
     if (p.ro_number) {

@@ -80,8 +80,15 @@ function ParkPage() {
       notes: notes.trim() || null,
       parked_by: user.id,
     };
-    const { error } = existingId
-      ? await supabase.from("parked_cars").update(payload).eq("id", existingId)
+    // If not editing but a car with this RO# already exists, update it — Park doubles as an updater.
+    let targetId = existingId;
+    if (!targetId) {
+      const { data: existing } = await supabase
+        .from("parked_cars").select("id").eq("ro_number", ro.trim()).maybeSingle();
+      if (existing) targetId = existing.id;
+    }
+    const { error } = targetId
+      ? await supabase.from("parked_cars").update(payload).eq("id", targetId)
       : await supabase.from("parked_cars").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);

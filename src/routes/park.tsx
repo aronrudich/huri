@@ -61,10 +61,12 @@ function ParkPage() {
       .eq("ro_number", normalizedRo)
       .maybeSingle();
     if (existing && existing.id !== existingId) {
-      if (existing.lot_position && existing.lot_position !== normalizedPos) {
+      const existingSpot = existing.lot_position?.toUpperCase();
+      const shouldConfirmExistingRo = existingSpot && existingSpot !== "0" && normalizedPos !== "0" && existingSpot !== normalizedPos;
+      if (shouldConfirmExistingRo) {
         const model = existing.car_model ? ` (${existing.car_model})` : "";
         const ok = window.confirm(
-          `RO #${normalizedRo} is already logged in Spot ${existing.lot_position}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
+          `RO #${normalizedRo} is already logged in Spot ${existingSpot}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
         );
         if (!ok) return;
       }

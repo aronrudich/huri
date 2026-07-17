@@ -5,14 +5,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { isValidSpot } from "@/lib/lot";
+import { isValidSpot, normalizeSpot } from "@/lib/lot";
 
-type ParkSearch = { ro?: string };
+type ParkSearch = { ro?: string; id?: string };
 
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
   validateSearch: (s: Record<string, unknown>): ParkSearch => ({
     ro: typeof s.ro === "string" ? s.ro : undefined,
+    id: typeof s.id === "string" ? s.id : undefined,
   }),
   component: ParkPage,
 });
@@ -20,7 +21,7 @@ export const Route = createFileRoute("/park")({
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { ro: roParam } = Route.useSearch();
+  const { ro: roParam, id: idParam } = Route.useSearch();
   const [ro, setRo] = useState(roParam ?? "");
   const [pos, setPos] = useState("");
   const [model, setModel] = useState("");
@@ -32,29 +33,40 @@ function ParkPage() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
-    if (!roParam) return;
-    supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle()
-      .then(({ data }) => {
-        if (!data) return;
-        setEditing(true);
-        setExistingId(data.id);
-        setRo(data.ro_number ?? "");
-        setModel(data.car_model ?? "");
-        setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
-        setNotes(data.notes ?? "");
-      });
-  }, [roParam]);
+    const load = async () => {
+      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null };
+      let data: Row | null = null;
+      if (idParam) {
+        const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
+        data = (r.data as Row | null) ?? null;
+      } else if (roParam) {
+        const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
+        data = (r.data as Row | null) ?? null;
+      }
+      if (!data) return;
+      setEditing(true);
+      setExistingId(data.id);
+      setRo(data.ro_number ?? "");
+      setModel(data.car_model ?? "");
+      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
+      setNotes(data.notes ?? "");
+    };
+    void load();
+  }, [roParam, idParam]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
-    if (!pos.trim()) return toast.error("Spot number is required");
-    if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, 0 (off the lot), or C1–C36 (Lot 1)");
+    if (!pos.trim()) return toast.error("Spot is required");
+    if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, C (Lot C), or T (Lot T)");
     if (!user) return;
 
     const normalizedRo = ro.trim();
-    const normalizedPos = pos.trim().toUpperCase();
+    const normalizedPos = normalizeSpot(pos.trim())!;
+    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN";
     let targetId = existingId;
+
+    // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.
     const { data: existing } = await supabase
       .from("parked_cars")
       .select("id, lot_position, car_model")
@@ -62,20 +74,23 @@ function ParkPage() {
       .maybeSingle();
     if (existing && existing.id !== existingId) {
       const existingSpot = existing.lot_position?.toUpperCase();
-      const shouldConfirmExistingRo = existingSpot && existingSpot !== "0" && normalizedPos !== "0" && existingSpot !== normalizedPos;
-      if (shouldConfirmExistingRo) {
-        const model = existing.car_model ? ` (${existing.car_model})` : "";
+      const bothReal =
+        existingSpot && !["T", "C", "UNKNOWN"].includes(existingSpot) &&
+        !isPlaceholder && existingSpot !== normalizedPos;
+      if (bothReal) {
+        const carModel = existing.car_model ? ` (${existing.car_model})` : "";
         const ok = window.confirm(
-          `RO #${normalizedRo} is already logged in Spot ${existingSpot}${model}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
+          `RO #${normalizedRo} is already logged in Spot ${existingSpot}${carModel}.\n\nConfirm that you want to update this RO # to Spot ${normalizedPos}?`,
         );
         if (!ok) return;
       }
       targetId = existing.id;
     } else if (existing) {
-        targetId = existing.id;
+      targetId = existing.id;
     }
-    // Only enforce uniqueness for designated spots — spot 0 means "off the lot" and can have many cars.
-    if (normalizedPos !== "0" && normalizedPos !== "UNKNOWN") {
+
+    // Only enforce uniqueness for numbered spots — C, T, UNKNOWN can have many cars.
+    if (!isPlaceholder) {
       const { data: occupant } = await supabase
         .from("parked_cars")
         .select("id, ro_number, car_model")
@@ -83,13 +98,12 @@ function ParkPage() {
         .maybeSingle();
       if (occupant && occupant.id !== targetId) {
         const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
-        const model = occupant.car_model ? ` (${occupant.car_model})` : "";
+        const carModel = occupant.car_model ? ` (${occupant.car_model})` : "";
         const ok = window.confirm(
-          `Spot ${normalizedPos} already has ${label}${model} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car will be removed from that spot.`,
+          `Spot ${normalizedPos} already has ${label}${carModel} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car will be moved to Lot T.`,
         );
         if (!ok) return;
-        // Free the previously listed car from that spot.
-        await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("id", occupant.id);
+        await supabase.from("parked_cars").update({ lot_position: "T" }).eq("id", occupant.id);
       }
     }
 
@@ -121,7 +135,10 @@ function ParkPage() {
 
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} />
-        <Field label="Spot Number (Lot 2: 0–147, 0 = off the lot · Lot 1: C1–C36)" required value={pos} onChange={setPos} />
+        <Field
+          label="Spot (1–147 for Lot 1, C for Lot C, T for Lot T / bay)"
+          required value={pos} onChange={setPos}
+        />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>
@@ -144,7 +161,7 @@ function ParkPage() {
               setBusy(false);
               if (error) return toast.error(error.message);
               toast.success("Car deleted");
-              navigate({ to: "/pickup", replace: true });
+              navigate({ to: "/lot", replace: true });
             }}
             className="w-full rounded-xl border border-destructive bg-background py-3 text-base font-semibold text-destructive disabled:opacity-60"
           >

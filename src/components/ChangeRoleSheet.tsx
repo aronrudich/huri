@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { setEmployeeRole } from "@/lib/admin.functions";
 import { toast } from "sonner";
 
 type Props = {
@@ -27,15 +29,21 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
     });
   }, [currentRole]);
 
+  const setRole = useServerFn(setEmployeeRole);
+
   const save = async () => {
     if (selected === currentRole) return onClose();
     setBusy(true);
-    const { error } = await supabase.from("profiles").update({ role_name: selected }).eq("id", employeeId);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(`${employeeName} is now ${selected}`);
-    onSaved(selected);
-    onClose();
+    try {
+      await setRole({ data: { userId: employeeId, newRole: selected } });
+      toast.success(`${employeeName} is now ${selected}`);
+      onSaved(selected);
+      onClose();
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

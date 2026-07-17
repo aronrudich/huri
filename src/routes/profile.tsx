@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, ArrowRightLeft, Briefcase } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, ArrowRightLeft, Briefcase, Shuffle } from "lucide-react";
+import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -48,6 +49,7 @@ function ProfilePage() {
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Employee | null>(null);
   const [transferTo, setTransferTo] = useState<Employee | null>(null);
+  const [changeRoleFor, setChangeRoleFor] = useState<Employee | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
   const [dealershipName, setDealershipName] = useState<string>("");
@@ -306,6 +308,11 @@ function ProfilePage() {
                 </div>
                 {!emp.is_owner && (
                   <>
+                    {isAdmin && (
+                      <button onClick={() => setChangeRoleFor(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary" title="Change role">
+                        <Shuffle className="h-4 w-4" />
+                      </button>
+                    )}
                     {isOwner && (
                       <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
                         <ArrowRightLeft className="h-4 w-4" />
@@ -358,6 +365,17 @@ function ProfilePage() {
       {editOpen && profile && (
         <EditProfileSheet profile={profile} onClose={() => setEditOpen(false)} onSaved={() => refreshProfile()} />
       )}
+
+      {changeRoleFor && (
+        <ChangeRoleSheet
+          employeeId={changeRoleFor.id}
+          employeeName={changeRoleFor.full_name}
+          currentRole={changeRoleFor.role_name}
+          onClose={() => setChangeRoleFor(null)}
+          onSaved={(newRole) => setStaff((s) => s.map((e) => e.id === changeRoleFor.id ? { ...e, role_name: newRole } : e))}
+        />
+      )}
+
 
       {roleReqOpen && profile && (
         <RequestRoleSheet

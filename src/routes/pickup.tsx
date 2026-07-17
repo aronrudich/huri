@@ -337,16 +337,32 @@ function PickupPage() {
                   </div>
                 )}
 
-                {p.status === "unclaimed" ? (
-                  <button onClick={() => claim(p)} className={`w-full rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
-                    {isParts ? "On it" : "Claim"}
+                <div className="flex items-center gap-2">
+                  {p.status === "unclaimed" ? (
+                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                      {isParts ? "On it" : "Claim"}
+                    </button>
+                  ) : (
+                    <p className="flex-1 text-xs text-muted-foreground">
+                      {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
+                      {p.claimed_at && ` · ${formatDistanceToNow(new Date(p.claimed_at), { addSuffix: true })}`}
+                    </p>
+                  )}
+                  <button
+                    onClick={async () => {
+                      if (!window.confirm(`Cancel this ${isParts ? "parts request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
+                      const { error } = await supabase.from("pickup_requests")
+                        .update({ status: "completed", completed_at: new Date().toISOString() })
+                        .eq("id", p.id);
+                      if (error) return toast.error(error.message);
+                      setPickups((cur) => cur.filter((x) => x.id !== p.id));
+                      toast.message("Canceled");
+                    }}
+                    className="rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent"
+                  >
+                    Cancel
                   </button>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
-                    {p.claimed_at && ` · ${formatDistanceToNow(new Date(p.claimed_at), { addSuffix: true })}`}
-                  </p>
-                )}
+                </div>
               </div>
             </li>
           );

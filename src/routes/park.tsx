@@ -34,16 +34,14 @@ function ParkPage() {
 
   useEffect(() => {
     const load = async () => {
-      let data: {
-        id: string; ro_number: string | null; car_model: string | null;
-        lot_position: string; notes: string | null;
-      } | null = null;
+      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null };
+      let data: Row | null = null;
       if (idParam) {
         const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
-        data = r.data as typeof data;
+        data = (r.data as Row | null) ?? null;
       } else if (roParam) {
         const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
-        data = r.data as typeof data;
+        data = (r.data as Row | null) ?? null;
       }
       if (!data) return;
       setEditing(true);

@@ -187,6 +187,25 @@ export const denyRoleChange = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// Admin-initiated role change — bypasses the pending-approval flow.
+const setRoleSchema = z.object({ userId: z.string().uuid(), newRole: z.string().trim().min(1).max(120) });
+export const setEmployeeRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => setRoleSchema.parse(d))
+  .handler(async ({ data, context }) => {
+    const { dealershipId } = await assertAdmin(context.userId);
+    await targetInDealership(data.userId, dealershipId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: roleRow } = await supabaseAdmin
+      .from("roles").upsert({ name: data.newRole }, { onConflict: "name" })
+      .select("id").maybeSingle();
+    const { error } = await supabaseAdmin.from("profiles")
+      .update({ role_name: data.newRole, role_id: roleRow?.id ?? null, pending_role_name: null })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 export const deleteOwnAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

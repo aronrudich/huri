@@ -32,7 +32,7 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "pr
 export function HuriLogo() {
   return (
     <Link to="/" aria-label="Huri home" className="flex select-none items-center">
-      <img src={huriLogo.url} alt="Huri" className="h-7 w-auto" />
+      <img src={huriLogo.url} alt="Huri" className="h-12 w-auto" />
     </Link>
   );
 }

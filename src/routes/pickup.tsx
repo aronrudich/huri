@@ -80,15 +80,22 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [user]);
 
-  // Valet push: any new pickup_request triggers a browser notification for valets
+  // In-app realtime alert.
+  //   - Regular car pickups → notify anyone with a Valet-type role.
+  //   - Parts requests → notify ONLY Valet & Parts (server push is already scoped that way).
   useEffect(() => {
-    if (!profile || profile.role_name !== "Valet") return;
+    if (!profile) return;
+    const role = profile.role_name;
+    const isValet = role === "Valet" || role === "Valet & Parts";
+    if (!isValet) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
     const chan = supabase.channel("valet-pickup-alert")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
+        if (p.kind === "parts" && role !== "Valet & Parts") return;
+        const title = p.kind === "parts" ? "🔧 Parts request" : "New pickup request";
         notify(
-          "New pickup request",
+          title,
           [p.ro_number && `RO #${p.ro_number}`, p.advisor_name]
             .filter(Boolean).join(" · ") || "Open Huri",
           "/pickup",

@@ -57,6 +57,7 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
+    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, C (Lot C), or T (Lot T)");
     if (!user) return;

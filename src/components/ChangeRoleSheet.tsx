@@ -48,13 +48,16 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
-      <div className="w-full max-w-md rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
-        <div className="mb-4 flex items-center justify-between">
+      <div
+        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-semibold">Change role</h2>
           <button onClick={onClose} className="rounded-full p-1 text-muted-foreground"><X className="h-5 w-5" /></button>
         </div>
-        <p className="mb-3 text-sm text-muted-foreground">{employeeName} — currently <span className="font-medium text-foreground">{currentRole}</span></p>
-        <div className="max-h-72 space-y-1 overflow-y-auto">
+        <p className="mb-3 shrink-0 text-sm text-muted-foreground">{employeeName} — currently <span className="font-medium text-foreground">{currentRole}</span></p>
+        <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
           {roles.map((r) => (
             <button
               key={r}
@@ -66,10 +69,11 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
             </button>
           ))}
         </div>
-        <button onClick={save} disabled={busy} className="mt-4 w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
+        <button onClick={save} disabled={busy} className="mt-4 w-full shrink-0 rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving..." : "Save role"}
         </button>
       </div>
     </div>
   );
 }
+

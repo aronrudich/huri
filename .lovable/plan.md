@@ -1,58 +1,32 @@
+## 1. Role sheet cut off on mobile
+`src/components/ChangeRoleSheet.tsx` — the sheet's inner container has no height cap, so the Save button gets pushed below the viewport on short mobile screens.
 
-## What I'll change
+- Wrap the sheet in a flex column with `max-h-[90vh]`.
+- Make the roles list the flex-1 scroll region (keep `overflow-y-auto`, drop the fixed `max-h-72`).
+- Keep the header and Save button as fixed-height sections at top/bottom so Save is always visible.
+- No visual changes on desktop.
 
-### 1. Bigger Huri logo everywhere
-- In `src/components/BottomBar.tsx` bump `HuriLogo` from `h-7` to `h-12` (roughly 1.7× larger) so the wordmark + car above the "i" is clearly readable in every page header.
-- Give the sticky page headers a bit more vertical padding so the taller logo doesn't get clipped.
+## 2. Desktop delete for a conversation
+`src/routes/thread.$threadId.tsx` — add a trash icon button in the top-right of the thread header (desktop-only via `hidden sm:inline-flex`, so mobile swipe stays untouched).
 
-### 2. Parts push notifications — only Valet & Parts
-- Server (`src/lib/push.functions.ts` → `sendPartsAlert`): already scoped to `role_name = 'Valet & Parts'`. Leave as-is (verified).
-- Client (`src/routes/pickup.tsx`): the in-app realtime `notify()` currently fires for anyone whose role is `Valet` on **every** new `pickup_request`, including parts. Filter that listener so it ignores rows where `kind = 'parts'`. Only the server `sendPartsAlert` (which targets Valet & Parts) will produce a push for parts.
+- On click: confirm, call `hideThreadForUser(user.id, threadId, new Date().toISOString())`, then navigate back to `/`.
+- Reuses the existing `thread_hides` mechanism, so it syncs the hide across devices exactly like the mobile swipe.
 
-### 3. "Cancel" button on every pickup/parts card
-- Add a small secondary "Cancel" button on each row in the pickup list (both unclaimed and claimed states, both car pickups and parts).
-- Cancel does NOT touch `parked_cars` — the car stays where it is in the lot list. It only sets `pickup_requests.status = 'completed'` (with a `completed_at` timestamp) so the row disappears from the pickup feed. Confirmation dialog before it fires.
+## 3. RO# must be exactly 6 digits
+Add a shared validator (regex `/^\d{6}$/`) and enforce it before submit in:
 
-### 4. Clear all current cars
-- One-time `DELETE FROM public.parked_cars` (via the insert/data tool, not a migration). Pickup history stays intact; only the live lot is emptied.
+- `src/routes/park.tsx` — block submit with `toast.error("Invalid RO#")` when the RO is not 6 digits.
+- `src/routes/pickup-new.tsx` — same validation on the pickup form's RO field.
 
-### 5. Enforce the 60-minute auto-hide for claimed pickups
-- The `archive_stale_pickups` cron function already flips claimed → completed after 60 min. Verify the `pg_cron` job is scheduled every minute; if not, (re)schedule it. Also keep the client-side fallback in `pickup.tsx` so tabs left open still hide stale rows even if cron lagged.
+Also add `inputMode="numeric"` and `maxLength={6}` on those inputs so the mobile keypad is numeric. No DB constraint change.
 
-### 6. Three-lot model: Lot 1 (1–147), Lot C (unnumbered), Lot T (unnumbered)
-- **Spot grammar update** in `src/lib/lot.ts`:
-  - Accept exactly `"T"` and exactly `"C"` as valid free-form spots (any car in that lot, no number).
-  - Remove `"0"` as an off-lot marker; migrate existing `"0"` and legacy `"UNKNOWN"` off-lot rows to `"T"`.
-  - Keep numeric `1–147` for Lot 1. Remove the old `C1–C36` numbered spec (per your message Lot C has no numbers now; if you want the old C1–C36 kept too, tell me and I'll leave that grammar in).
-  - `lotOf()` returns `lot1` for numeric, `lotC` for `C`, `lotT` for `T`.
-  - `adjacentSpots()` only applies to Lot 1 numeric spots. `C` and `T` have no blockers.
-- **DB validation** (`validate_spot` trigger): update to allow `1–147`, `C`, or `T`.
-- **Lot page** (`src/routes/lot.tsx`): three tabs — Lot 1, Lot C, Lot T. Lot 1 shows the numbered grid. Lot C and Lot T show a flat list of all cars currently assigned to that lot (no spot numbers, just RO / model / notes). Cross-lot search still auto-switches tabs on match.
-- **Park form** (`src/routes/park.tsx`): update the field label and validation error to say "Spot: 1–147, or C for Lot C, or T for Lot T". Spot-conflict duplicate check only runs for numeric spots — many cars can share `C` or `T`.
-- **Pickup list**: display `Spot C` or `Spot T` cleanly (no "Spot unknown" fallback for those).
+## 4. Parts submissions visible to everyone in the pickup list
+`src/routes/pickup.tsx` — the visibility filter currently hides `kind === "parts"` from anyone who isn't Valet & Parts or Technician.
 
-### 7. Any employee's role editable by admins without approval
-- In `src/routes/profile.tsx` roster + wherever a user's profile is tappable, allow Manager / Director / Owner roles to open a profile and change `role_name` directly via `ChangeRoleSheet`. This bypasses the pending-approval flow entirely for admin-initiated changes. Regular users still go through the request→approve flow.
+- Remove that filter so parts requests appear in the pickup list for every role.
+- Leave the push-notification logic alone: `sendPartsAlert` in `src/lib/push.functions.ts` already targets only Valet & Parts, and the in-app toast in `pickup.tsx` line 95 already gates the sound/toast on `role === "Valet & Parts"`. Only the list rendering changes.
 
-### 8. Delete button on every lot-list car
-- Currently the delete button lives on the Park form and only shows when we can resolve the row by `ro_number`. Rows without an RO can be tapped but never expose delete.
-- Change `src/routes/lot.tsx` so tapping any occupied row opens Park in edit mode by `id` (not just by RO). Update `park.tsx` to accept `?id=<uuid>` as an alternative to `?ro=`, load that record, and always render the Delete button when editing an existing row.
-
-### 9. Downloadable single-file code export
-- Bundle the entire project source (excluding `node_modules`, `.git`, build output, `remotion/`, `/tmp`) into `/mnt/documents/huri-source-YYYY-MM-DD.zip` and post it as a `<presentation-artifact>` in the chat so you can download it in one click.
-
-## Explicit non-changes
-- Messaging, dealership branding, icons, and other unrelated flows stay untouched.
-- Pickup history (`pickup_requests`) is preserved — only live `parked_cars` is wiped.
-
-## Order of execution
-1. Small type/grammar changes in `src/lib/lot.ts` + DB `validate_spot` migration + data migration `0 → T` + `DELETE parked_cars` (one insert-tool call after the migration).
-2. UI updates: `BottomBar` logo, `lot.tsx` three tabs, `park.tsx` id-based edit + delete, `pickup.tsx` cancel button + parts-realtime filter + display of `C`/`T`.
-3. Admin role edit path in profile.
-4. Verify cron job scheduled.
-5. Build the zip and drop it in `/mnt/documents/`.
-
-## Confirmations before I build
-
-- **Old `C1–C36` numbered spots** — your latest message says Lot C now has no numbered spots. Should I fully drop the old `C1–C36` grammar (any existing rows migrate to plain `C`), or keep both `C` and `C1..C36` valid?
-- **`0` → `T` migration** — okay to convert every existing `"0"` and `"UNKNOWN"` `parked_cars` row to `"T"` as part of the wipe? (Since you also want a full clear, this is moot for cars, but I'll apply the same rule to `pickup_requests.lot_position` snapshots so old claimed cards read "Spot T" instead of "Spot 0/Spot unknown".)
+## Technical notes
+- No database migration needed.
+- No changes to mobile SwipeRow behavior.
+- `hideThreadForUser` already writes to `thread_hides` + localStorage, so the desktop delete button gives the same cross-device behavior as the mobile swipe.

@@ -163,18 +163,17 @@ function PickupPage() {
       .slice(0, 8);
   }, [q, allCars]);
 
-  // Parts requests are visible ONLY to the Valet & Parts employee.
-  const canSeeParts = profile?.role_name === "Valet & Parts" || profile?.role_name === "Technician";
+  // Parts requests are visible to everyone in the pickup list; only Valet & Parts get push notifications.
   const visiblePickups = useMemo(
     () => pickups.filter((p) => {
-      if (p.kind === "parts" && !canSeeParts) return false;
       if (p.status === "claimed" && p.claimed_at) {
         return Date.now() - new Date(p.claimed_at).getTime() < CLAIM_HIDE_MS;
       }
       return true;
     }),
-    [pickups, canSeeParts],
+    [pickups],
   );
+
 
   // Sort: unclaimed first (oldest first), then claimed (oldest claim first)
   const sortedPickups = useMemo(() => {

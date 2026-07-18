@@ -57,6 +57,7 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
+    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Spot must be 1–147, C (Lot C), or T (Lot T)");
     if (!user) return;
@@ -134,7 +135,7 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={setRo} />
+        <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <Field
           label="Spot (1–147 for Lot 1, C for Lot C, T for Lot T / bay)"
           required value={pos} onChange={setPos}
@@ -173,15 +174,17 @@ function ParkPage() {
   );
 }
 
-function Field({ label, value, onChange, required, placeholder }:
-  { label: string; value: string; onChange: (v: string) => void; required?: boolean; placeholder?: string }) {
+function Field({ label, value, onChange, required, placeholder, inputMode, maxLength }:
+  { label: string; value: string; onChange: (v: string) => void; required?: boolean; placeholder?: string; inputMode?: "numeric" | "text"; maxLength?: number }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {label}{required && <span className="ml-1 text-primary">(Required)</span>}
       </label>
       <input value={value} onChange={(e) => onChange(e.target.value)} required={required} placeholder={placeholder}
+        inputMode={inputMode} maxLength={maxLength}
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
     </div>
   );
 }
+

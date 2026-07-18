@@ -88,14 +88,16 @@ function NewPickupPage() {
   );
 }
 
-function Field({ label, value, onChange, required, autoFocus }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; autoFocus?: boolean }) {
+function Field({ label, value, onChange, required, autoFocus, inputMode, maxLength }: { label: string; value: string; onChange: (v: string) => void; required?: boolean; autoFocus?: boolean; inputMode?: "numeric" | "text"; maxLength?: number }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {label}{required && <span className="ml-1 text-primary">(Required)</span>}
       </label>
       <input value={value} onChange={(e) => onChange(e.target.value)} required={required} autoFocus={autoFocus}
+        inputMode={inputMode} maxLength={maxLength}
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
     </div>
   );
 }
+

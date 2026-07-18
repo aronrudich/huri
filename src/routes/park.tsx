@@ -135,7 +135,7 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={setRo} />
+        <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <Field
           label="Spot (1–147 for Lot 1, C for Lot C, T for Lot T / bay)"
           required value={pos} onChange={setPos}

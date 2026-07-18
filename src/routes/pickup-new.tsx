@@ -26,6 +26,7 @@ function NewPickupPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
+    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     if (!user) return;
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;

@@ -129,8 +129,25 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
-        <div className="w-8" />
+        <button
+          type="button"
+          onClick={async () => {
+            if (!user) return;
+            if (!window.confirm("Delete this conversation? It will be removed from your inbox.")) return;
+            try {
+              await hideThreadForUser(user.id, threadId, new Date().toISOString());
+              navigate({ to: "/", replace: true });
+            } catch (e) {
+              toast.error((e as Error).message);
+            }
+          }}
+          aria-label="Delete conversation"
+          className="hidden h-8 w-8 place-items-center rounded-full text-destructive hover:bg-destructive/10 sm:grid"
+        >
+          <Trash2 className="h-5 w-5" />
+        </button>
       </header>
+
 
       <ol className="flex-1 space-y-2 px-3 py-4">
         {visibleMsgs.map((m) => {

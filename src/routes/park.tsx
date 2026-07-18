@@ -174,15 +174,17 @@ function ParkPage() {
   );
 }
 
-function Field({ label, value, onChange, required, placeholder }:
-  { label: string; value: string; onChange: (v: string) => void; required?: boolean; placeholder?: string }) {
+function Field({ label, value, onChange, required, placeholder, inputMode, maxLength }:
+  { label: string; value: string; onChange: (v: string) => void; required?: boolean; placeholder?: string; inputMode?: "numeric" | "text"; maxLength?: number }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">
         {label}{required && <span className="ml-1 text-primary">(Required)</span>}
       </label>
       <input value={value} onChange={(e) => onChange(e.target.value)} required={required} placeholder={placeholder}
+        inputMode={inputMode} maxLength={maxLength}
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
     </div>
   );
 }
+

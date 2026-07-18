@@ -70,7 +70,7 @@ function NewPickupPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus />
+        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Advisor</label>
           <input

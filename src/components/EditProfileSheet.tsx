@@ -3,6 +3,7 @@ import { X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { normalizePhone, formatPhone } from "@/lib/phone";
 
 type Props = {
   profile: Profile;
@@ -11,46 +12,38 @@ type Props = {
 };
 
 export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
-  const [tab, setTab] = useState<"info" | "email" | "password">("info");
+  const [tab, setTab] = useState<"info" | "password">("info");
   const [busy, setBusy] = useState(false);
 
   // info
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
-
-  // email
-  const [newEmail, setNewEmail] = useState(profile.email);
+  const [phone, setPhone] = useState(profile.phone_number ?? "");
 
   // password
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
 
-
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");
+    let phoneToSave: string | null = null;
+    if (phone.trim()) {
+      const normalized = normalizePhone(phone);
+      if (!normalized) return toast.error("Enter a valid phone number");
+      phoneToSave = normalized;
+    }
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
-      .update({ full_name: fullName.trim(), nickname: nickname.trim() || null })
+      .update({
+        full_name: fullName.trim(),
+        nickname: nickname.trim() || null,
+        phone_number: phoneToSave,
+      })
       .eq("id", profile.id);
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Profile updated");
-    onSaved();
-    onClose();
-  };
-
-  const saveEmail = async () => {
-    const email = newEmail.trim().toLowerCase();
-    if (!email.includes("@")) return toast.error("Enter a valid email");
-    if (email === profile.email) return toast.message("That's already your email");
-    setBusy(true);
-    const { error: authErr } = await supabase.auth.updateUser({ email });
-    if (authErr) { setBusy(false); return toast.error(authErr.message); }
-    // mirror to profile row (will be re-synced if user confirms)
-    await supabase.from("profiles").update({ email }).eq("id", profile.id);
-    setBusy(false);
-    toast.success("Check your new inbox to confirm the change");
     onSaved();
     onClose();
   };
@@ -67,18 +60,18 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="w-full max-w-md rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl"
+        className="flex max-h-[100dvh] w-full max-w-md flex-col rounded-t-3xl bg-background p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[85dvh] sm:rounded-3xl sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-center justify-between">
+        <div className="mb-4 flex shrink-0 items-center justify-between">
           <h2 className="text-lg font-semibold">Edit profile</h2>
           <button onClick={onClose} className="rounded-full p-1 text-muted-foreground"><X className="h-5 w-5" /></button>
         </div>
 
-        <div className="mb-4 flex gap-1 rounded-xl bg-muted p-1 text-sm">
-          {(["info", "email", "password"] as const).map((t) => (
+        <div className="mb-4 flex shrink-0 gap-1 rounded-xl bg-muted p-1 text-sm">
+          {(["info", "password"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -89,52 +82,51 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
           ))}
         </div>
 
-        {tab === "info" && (
-          <div className="space-y-3">
-            <Field label="Full name">
-              <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input" />
-            </Field>
-            <Field label="Nickname">
-              <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
-            </Field>
-            <p className="text-xs text-muted-foreground">
-              To change your role, close this and tap "Request role change" — the owner has to approve it.
-            </p>
-            <PrimaryBtn busy={busy} onClick={saveInfo}>Save changes</PrimaryBtn>
-          </div>
-        )}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          {tab === "info" && (
+            <div className="space-y-3">
+              <Field label="Full name">
+                <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="input" />
+              </Field>
+              <Field label="Nickname">
+                <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
+              </Field>
+              <Field label="Phone number">
+                <input
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="(555) 555-1234"
+                  className="input"
+                />
+              </Field>
+              {phone.trim() && normalizePhone(phone) && (
+                <p className="-mt-1 text-xs text-muted-foreground">
+                  Saved as {formatPhone(normalizePhone(phone))}
+                </p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                To change your role, close this and tap "Request role change" — the owner has to approve it.
+              </p>
+              <PrimaryBtn busy={busy} onClick={saveInfo}>Save changes</PrimaryBtn>
+            </div>
+          )}
 
-        {tab === "email" && (
-          <div className="space-y-3">
-            <Field label="New email">
-              <input
-                type="email"
-                value={newEmail}
-                onChange={(e) => setNewEmail(e.target.value)}
-                className="input"
-                inputMode="email"
-                autoCapitalize="off"
-              />
-            </Field>
-            <p className="text-xs text-muted-foreground">
-              We'll send a confirmation link to the new address. The change activates only after you click it.
-            </p>
-            <PrimaryBtn busy={busy} onClick={saveEmail}>Send confirmation</PrimaryBtn>
-          </div>
-        )}
-
-        {tab === "password" && (
-          <div className="space-y-3">
-            <Field label="New password">
-              <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} className="input" autoComplete="new-password" />
-            </Field>
-            <Field label="Confirm new password">
-              <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className="input" autoComplete="new-password" />
-            </Field>
-            <p className="text-xs text-muted-foreground">At least 8 characters.</p>
-            <PrimaryBtn busy={busy} onClick={savePassword}>Update password</PrimaryBtn>
-          </div>
-        )}
+          {tab === "password" && (
+            <div className="space-y-3">
+              <Field label="New password">
+                <input type="password" value={newPass} onChange={(e) => setNewPass(e.target.value)} className="input" autoComplete="new-password" />
+              </Field>
+              <Field label="Confirm new password">
+                <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className="input" autoComplete="new-password" />
+              </Field>
+              <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+              <PrimaryBtn busy={busy} onClick={savePassword}>Update password</PrimaryBtn>
+            </div>
+          )}
+        </div>
       </div>
       <style>{`.input{width:100%;border-radius:0.75rem;border:1px solid hsl(var(--border));background:hsl(var(--background));padding:0.6rem 0.85rem;font-size:0.95rem;outline:none}.input:focus{border-color:hsl(var(--primary))}`}</style>
     </div>

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Phone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
+import { formatPhone } from "@/lib/phone";
 
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -78,11 +79,27 @@ function ThreadPage() {
     [msgs, threadCutoffs, threadId],
   );
 
+  // For 1-on-1 threads (dm:uuid1:uuid2) figure out the other user's id
+  // so we can pull their phone number for the tel: call button.
+  const otherUserId = useMemo(() => {
+    if (isGroup || !user) return null;
+    const parts = threadId.split(":");
+    if (parts[0] !== "dm" || parts.length < 3) return null;
+    return parts[1] === user.id ? parts[2] : parts[1];
+  }, [threadId, user, isGroup]);
+
+  const [otherPhone, setOtherPhone] = useState<string | null>(null);
+  useEffect(() => {
+    if (!otherUserId) { setOtherPhone(null); return; }
+    supabase.from("profiles").select("phone_number").eq("id", otherUserId).maybeSingle()
+      .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
+  }, [otherUserId]);
+
   const title = isGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
-        if (!last) return "Direct message";
+        if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
         const otherId = last.sender_id === user?.id ? last.recipient_id : last.sender_id;
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
@@ -129,6 +146,16 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+        {!isGroup && otherPhone && (
+          <a
+            href={`tel:${otherPhone}`}
+            aria-label={`Call ${formatPhone(otherPhone)}`}
+            title={`Call ${formatPhone(otherPhone)}`}
+            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
+          >
+            <Phone className="h-5 w-5" />
+          </a>
+        )}
         <button
           type="button"
           onClick={async () => {

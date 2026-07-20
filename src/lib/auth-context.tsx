@@ -7,6 +7,7 @@ export type Profile = {
   full_name: string;
   nickname: string | null;
   email: string;
+  phone_number?: string | null;
   role_id: string | null;
   role_name: string;
   is_active?: boolean;

@@ -60,6 +60,10 @@ function LotPage() {
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "T"),
     [cars],
   );
+  const carsUnknown = useMemo(
+    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN"),
+    [cars],
+  );
 
   const spots = useMemo(() => spotsForLot(tab), [tab]);
 
@@ -84,6 +88,16 @@ function LotPage() {
       c.car_model?.toLowerCase().includes(n),
     );
   }, [tab, carsInLotC, carsInLotT, q]);
+
+  // Cars with an UNKNOWN location that match the search — surfaced from every tab.
+  const filteredUnknown = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    return carsUnknown.filter((c) =>
+      c.ro_number?.toLowerCase().includes(n) ||
+      c.car_model?.toLowerCase().includes(n),
+    );
+  }, [carsUnknown, q]);
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.
   useEffect(() => {
@@ -223,6 +237,33 @@ function LotPage() {
           )}
         </ul>
       )}
+
+      {filteredUnknown.length > 0 && (
+        <>
+          <p className="mx-4 mt-4 mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Location unknown ({filteredUnknown.length})
+          </p>
+          <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
+            {filteredUnknown.map((car) => (
+              <li key={car.id} className="border-b border-border last:border-b-0">
+                <Link to="/park" search={{ id: car.id }} className="flex items-center gap-3 px-4 py-3 active:bg-accent">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                    ?
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">
+                      {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
+                      {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
+                    </p>
+                    <p className="truncate text-xs text-muted-foreground">Location unknown — not in any lot</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
 
       <BottomBar active="lot" />
     </div>

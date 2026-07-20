@@ -47,9 +47,9 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4" onClick={onClose}>
       <div
-        className="flex max-h-[90vh] w-full max-w-md flex-col rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl"
+        className="flex max-h-[100dvh] w-full max-w-md flex-col rounded-t-3xl bg-background p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] shadow-2xl sm:max-h-[85dvh] sm:rounded-3xl sm:pb-5"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex shrink-0 items-center justify-between">

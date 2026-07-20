@@ -211,6 +211,7 @@ export type Database = {
           is_owner: boolean
           nickname: string | null
           pending_role_name: string | null
+          phone_number: string | null
           role_id: string | null
           role_name: string
           status: string
@@ -227,6 +228,7 @@ export type Database = {
           is_owner?: boolean
           nickname?: string | null
           pending_role_name?: string | null
+          phone_number?: string | null
           role_id?: string | null
           role_name: string
           status?: string
@@ -243,6 +245,7 @@ export type Database = {
           is_owner?: boolean
           nickname?: string | null
           pending_role_name?: string | null
+          phone_number?: string | null
           role_id?: string | null
           role_name?: string
           status?: string

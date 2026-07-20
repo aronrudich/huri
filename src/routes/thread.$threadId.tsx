@@ -146,6 +146,16 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+        {!isGroup && otherPhone && (
+          <a
+            href={`tel:${otherPhone}`}
+            aria-label={`Call ${formatPhone(otherPhone)}`}
+            title={`Call ${formatPhone(otherPhone)}`}
+            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
+          >
+            <Phone className="h-5 w-5" />
+          </a>
+        )}
         <button
           type="button"
           onClick={async () => {

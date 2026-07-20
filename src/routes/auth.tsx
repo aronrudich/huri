@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
+import { confirmEmailForValidCredentials, createConfirmedAccount, resolveEmailForPhone } from "@/lib/auth.functions";
 import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
+import { normalizePhone, phoneToSyntheticEmail, formatPhone, digitsOnly } from "@/lib/phone";
 import huriLogo from "@/assets/huri-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -40,12 +41,14 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
+  const [useLegacyEmail, setUseLegacyEmail] = useState(false);
   const roles = DEFAULT_ROLES;
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [dealershipId, setDealershipId] = useState<string>("");
 
   // form fields
-  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState(""); // only for legacy email login
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -65,57 +68,79 @@ function AuthPage() {
     if (!loading && user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
 
+  const signInWithEmail = async (loginEmail: string) => {
+    let { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+    if (isEmailNotConfirmed(error?.message)) {
+      try {
+        await confirmEmailForValidCredentials({ data: { email: loginEmail, password } });
+        const retry = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+        error = retry.error;
+      } catch (confirmError) {
+        throw new Error(errorMessage(confirmError));
+      }
+    }
+    if (error) throw new Error(error.message);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
-    let { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-
-    if (isEmailNotConfirmed(error?.message)) {
-      try {
-        await confirmEmailForValidCredentials({ data: { email: email.trim(), password } });
-        const retry = await supabase.auth.signInWithPassword({ email: email.trim(), password });
-        error = retry.error;
-      } catch (confirmError) {
-        setBusy(false);
-        return toast.error(errorMessage(confirmError));
+    try {
+      let loginEmail: string;
+      if (useLegacyEmail) {
+        loginEmail = email.trim();
+        if (!loginEmail) throw new Error("Enter your email");
+      } else {
+        const normalized = normalizePhone(phone);
+        if (!normalized) throw new Error("Enter a valid phone number");
+        try {
+          const r = await resolveEmailForPhone({ data: { phone: normalized } });
+          loginEmail = r.email;
+        } catch {
+          // Fall back to synthetic email for accounts created via phone but not yet indexed.
+          loginEmail = phoneToSyntheticEmail(normalized);
+        }
       }
+      await signInWithEmail(loginEmail);
+      toast.success("Welcome back");
+      const { data } = await supabase.auth.getUser();
+      if (data.user) subscribePush(data.user.id);
+      navigate({ to: "/", replace: true });
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
     }
-
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Welcome back");
-    // try to subscribe to push (non-blocking)
-    const { data } = await supabase.auth.getUser();
-    if (data.user) subscribePush(data.user.id);
-    navigate({ to: "/", replace: true });
   };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = email.trim();
-    if (!fullName.trim() || !trimmedEmail || !password) {
-      return toast.error("Name, email, and password are required");
-    }
+    if (!fullName.trim()) return toast.error("Name is required");
+    const normalized = normalizePhone(phone);
+    if (!normalized) return toast.error("Enter a valid phone number");
+    if (!password) return toast.error("Password is required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
     if (!dealershipId) return toast.error("Please pick your dealership");
+
+    const syntheticEmail = phoneToSyntheticEmail(normalized);
 
     setBusy(true);
     try {
       await createConfirmedAccount({
         data: {
-          email: trimmedEmail,
+          email: syntheticEmail,
           password,
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
           dealershipId,
+          phoneNumber: normalized,
         },
       });
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: trimmedEmail,
+        email: syntheticEmail,
         password,
       });
       if (signInError) throw signInError;
@@ -146,7 +171,6 @@ function AuthPage() {
           <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
         </div>
 
-
         <div className="rounded-2xl bg-card p-6 shadow-sm">
           <div className="mb-6 flex rounded-full bg-muted p-1 text-sm font-medium">
             <button
@@ -167,13 +191,25 @@ function AuthPage() {
 
           {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-3">
-              <Field
-                label="Email"
-                value={email}
-                onChange={setEmail}
-                type="email"
-                autoComplete="email"
-              />
+              {useLegacyEmail ? (
+                <Field
+                  label="Email (legacy)"
+                  value={email}
+                  onChange={setEmail}
+                  type="email"
+                  autoComplete="email"
+                />
+              ) : (
+                <Field
+                  label="Phone number"
+                  value={phone}
+                  onChange={setPhone}
+                  type="tel"
+                  autoComplete="tel"
+                  inputMode="tel"
+                  placeholder="(555) 555-1234"
+                />
+              )}
               <Field
                 label="Password"
                 value={password}
@@ -187,19 +223,33 @@ function AuthPage() {
               >
                 {busy ? "Signing in…" : "Sign In"}
               </button>
+              <button
+                type="button"
+                onClick={() => setUseLegacyEmail((v) => !v)}
+                className="mx-auto block text-xs text-muted-foreground underline"
+              >
+                {useLegacyEmail ? "Sign in with phone instead" : "Sign in with email (legacy)"}
+              </button>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-3">
               <Field label="Full Name" value={fullName} onChange={setFullName} required />
               <Field label="Nickname (optional)" value={nickname} onChange={setNickname} />
               <Field
-                label="Email"
-                value={email}
-                onChange={setEmail}
-                type="email"
+                label="Phone number"
+                value={phone}
+                onChange={setPhone}
+                type="tel"
                 required
-                autoComplete="email"
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder="(555) 555-1234"
               />
+              {phone && normalizePhone(phone) && (
+                <p className="-mt-2 text-xs text-muted-foreground">
+                  Saved as {formatPhone(normalizePhone(phone))}
+                </p>
+              )}
               <Field
                 label="Password"
                 value={password}
@@ -223,7 +273,6 @@ function AuthPage() {
                 </select>
               </div>
 
-
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>
                 <select
@@ -232,9 +281,7 @@ function AuthPage() {
                   className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
                 >
                   {roles.map((r) => (
-                    <option key={r} value={r}>
-                      {r}
-                    </option>
+                    <option key={r} value={r}>{r}</option>
                   ))}
                 </select>
               </div>
@@ -255,7 +302,7 @@ function AuthPage() {
                 {busy ? "Creating…" : "Create Account"}
               </button>
               <p className="text-center text-xs text-muted-foreground">
-                No email verification required.
+                No email or SMS verification required — waiting for owner approval.
               </p>
             </form>
           )}
@@ -280,6 +327,8 @@ function Field({
   type = "text",
   required,
   autoComplete,
+  inputMode,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -287,7 +336,11 @@ function Field({
   type?: string;
   required?: boolean;
   autoComplete?: string;
+  inputMode?: "text" | "tel" | "email" | "numeric";
+  placeholder?: string;
 }) {
+  // Reference digitsOnly so the tree-shaker keeps our helper import graph honest.
+  void digitsOnly;
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>
@@ -297,6 +350,8 @@ function Field({
         type={type}
         required={required}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        placeholder={placeholder}
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
       />
     </div>

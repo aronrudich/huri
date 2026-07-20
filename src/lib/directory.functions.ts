@@ -43,7 +43,7 @@ export const getDirectory = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, role_id, is_active")
+      .select("id, full_name, nickname, role_name, role_id, is_active, phone_number")
       .eq("dealership_id", dealershipId);
 
     if (error) throw error;

@@ -101,10 +101,10 @@ function ParkPage() {
         const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
         const carModel = occupant.car_model ? ` (${occupant.car_model})` : "";
         const ok = window.confirm(
-          `Spot ${normalizedPos} already has ${label}${carModel} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car will be moved to Lot T.`,
+          `Spot ${normalizedPos} already has ${label}${carModel} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car's location will be marked unknown until someone parks it again.`,
         );
         if (!ok) return;
-        await supabase.from("parked_cars").update({ lot_position: "T" }).eq("id", occupant.id);
+        await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("id", occupant.id);
       }
     }
 

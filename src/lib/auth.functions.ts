@@ -13,7 +13,11 @@ const confirmedSignupSchema = emailPasswordSchema.extend({
   nickname: z.string().trim().max(120).optional(),
   roleName: z.string().trim().min(1).max(120),
   dealershipId: z.string().uuid(),
+  phoneNumber: z.string().trim().max(20).optional(),
 });
+
+const phoneSchema = z.object({ phone: z.string().trim().min(4).max(20) });
+
 
 
 function createAuthClient(key: string) {
@@ -120,6 +124,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           full_name: fullName,
           nickname,
           email: targetEmail,
+          phone_number: data.phoneNumber?.trim() || null,
           role_id: roleRow?.id ?? null,
           role_name: roleName,
           is_active: true,
@@ -189,4 +194,38 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     }
 
     throw new Error("Account not found for confirmation.");
+  });
+
+// Given a phone number (E.164 or digits), find the account's login email.
+// This is how phone-based sign-in works: user types phone → we look up the
+// synthetic <digits>@huri.local email tied to that profile → sign in with it.
+export const resolveEmailForPhone = createServerFn({ method: "POST" })
+  .inputValidator((data) => phoneSchema.parse(data))
+  .handler(async ({ data }) => {
+    const secretKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY;
+    if (!secretKey) throw new Error("Account lookup is not configured for this deployment.");
+
+    const digits = data.phone.replace(/\D+/g, "");
+    if (!digits) throw new Error("Enter a phone number.");
+    const e164 = digits.length === 10 ? `+1${digits}` : `+${digits}`;
+    const synthetic = `${digits}@huri.local`;
+
+    const adminClient = createAuthClient(secretKey);
+    // Try phone_number match first, then fall back to the synthetic email
+    // in case a legacy row didn't get phone_number filled in.
+    const { data: byPhone } = await adminClient
+      .from("profiles")
+      .select("email")
+      .or(`phone_number.eq.${e164},phone_number.eq.${digits}`)
+      .maybeSingle();
+    if (byPhone?.email) return { email: byPhone.email as string };
+
+    const { data: byEmail } = await adminClient
+      .from("profiles")
+      .select("email")
+      .eq("email", synthetic)
+      .maybeSingle();
+    if (byEmail?.email) return { email: byEmail.email as string };
+
+    throw new Error("No account found for that phone number.");
   });

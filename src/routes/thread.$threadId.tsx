@@ -79,17 +79,31 @@ function ThreadPage() {
     [msgs, threadCutoffs, threadId],
   );
 
+  // For 1-on-1 threads (dm:uuid1:uuid2) figure out the other user's id
+  // so we can pull their phone number for the tel: call button.
+  const otherUserId = useMemo(() => {
+    if (isGroup || !user) return null;
+    const parts = threadId.split(":");
+    if (parts[0] !== "dm" || parts.length < 3) return null;
+    return parts[1] === user.id ? parts[2] : parts[1];
+  }, [threadId, user, isGroup]);
+
+  const [otherPhone, setOtherPhone] = useState<string | null>(null);
+  useEffect(() => {
+    if (!otherUserId) { setOtherPhone(null); return; }
+    supabase.from("profiles").select("phone_number").eq("id", otherUserId).maybeSingle()
+      .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
+  }, [otherUserId]);
+
   const title = isGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
-        if (!last) return "Direct message";
+        if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
         const otherId = last.sender_id === user?.id ? last.recipient_id : last.sender_id;
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
-
-  const send = async () => {
     if (!body.trim() || !user) return;
     setBusy(true);
     const payload: any = {

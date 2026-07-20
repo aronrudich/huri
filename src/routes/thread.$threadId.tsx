@@ -104,6 +104,8 @@ function ThreadPage() {
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
+
+  const send = async () => {
     if (!body.trim() || !user) return;
     setBusy(true);
     const payload: any = {

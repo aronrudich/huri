@@ -315,6 +315,60 @@ function InboxPage() {
         <PenSquare className="h-6 w-6" />
       </Link>
 
+      {selectedPerson && (
+        <div
+          className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => setSelectedPerson(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+                {selectedPerson.name[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold">{selectedPerson.name}</p>
+                {selectedPerson.phone && (
+                  <p className="text-xs text-muted-foreground">{formatPhone(selectedPerson.phone)}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedPerson(null)}
+                aria-label="Close"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => openMessage(selectedPerson.id)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground"
+              >
+                <MessageSquare className="h-4 w-4" /> Message
+              </button>
+              {selectedPerson.phone ? (
+                <a
+                  href={`tel:${selectedPerson.phone}`}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-accent-foreground"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+              ) : (
+                <button
+                  disabled
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-muted py-3 text-sm font-semibold text-muted-foreground"
+                >
+                  <Phone className="h-4 w-4" /> No phone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       <BottomBar active="inbox" />
     </div>
   );

@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, PenSquare } from "lucide-react";
+import { Search, PenSquare, Phone, MessageSquare, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDirectory } from "@/lib/directory.functions";
+import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
+import { formatPhone } from "@/lib/phone";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 export const Route = createFileRoute("/")({
@@ -39,6 +40,8 @@ type ThreadSummary = {
   unread?: boolean;
 };
 
+type PersonHit = { id: string; name: string; phone: string | null };
+
 function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
@@ -46,6 +49,8 @@ function InboxPage() {
   const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [people, setPeople] = useState<PersonHit[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
   const hideThread = (tid: string, latestAt: string) => {
@@ -94,6 +99,15 @@ function InboxPage() {
         setProfiles(m);
       }
     });
+    getMessageRecipients().then((data) => {
+      if (data) {
+        setPeople(data.map((p) => ({
+          id: p.id,
+          name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
+          phone: p.phoneNumber ?? null,
+        })));
+      }
+    }).catch(() => {});
     supabase.from("roles").select("id, name").then(({ data }) => {
       if (data) {
         const m: Record<string, string> = {};
@@ -199,6 +213,20 @@ function InboxPage() {
     return arr;
   }, [messages, profiles, roles, user, q, threadCutoffs]);
 
+  const filteredPeople = useMemo<PersonHit[]>(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return [];
+    return people.filter((p) => p.name.toLowerCase().includes(needle)).slice(0, 20);
+  }, [people, q]);
+
+  const openMessage = (personId: string) => {
+    if (!user) return;
+    const ids = [user.id, personId].sort();
+    const tid = `dm:${ids[0]}:${ids[1]}`;
+    setSelectedPerson(null);
+    navigate({ to: "/thread/$threadId", params: { threadId: tid } });
+  };
+
   if (loading || !user) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
   }
@@ -217,6 +245,30 @@ function InboxPage() {
           />
         </div>
       </header>
+
+      {filteredPeople.length > 0 && (
+        <div className="border-b border-border bg-background">
+          <h2 className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">People</h2>
+          <ul>
+            {filteredPeople.map((p) => (
+              <li key={p.id}>
+                <button
+                  onClick={() => setSelectedPerson(p)}
+                  className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                    {p.name[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium">{p.name}</p>
+                    {p.phone && <p className="text-xs text-muted-foreground">{formatPhone(p.phone)}</p>}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <ul className="divide-y divide-border bg-background">
         {threads.length === 0 && (
@@ -262,6 +314,60 @@ function InboxPage() {
       >
         <PenSquare className="h-6 w-6" />
       </Link>
+
+      {selectedPerson && (
+        <div
+          className="fixed inset-0 z-30 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          onClick={() => setSelectedPerson(null)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-4 flex items-start gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-base font-semibold text-primary">
+                {selectedPerson.name[0]?.toUpperCase() ?? "?"}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-base font-semibold">{selectedPerson.name}</p>
+                {selectedPerson.phone && (
+                  <p className="text-xs text-muted-foreground">{formatPhone(selectedPerson.phone)}</p>
+                )}
+              </div>
+              <button
+                onClick={() => setSelectedPerson(null)}
+                aria-label="Close"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => openMessage(selectedPerson.id)}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground"
+              >
+                <MessageSquare className="h-4 w-4" /> Message
+              </button>
+              {selectedPerson.phone ? (
+                <a
+                  href={`tel:${selectedPerson.phone}`}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-accent-foreground"
+                >
+                  <Phone className="h-4 w-4" /> Call
+                </a>
+              ) : (
+                <button
+                  disabled
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-muted py-3 text-sm font-semibold text-muted-foreground"
+                >
+                  <Phone className="h-4 w-4" /> No phone
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       <BottomBar active="inbox" />
     </div>

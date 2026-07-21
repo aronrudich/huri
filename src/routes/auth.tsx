@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { confirmEmailForValidCredentials, createConfirmedAccount, resolveEmailForPhone } from "@/lib/auth.functions";
+import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
 import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
-import { normalizePhone, phoneToSyntheticEmail, formatPhone, digitsOnly } from "@/lib/phone";
+import { normalizePhone, formatPhone } from "@/lib/phone";
 import huriLogo from "@/assets/huri-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -41,14 +41,13 @@ function AuthPage() {
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
-  const [useLegacyEmail, setUseLegacyEmail] = useState(false);
   const roles = DEFAULT_ROLES;
   const [dealerships, setDealerships] = useState<Dealership[]>([]);
   const [dealershipId, setDealershipId] = useState<string>("");
 
   // form fields
+  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState(""); // only for legacy email login
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -86,21 +85,9 @@ function AuthPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      let loginEmail: string;
-      if (useLegacyEmail) {
-        loginEmail = email.trim();
-        if (!loginEmail) throw new Error("Enter your email");
-      } else {
-        const normalized = normalizePhone(phone);
-        if (!normalized) throw new Error("Enter a valid phone number");
-        try {
-          const r = await resolveEmailForPhone({ data: { phone: normalized } });
-          loginEmail = r.email;
-        } catch {
-          // Fall back to synthetic email for accounts created via phone but not yet indexed.
-          loginEmail = phoneToSyntheticEmail(normalized);
-        }
-      }
+      const loginEmail = email.trim().toLowerCase();
+      if (!loginEmail) throw new Error("Enter your email");
+      if (!password) throw new Error("Enter your password");
       await signInWithEmail(loginEmail);
       toast.success("Welcome back");
       const { data } = await supabase.auth.getUser();
@@ -116,31 +103,31 @@ function AuthPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fullName.trim()) return toast.error("Name is required");
-    const normalized = normalizePhone(phone);
-    if (!normalized) return toast.error("Enter a valid phone number");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid email");
+    const normalizedPhone = normalizePhone(phone);
+    if (!normalizedPhone) return toast.error("Enter a valid phone number");
     if (!password) return toast.error("Password is required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
     if (!dealershipId) return toast.error("Please pick your dealership");
 
-    const syntheticEmail = phoneToSyntheticEmail(normalized);
-
     setBusy(true);
     try {
       await createConfirmedAccount({
         data: {
-          email: syntheticEmail,
+          email: cleanEmail,
           password,
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
           dealershipId,
-          phoneNumber: normalized,
+          phoneNumber: normalizedPhone,
         },
       });
 
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: syntheticEmail,
+        email: cleanEmail,
         password,
       });
       if (signInError) throw signInError;
@@ -191,31 +178,21 @@ function AuthPage() {
 
           {mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-3">
-              {useLegacyEmail ? (
-                <Field
-                  label="Email (legacy)"
-                  value={email}
-                  onChange={setEmail}
-                  type="email"
-                  autoComplete="email"
-                />
-              ) : (
-                <Field
-                  label="Phone number"
-                  value={phone}
-                  onChange={setPhone}
-                  type="tel"
-                  autoComplete="tel"
-                  inputMode="tel"
-                  placeholder="(555) 555-1234"
-                />
-              )}
+              <Field
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                autoComplete="email"
+                required
+              />
               <Field
                 label="Password"
                 value={password}
                 onChange={setPassword}
                 type="password"
                 autoComplete="current-password"
+                required
               />
               <button
                 disabled={busy}
@@ -223,18 +200,19 @@ function AuthPage() {
               >
                 {busy ? "Signing in…" : "Sign In"}
               </button>
-              <button
-                type="button"
-                onClick={() => setUseLegacyEmail((v) => !v)}
-                className="mx-auto block text-xs text-muted-foreground underline"
-              >
-                {useLegacyEmail ? "Sign in with phone instead" : "Sign in with email (legacy)"}
-              </button>
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-3">
               <Field label="Full Name" value={fullName} onChange={setFullName} required />
               <Field label="Nickname (optional)" value={nickname} onChange={setNickname} />
+              <Field
+                label="Email"
+                value={email}
+                onChange={setEmail}
+                type="email"
+                required
+                autoComplete="email"
+              />
               <Field
                 label="Phone number"
                 value={phone}
@@ -339,8 +317,6 @@ function Field({
   inputMode?: "text" | "tel" | "email" | "numeric";
   placeholder?: string;
 }) {
-  // Reference digitsOnly so the tree-shaker keeps our helper import graph honest.
-  void digitsOnly;
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">{label}</label>

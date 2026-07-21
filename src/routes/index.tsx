@@ -246,6 +246,30 @@ function InboxPage() {
         </div>
       </header>
 
+      {filteredPeople.length > 0 && (
+        <div className="border-b border-border bg-background">
+          <h2 className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">People</h2>
+          <ul>
+            {filteredPeople.map((p) => (
+              <li key={p.id}>
+                <button
+                  onClick={() => setSelectedPerson(p)}
+                  className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                    {p.name[0]?.toUpperCase() ?? "?"}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium">{p.name}</p>
+                    {p.phone && <p className="text-xs text-muted-foreground">{formatPhone(p.phone)}</p>}
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <ul className="divide-y divide-border bg-background">
         {threads.length === 0 && (
           <li className="px-5 py-16 text-center text-sm text-muted-foreground">

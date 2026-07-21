@@ -213,6 +213,20 @@ function InboxPage() {
     return arr;
   }, [messages, profiles, roles, user, q, threadCutoffs]);
 
+  const filteredPeople = useMemo<PersonHit[]>(() => {
+    const needle = q.trim().toLowerCase();
+    if (!needle) return [];
+    return people.filter((p) => p.name.toLowerCase().includes(needle)).slice(0, 20);
+  }, [people, q]);
+
+  const openMessage = (personId: string) => {
+    if (!user) return;
+    const ids = [user.id, personId].sort();
+    const tid = `dm:${ids[0]}:${ids[1]}`;
+    setSelectedPerson(null);
+    navigate({ to: "/thread/$threadId", params: { threadId: tid } });
+  };
+
   if (loading || !user) {
     return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
   }

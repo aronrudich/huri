@@ -40,6 +40,8 @@ type ThreadSummary = {
   unread?: boolean;
 };
 
+type PersonHit = { id: string; name: string; phone: string | null };
+
 function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
@@ -47,6 +49,8 @@ function InboxPage() {
   const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  const [people, setPeople] = useState<PersonHit[]>([]);
+  const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
   const hideThread = (tid: string, latestAt: string) => {

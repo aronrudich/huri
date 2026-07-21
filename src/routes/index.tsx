@@ -99,6 +99,15 @@ function InboxPage() {
         setProfiles(m);
       }
     });
+    getMessageRecipients().then((data) => {
+      if (data) {
+        setPeople(data.map((p) => ({
+          id: p.id,
+          name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
+          phone: p.phoneNumber ?? null,
+        })));
+      }
+    }).catch(() => {});
     supabase.from("roles").select("id, name").then(({ data }) => {
       if (data) {
         const m: Record<string, string> = {};

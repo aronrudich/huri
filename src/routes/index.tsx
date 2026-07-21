@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, PenSquare } from "lucide-react";
+import { Search, PenSquare, Phone, MessageSquare, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDirectory } from "@/lib/directory.functions";
+import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { formatDistanceToNow } from "date-fns";
+import { formatPhone } from "@/lib/phone";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 export const Route = createFileRoute("/")({

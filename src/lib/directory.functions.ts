@@ -17,7 +17,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name")
+      .select("id, full_name, nickname, role_name, phone_number")
       .eq("is_active", true)
       .eq("status", "approved")
       .eq("dealership_id", dealershipId)
@@ -31,6 +31,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
       fullName: person.full_name,
       nickname: person.nickname,
       roleName: person.role_name,
+      phoneNumber: person.phone_number,
     }));
   });
 

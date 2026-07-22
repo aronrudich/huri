@@ -223,6 +223,19 @@ function InboxPage() {
     return people.filter((p) => p.name.toLowerCase().includes(needle)).slice(0, 20);
   }, [people, q]);
 
+  // Search parked cars by RO#/model/spot as user types.
+  useEffect(() => {
+    const needle = q.trim();
+    if (needle.length < 1) { setCarHits([]); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      searchCars({ data: { q: needle } })
+        .then((rows) => { if (!cancelled) setCarHits((rows ?? []) as CarHit[]); })
+        .catch(() => { if (!cancelled) setCarHits([]); });
+    }, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
   const openMessage = (personId: string) => {
     if (!user) return;
     const ids = [user.id, personId].sort();

@@ -42,6 +42,7 @@ type ThreadSummary = {
 };
 
 type PersonHit = { id: string; name: string; phone: string | null };
+type CarHit = { id: string; ro_number: string | null; car_model: string | null; lot_position: string };
 
 function InboxPage() {
   const navigate = useNavigate();
@@ -52,6 +53,8 @@ function InboxPage() {
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<PersonHit[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [carHits, setCarHits] = useState<CarHit[]>([]);
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
   const hideThread = (tid: string, latestAt: string) => {

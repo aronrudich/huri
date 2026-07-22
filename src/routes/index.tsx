@@ -387,7 +387,7 @@ function InboxPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => openMessage(selectedPerson.id)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground"
@@ -409,6 +409,12 @@ function InboxPage() {
                   <Phone className="h-4 w-4" /> No phone
                 </button>
               )}
+              <button
+                onClick={() => { const id = selectedPerson.id; setSelectedPerson(null); setViewProfileId(id); }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-3 text-sm font-semibold text-secondary-foreground"
+              >
+                <User className="h-4 w-4" /> Profile
+              </button>
             </div>
           </div>
         </div>

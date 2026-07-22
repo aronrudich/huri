@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Huri" },
-      { name: "description", content: "Huri - Lot Managemen" },
+      { name: "description", content: "Huri - Lot Management" },
     ],
   }),
   component: InboxPage,

@@ -230,6 +230,10 @@ function ThreadPage() {
           </button>
         </div>
       </div>
+
+      {showProfile && otherUserId && (
+        <ProfileViewSheet userId={otherUserId} onClose={() => setShowProfile(false)} />
+      )}
     </div>
   );
 }

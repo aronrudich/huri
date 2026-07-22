@@ -9,6 +9,7 @@ import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { formatPhone } from "@/lib/phone";
+import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -33,6 +34,7 @@ function ThreadPage() {
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
+  const [showProfile, setShowProfile] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -146,6 +148,16 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+        {!isGroup && otherUserId && (
+          <button
+            type="button"
+            onClick={() => setShowProfile(true)}
+            aria-label="View profile"
+            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
+          >
+            <User className="h-5 w-5" />
+          </button>
+        )}
         {!isGroup && otherPhone && (
           <a
             href={`tel:${otherPhone}`}

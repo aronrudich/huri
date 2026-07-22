@@ -287,6 +287,34 @@ function InboxPage() {
         </div>
       )}
 
+      {carHits.length > 0 && (
+        <div className="border-b border-border bg-background">
+          <h2 className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cars</h2>
+          <ul>
+            {carHits.map((c) => (
+              <li key={c.id}>
+                <Link
+                  to="/park"
+                  search={{ id: c.id }}
+                  className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {c.lot_position?.toUpperCase() || <Car className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium">
+                      {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
+                      {c.car_model && <span className="text-muted-foreground"> · {c.car_model}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Spot {c.lot_position?.toUpperCase() || "—"}</p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <ul className="divide-y divide-border bg-background">
         {threads.length === 0 && (
           <li className="px-5 py-16 text-center text-sm text-muted-foreground">

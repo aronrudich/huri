@@ -420,6 +420,10 @@ function InboxPage() {
         </div>
       )}
 
+      {viewProfileId && (
+        <ProfileViewSheet userId={viewProfileId} onClose={() => setViewProfileId(null)} />
+      )}
+
       <BottomBar active="inbox" />
     </div>
   );

@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, PenSquare, Phone, MessageSquare, X } from "lucide-react";
+import { Search, PenSquare, Phone, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
+import { getDirectory, getMessageRecipients, searchCars } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
+import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { formatDistanceToNow } from "date-fns";
 import { formatPhone } from "@/lib/phone";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
@@ -41,6 +42,7 @@ type ThreadSummary = {
 };
 
 type PersonHit = { id: string; name: string; phone: string | null };
+type CarHit = { id: string; ro_number: string | null; car_model: string | null; lot_position: string };
 
 function InboxPage() {
   const navigate = useNavigate();
@@ -51,6 +53,8 @@ function InboxPage() {
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<PersonHit[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
+  const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [carHits, setCarHits] = useState<CarHit[]>([]);
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
 
   const hideThread = (tid: string, latestAt: string) => {
@@ -219,6 +223,19 @@ function InboxPage() {
     return people.filter((p) => p.name.toLowerCase().includes(needle)).slice(0, 20);
   }, [people, q]);
 
+  // Search parked cars by RO#/model/spot as user types.
+  useEffect(() => {
+    const needle = q.trim();
+    if (needle.length < 1) { setCarHits([]); return; }
+    let cancelled = false;
+    const t = setTimeout(() => {
+      searchCars({ data: { q: needle } })
+        .then((rows) => { if (!cancelled) setCarHits((rows ?? []) as CarHit[]); })
+        .catch(() => { if (!cancelled) setCarHits([]); });
+    }, 200);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [q]);
+
   const openMessage = (personId: string) => {
     if (!user) return;
     const ids = [user.id, personId].sort();
@@ -264,6 +281,34 @@ function InboxPage() {
                     {p.phone && <p className="text-xs text-muted-foreground">{formatPhone(p.phone)}</p>}
                   </div>
                 </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {carHits.length > 0 && (
+        <div className="border-b border-border bg-background">
+          <h2 className="px-4 pt-3 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Cars</h2>
+          <ul>
+            {carHits.map((c) => (
+              <li key={c.id}>
+                <Link
+                  to="/park"
+                  search={{ id: c.id }}
+                  className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
+                >
+                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                    {c.lot_position?.toUpperCase() || <Car className="h-4 w-4" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-base font-medium">
+                      {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
+                      {c.car_model && <span className="text-muted-foreground"> · {c.car_model}</span>}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Spot {c.lot_position?.toUpperCase() || "—"}</p>
+                  </div>
+                </Link>
               </li>
             ))}
           </ul>
@@ -342,7 +387,7 @@ function InboxPage() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => openMessage(selectedPerson.id)}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground"
@@ -364,9 +409,19 @@ function InboxPage() {
                   <Phone className="h-4 w-4" /> No phone
                 </button>
               )}
+              <button
+                onClick={() => { const id = selectedPerson.id; setSelectedPerson(null); setViewProfileId(id); }}
+                className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-3 text-sm font-semibold text-secondary-foreground"
+              >
+                <User className="h-4 w-4" /> Profile
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {viewProfileId && (
+        <ProfileViewSheet userId={viewProfileId} onClose={() => setViewProfileId(null)} />
       )}
 
       <BottomBar active="inbox" />

@@ -84,7 +84,7 @@ function ThreadPage() {
   // Custom multi-user group thread: gm:<uuid>_<uuid>_...
   const customGroupMatch = threadId.match(/^gm:(.+)$/);
   const isCustomGroup = !!customGroupMatch;
-  const customGroupMembers = useMemo(
+  const customGroupMembers = useMemo<string[]>(
     () => (customGroupMatch ? customGroupMatch[1].split("_").filter(Boolean) : []),
     [customGroupMatch],
   );

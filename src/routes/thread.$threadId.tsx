@@ -77,9 +77,19 @@ function ThreadPage() {
   }, [threadId, user]);
 
   const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
-  const isGroup = !!groupMatch;
+  const isRoleGroup = !!groupMatch;
   const groupRoleId = groupMatch?.[1] ?? null;
   const groupStarterId = groupMatch?.[2] ?? null;
+
+  // Custom multi-user group thread: gm:<uuid>_<uuid>_...
+  const customGroupMatch = threadId.match(/^gm:(.+)$/);
+  const isCustomGroup = !!customGroupMatch;
+  const customGroupMembers = useMemo(
+    () => (customGroupMatch ? customGroupMatch[1].split("_").filter(Boolean) : []),
+    [customGroupMatch],
+  );
+  const isGroup = isRoleGroup || isCustomGroup;
+
   const visibleMsgs = useMemo(
     () => msgs.filter((m) => isMessageAfterCutoff(m.created_at, threadCutoffs[threadId])),
     [msgs, threadCutoffs, threadId],
@@ -101,8 +111,14 @@ function ThreadPage() {
       .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
   }, [otherUserId]);
 
-  const title = isGroup
+  const title = isRoleGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
+    : isCustomGroup
+    ? (() => {
+        const others = customGroupMembers.filter((id) => id !== user?.id);
+        const names = others.map((id) => profiles[id] ?? "…").filter(Boolean);
+        return names.length ? `${names.join(", ")} (group)` : "Group";
+      })()
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
         if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
@@ -110,6 +126,45 @@ function ThreadPage() {
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
+
+  // Load directory once when the add-people modal is first opened.
+  useEffect(() => {
+    if (!showAddPeople || directory.length) return;
+    getMessageRecipients()
+      .then((data) =>
+        setDirectory(
+          (data ?? []).map((p) => ({
+            id: p.id,
+            name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
+          })),
+        ),
+      )
+      .catch(() => {});
+  }, [showAddPeople, directory.length]);
+
+  // People already in this thread — excluded from the add list.
+  const existingMembers = useMemo(() => {
+    const set = new Set<string>();
+    if (user) set.add(user.id);
+    if (isCustomGroup) customGroupMembers.forEach((id) => set.add(id));
+    else if (otherUserId) set.add(otherUserId);
+    return set;
+  }, [user, isCustomGroup, customGroupMembers, otherUserId]);
+
+  const canAddPeople = !isRoleGroup && (!!otherUserId || isCustomGroup);
+
+  const confirmAddPeople = () => {
+    if (!user || addSelected.size === 0) return;
+    const ids = new Set<string>(existingMembers);
+    addSelected.forEach((id) => ids.add(id));
+    const sorted = Array.from(ids).sort();
+    const newThreadId = `gm:${sorted.join("_")}`;
+    setShowAddPeople(false);
+    setAddSelected(new Set());
+    setAddQuery("");
+    if (newThreadId === threadId) return;
+    navigate({ to: "/thread/$threadId", params: { threadId: newThreadId }, replace: true });
+  };
 
   const send = async () => {
     if (!body.trim() || !user) return;
@@ -119,8 +174,10 @@ function ThreadPage() {
       body: body.trim(),
       sender_id: user.id,
     };
-    if (isGroup) payload.recipient_role_id = groupRoleId;
-    else {
+    if (isRoleGroup) payload.recipient_role_id = groupRoleId;
+    else if (isCustomGroup) {
+      // no single recipient — resolved server-side from thread_id
+    } else {
       // dm:uuid1:uuid2  → other id
       const parts = threadId.split(":");
       const other = parts[1] === user.id ? parts[2] : parts[1];

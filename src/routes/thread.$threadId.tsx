@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, Phone, User } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Phone, User, UserPlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
-import { getDirectory } from "@/lib/directory.functions";
+import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { formatPhone } from "@/lib/phone";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";

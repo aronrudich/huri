@@ -135,6 +135,8 @@ function InboxPage() {
       `sender_id.eq.${user.id}`,
       // Group threads that we started (as anyone with any role): group:*:<myId>
       `thread_id.like.group:*:${user.id}`,
+      // Custom multi-user group threads: gm:<uuid>_<uuid>_...
+      `thread_id.ilike.gm:*${user.id}*`,
     ];
     if (myRoleIds.size) {
       parts.push(`recipient_role_id.in.(${Array.from(myRoleIds).join(",")})`);
@@ -155,11 +157,14 @@ function InboxPage() {
         const m = payload.new as Msg;
         const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
         const iStarted = !!groupMatch && groupMatch[2] === user.id;
+        const isCustomGroupForMe =
+          m.thread_id.startsWith("gm:") && m.thread_id.includes(user.id);
         const mine =
           m.recipient_id === user.id ||
           m.sender_id === user.id ||
           (m.recipient_role_id && myRoleIds.has(m.recipient_role_id)) ||
-          iStarted;
+          iStarted ||
+          isCustomGroupForMe;
         if (mine) setMessages((prev) => [m, ...prev]);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
@@ -178,7 +183,8 @@ function InboxPage() {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
-      const isGroup = !!groupMatch;
+      const customGroupMatch = m.thread_id.match(/^gm:(.+)$/);
+      const isGroup = !!groupMatch || !!customGroupMatch;
       let title: string;
       if (groupMatch) {
         const [, rid, starterId] = groupMatch;
@@ -189,6 +195,10 @@ function InboxPage() {
           const starterName = profiles[starterId]?.name ?? "someone";
           title = `${roleName} (group) · ${starterName}`;
         }
+      } else if (customGroupMatch) {
+        const ids = customGroupMatch[1].split("_").filter((id) => id && id !== user?.id);
+        const names = ids.map((id) => profiles[id]?.name ?? "…");
+        title = names.length ? `${names.join(", ")} (group)` : "Group";
       } else if (m.thread_id.startsWith("group:")) {
         title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {

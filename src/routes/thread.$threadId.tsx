@@ -1,12 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, Phone, User } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Phone, User, UserPlus, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
-import { getDirectory } from "@/lib/directory.functions";
+import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { formatPhone } from "@/lib/phone";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
@@ -35,6 +35,10 @@ function ThreadPage() {
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showAddPeople, setShowAddPeople] = useState(false);
+  const [directory, setDirectory] = useState<Array<{ id: string; name: string }>>([]);
+  const [addSelected, setAddSelected] = useState<Set<string>>(new Set());
+  const [addQuery, setAddQuery] = useState("");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -73,9 +77,19 @@ function ThreadPage() {
   }, [threadId, user]);
 
   const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
-  const isGroup = !!groupMatch;
+  const isRoleGroup = !!groupMatch;
   const groupRoleId = groupMatch?.[1] ?? null;
   const groupStarterId = groupMatch?.[2] ?? null;
+
+  // Custom multi-user group thread: gm:<uuid>_<uuid>_...
+  const customGroupMatch = threadId.match(/^gm:(.+)$/);
+  const isCustomGroup = !!customGroupMatch;
+  const customGroupMembers = useMemo<string[]>(
+    () => (customGroupMatch ? customGroupMatch[1].split("_").filter(Boolean) : []),
+    [customGroupMatch],
+  );
+  const isGroup = isRoleGroup || isCustomGroup;
+
   const visibleMsgs = useMemo(
     () => msgs.filter((m) => isMessageAfterCutoff(m.created_at, threadCutoffs[threadId])),
     [msgs, threadCutoffs, threadId],
@@ -97,8 +111,14 @@ function ThreadPage() {
       .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
   }, [otherUserId]);
 
-  const title = isGroup
+  const title = isRoleGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
+    : isCustomGroup
+    ? (() => {
+        const others = customGroupMembers.filter((id) => id !== user?.id);
+        const names = others.map((id) => profiles[id] ?? "…").filter(Boolean);
+        return names.length ? `${names.join(", ")} (group)` : "Group";
+      })()
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
         if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
@@ -106,6 +126,45 @@ function ThreadPage() {
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
+
+  // Load directory once when the add-people modal is first opened.
+  useEffect(() => {
+    if (!showAddPeople || directory.length) return;
+    getMessageRecipients()
+      .then((data) =>
+        setDirectory(
+          (data ?? []).map((p) => ({
+            id: p.id,
+            name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
+          })),
+        ),
+      )
+      .catch(() => {});
+  }, [showAddPeople, directory.length]);
+
+  // People already in this thread — excluded from the add list.
+  const existingMembers = useMemo(() => {
+    const set = new Set<string>();
+    if (user) set.add(user.id);
+    if (isCustomGroup) customGroupMembers.forEach((id) => set.add(id));
+    else if (otherUserId) set.add(otherUserId);
+    return set;
+  }, [user, isCustomGroup, customGroupMembers, otherUserId]);
+
+  const canAddPeople = !isRoleGroup && (!!otherUserId || isCustomGroup);
+
+  const confirmAddPeople = () => {
+    if (!user || addSelected.size === 0) return;
+    const ids = new Set<string>(existingMembers);
+    addSelected.forEach((id) => ids.add(id));
+    const sorted = Array.from(ids).sort();
+    const newThreadId = `gm:${sorted.join("_")}`;
+    setShowAddPeople(false);
+    setAddSelected(new Set());
+    setAddQuery("");
+    if (newThreadId === threadId) return;
+    navigate({ to: "/thread/$threadId", params: { threadId: newThreadId }, replace: true });
+  };
 
   const send = async () => {
     if (!body.trim() || !user) return;
@@ -115,8 +174,10 @@ function ThreadPage() {
       body: body.trim(),
       sender_id: user.id,
     };
-    if (isGroup) payload.recipient_role_id = groupRoleId;
-    else {
+    if (isRoleGroup) payload.recipient_role_id = groupRoleId;
+    else if (isCustomGroup) {
+      // no single recipient — resolved server-side from thread_id
+    } else {
       // dm:uuid1:uuid2  → other id
       const parts = threadId.split(":");
       const other = parts[1] === user.id ? parts[2] : parts[1];
@@ -148,6 +209,17 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+        {canAddPeople && (
+          <button
+            type="button"
+            onClick={() => setShowAddPeople(true)}
+            aria-label="Add people to conversation"
+            title="Add people"
+            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
+          >
+            <UserPlus className="h-5 w-5" />
+          </button>
+        )}
         {!isGroup && otherUserId && (
           <button
             type="button"
@@ -233,6 +305,84 @@ function ThreadPage() {
 
       {showProfile && otherUserId && (
         <ProfileViewSheet userId={otherUserId} onClose={() => setShowProfile(false)} />
+      )}
+
+      {showAddPeople && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowAddPeople(false)}
+        >
+          <div
+            className="flex w-full max-w-sm flex-col rounded-2xl bg-background shadow-xl"
+            style={{ maxHeight: "80vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 className="text-base font-semibold">Add people</h2>
+              <button
+                onClick={() => setShowAddPeople(false)}
+                aria-label="Close"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="border-b border-border px-4 py-2">
+              <input
+                value={addQuery}
+                onChange={(e) => setAddQuery(e.target.value)}
+                placeholder="Search people"
+                className="w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <ul className="flex-1 overflow-y-auto">
+              {directory
+                .filter((p) => !existingMembers.has(p.id))
+                .filter((p) => !addQuery.trim() || p.name.toLowerCase().includes(addQuery.trim().toLowerCase()))
+                .map((p) => {
+                  const checked = addSelected.has(p.id);
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddSelected((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(p.id)) next.delete(p.id);
+                            else next.add(p.id);
+                            return next;
+                          });
+                        }}
+                        className="flex w-full items-center gap-3 border-b border-border px-5 py-3 text-left last:border-b-0 active:bg-accent"
+                      >
+                        <span
+                          className={`grid h-5 w-5 place-items-center rounded border ${
+                            checked ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"
+                          }`}
+                        >
+                          {checked && <span className="text-xs">✓</span>}
+                        </span>
+                        <span className="flex-1 text-sm">{p.name}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              {directory.length === 0 && (
+                <li className="px-5 py-6 text-center text-sm text-muted-foreground">Loading…</li>
+              )}
+            </ul>
+            <div className="border-t border-border p-3">
+              <button
+                type="button"
+                onClick={confirmAddPeople}
+                disabled={addSelected.size === 0}
+                className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+              >
+                Add {addSelected.size > 0 ? `(${addSelected.size})` : ""}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

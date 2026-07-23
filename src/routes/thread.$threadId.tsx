@@ -35,6 +35,10 @@ function ThreadPage() {
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [showAddPeople, setShowAddPeople] = useState(false);
+  const [directory, setDirectory] = useState<Array<{ id: string; name: string }>>([]);
+  const [addSelected, setAddSelected] = useState<Set<string>>(new Set());
+  const [addQuery, setAddQuery] = useState("");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 

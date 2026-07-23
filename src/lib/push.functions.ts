@@ -142,6 +142,8 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 
     // Per-starter group thread format: group:{roleId}:{starterId}
     const groupMatch = data.threadId.match(/^group:([^:]+):([^:]+)$/);
+    // Custom group message thread format: gm:<uuid>_<uuid>_...
+    const customGroupMatch = data.threadId.match(/^gm:(.+)$/);
 
     if (data.recipientId) {
       recipientIds = [data.recipientId];
@@ -151,6 +153,9 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       ids.add(starterId);
       ids.delete(context.userId);
       recipientIds = Array.from(ids);
+    } else if (customGroupMatch) {
+      const ids = customGroupMatch[1].split("_").filter(Boolean);
+      recipientIds = ids.filter((id) => id !== context.userId);
     } else if (data.recipientRoleId) {
       const ids = await membersForRole(data.recipientRoleId);
       recipientIds = ids.filter((id) => id !== context.userId);

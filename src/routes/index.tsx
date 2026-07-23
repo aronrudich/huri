@@ -183,7 +183,8 @@ function InboxPage() {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
       if (map.has(m.thread_id)) continue;
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
-      const isGroup = !!groupMatch;
+      const customGroupMatch = m.thread_id.match(/^gm:(.+)$/);
+      const isGroup = !!groupMatch || !!customGroupMatch;
       let title: string;
       if (groupMatch) {
         const [, rid, starterId] = groupMatch;
@@ -194,6 +195,10 @@ function InboxPage() {
           const starterName = profiles[starterId]?.name ?? "someone";
           title = `${roleName} (group) · ${starterName}`;
         }
+      } else if (customGroupMatch) {
+        const ids = customGroupMatch[1].split("_").filter((id) => id && id !== user?.id);
+        const names = ids.map((id) => profiles[id]?.name ?? "…");
+        title = names.length ? `${names.join(", ")} (group)` : "Group";
       } else if (m.thread_id.startsWith("group:")) {
         title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {

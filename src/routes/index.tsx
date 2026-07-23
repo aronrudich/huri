@@ -135,6 +135,8 @@ function InboxPage() {
       `sender_id.eq.${user.id}`,
       // Group threads that we started (as anyone with any role): group:*:<myId>
       `thread_id.like.group:*:${user.id}`,
+      // Custom multi-user group threads: gm:<uuid>_<uuid>_...
+      `thread_id.ilike.gm:*${user.id}*`,
     ];
     if (myRoleIds.size) {
       parts.push(`recipient_role_id.in.(${Array.from(myRoleIds).join(",")})`);

@@ -157,11 +157,14 @@ function InboxPage() {
         const m = payload.new as Msg;
         const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
         const iStarted = !!groupMatch && groupMatch[2] === user.id;
+        const isCustomGroupForMe =
+          m.thread_id.startsWith("gm:") && m.thread_id.includes(user.id);
         const mine =
           m.recipient_id === user.id ||
           m.sender_id === user.id ||
           (m.recipient_role_id && myRoleIds.has(m.recipient_role_id)) ||
-          iStarted;
+          iStarted ||
+          isCustomGroupForMe;
         if (mine) setMessages((prev) => [m, ...prev]);
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {

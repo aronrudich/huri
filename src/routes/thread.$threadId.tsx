@@ -209,6 +209,17 @@ function ThreadPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+        {canAddPeople && (
+          <button
+            type="button"
+            onClick={() => setShowAddPeople(true)}
+            aria-label="Add people to conversation"
+            title="Add people"
+            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
+          >
+            <UserPlus className="h-5 w-5" />
+          </button>
+        )}
         {!isGroup && otherUserId && (
           <button
             type="button"

@@ -306,6 +306,84 @@ function ThreadPage() {
       {showProfile && otherUserId && (
         <ProfileViewSheet userId={otherUserId} onClose={() => setShowProfile(false)} />
       )}
+
+      {showAddPeople && (
+        <div
+          className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setShowAddPeople(false)}
+        >
+          <div
+            className="flex w-full max-w-sm flex-col rounded-2xl bg-background shadow-xl"
+            style={{ maxHeight: "80vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-border px-5 py-3">
+              <h2 className="text-base font-semibold">Add people</h2>
+              <button
+                onClick={() => setShowAddPeople(false)}
+                aria-label="Close"
+                className="grid h-8 w-8 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="border-b border-border px-4 py-2">
+              <input
+                value={addQuery}
+                onChange={(e) => setAddQuery(e.target.value)}
+                placeholder="Search people"
+                className="w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+            <ul className="flex-1 overflow-y-auto">
+              {directory
+                .filter((p) => !existingMembers.has(p.id))
+                .filter((p) => !addQuery.trim() || p.name.toLowerCase().includes(addQuery.trim().toLowerCase()))
+                .map((p) => {
+                  const checked = addSelected.has(p.id);
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAddSelected((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(p.id)) next.delete(p.id);
+                            else next.add(p.id);
+                            return next;
+                          });
+                        }}
+                        className="flex w-full items-center gap-3 border-b border-border px-5 py-3 text-left last:border-b-0 active:bg-accent"
+                      >
+                        <span
+                          className={`grid h-5 w-5 place-items-center rounded border ${
+                            checked ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background"
+                          }`}
+                        >
+                          {checked && <span className="text-xs">✓</span>}
+                        </span>
+                        <span className="flex-1 text-sm">{p.name}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              {directory.length === 0 && (
+                <li className="px-5 py-6 text-center text-sm text-muted-foreground">Loading…</li>
+              )}
+            </ul>
+            <div className="border-t border-border p-3">
+              <button
+                type="button"
+                onClick={confirmAddPeople}
+                disabled={addSelected.size === 0}
+                className="w-full rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-40"
+              >
+                Add {addSelected.size > 0 ? `(${addSelected.size})` : ""}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

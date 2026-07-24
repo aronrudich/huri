@@ -123,44 +123,6 @@ function ThreadPage() {
         return profiles[otherId] ?? "Direct message";
       })();
 
-  // Load directory once when the add-people modal is first opened.
-  useEffect(() => {
-    if (!showAddPeople || directory.length) return;
-    getMessageRecipients()
-      .then((data) =>
-        setDirectory(
-          (data ?? []).map((p) => ({
-            id: p.id,
-            name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
-          })),
-        ),
-      )
-      .catch(() => {});
-  }, [showAddPeople, directory.length]);
-
-  // People already in this thread — excluded from the add list.
-  const existingMembers = useMemo(() => {
-    const set = new Set<string>();
-    if (user) set.add(user.id);
-    if (isCustomGroup) customGroupMembers.forEach((id) => set.add(id));
-    else if (otherUserId) set.add(otherUserId);
-    return set;
-  }, [user, isCustomGroup, customGroupMembers, otherUserId]);
-
-  const canAddPeople = !isRoleGroup && (!!otherUserId || isCustomGroup);
-
-  const confirmAddPeople = () => {
-    if (!user || addSelected.size === 0) return;
-    const ids = new Set<string>(existingMembers);
-    addSelected.forEach((id) => ids.add(id));
-    const sorted = Array.from(ids).sort();
-    const newThreadId = `gm:${sorted.join("_")}`;
-    setShowAddPeople(false);
-    setAddSelected(new Set());
-    setAddQuery("");
-    if (newThreadId === threadId) return;
-    navigate({ to: "/thread/$threadId", params: { threadId: newThreadId }, replace: true });
-  };
 
   const send = async () => {
     if (!body.trim() || !user) return;

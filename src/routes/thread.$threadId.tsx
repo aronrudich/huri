@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
-import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
+import { getDirectory } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { formatPhone } from "@/lib/phone";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";

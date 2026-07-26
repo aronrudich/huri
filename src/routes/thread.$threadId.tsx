@@ -73,19 +73,9 @@ function ThreadPage() {
   }, [threadId, user]);
 
   const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
-  const isRoleGroup = !!groupMatch;
+  const isGroup = !!groupMatch;
   const groupRoleId = groupMatch?.[1] ?? null;
   const groupStarterId = groupMatch?.[2] ?? null;
-
-  // Custom multi-user group thread: gm:<uuid>_<uuid>_...
-  const customGroupMatch = threadId.match(/^gm:(.+)$/);
-  const isCustomGroup = !!customGroupMatch;
-  const customGroupMembers = useMemo<string[]>(
-    () => (customGroupMatch ? customGroupMatch[1].split("_").filter(Boolean) : []),
-    [customGroupMatch],
-  );
-  const isGroup = isRoleGroup || isCustomGroup;
-
   const visibleMsgs = useMemo(
     () => msgs.filter((m) => isMessageAfterCutoff(m.created_at, threadCutoffs[threadId])),
     [msgs, threadCutoffs, threadId],
@@ -107,14 +97,8 @@ function ThreadPage() {
       .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
   }, [otherUserId]);
 
-  const title = isRoleGroup
+  const title = isGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
-    : isCustomGroup
-    ? (() => {
-        const others = customGroupMembers.filter((id) => id !== user?.id);
-        const names = others.map((id) => profiles[id] ?? "…").filter(Boolean);
-        return names.length ? `${names.join(", ")} (group)` : "Group";
-      })()
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
         if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
@@ -122,7 +106,6 @@ function ThreadPage() {
         if (!otherId) return "Unknown";
         return profiles[otherId] ?? "Direct message";
       })();
-
 
   const send = async () => {
     if (!body.trim() || !user) return;
@@ -132,10 +115,8 @@ function ThreadPage() {
       body: body.trim(),
       sender_id: user.id,
     };
-    if (isRoleGroup) payload.recipient_role_id = groupRoleId;
-    else if (isCustomGroup) {
-      // no single recipient — resolved server-side from thread_id
-    } else {
+    if (isGroup) payload.recipient_role_id = groupRoleId;
+    else {
       // dm:uuid1:uuid2  → other id
       const parts = threadId.split(":");
       const other = parts[1] === user.id ? parts[2] : parts[1];
@@ -253,7 +234,6 @@ function ThreadPage() {
       {showProfile && otherUserId && (
         <ProfileViewSheet userId={otherUserId} onClose={() => setShowProfile(false)} />
       )}
-
     </div>
   );
 }

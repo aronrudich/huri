@@ -72,7 +72,7 @@ function NewPickupPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Advisor</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
           <input
             value={advisorName}
             disabled

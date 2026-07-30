@@ -86,7 +86,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, phone_number, email, dealership_id")
+      .select("id, full_name, nickname, role_name, phone_number, email, dealership_id, avatar_url")
       .eq("id", data.userId)
       .eq("dealership_id", dealershipId)
       .maybeSingle();
@@ -107,6 +107,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       roleName: profile.role_name,
       phoneNumber: profile.phone_number,
       email: profile.email,
+      avatarUrl: profile.avatar_url ?? null,
       dealershipName: dealer?.name ?? null,
     };
   });

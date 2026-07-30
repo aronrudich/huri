@@ -12,6 +12,7 @@ type Profile = {
   roleName: string;
   phoneNumber: string | null;
   email: string;
+  avatarUrl?: string | null;
   dealershipName: string | null;
 };
 
@@ -52,9 +53,13 @@ export function ProfileViewSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start gap-3">
-          <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
-            {initials}
-          </div>
+          {profile?.avatarUrl ? (
+            <img src={profile.avatarUrl} alt={`${displayName} profile photo`} className="h-12 w-12 rounded-full object-cover" />
+          ) : (
+            <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
+              {initials}
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold">{displayName}</p>
             {profile?.roleName && (

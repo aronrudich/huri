@@ -144,10 +144,11 @@ function AuthPage() {
     }
 
     setBusy(false);
-    toast.success("Account created — waiting for approval");
+    toast.success("Account created");
     try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
     subscribePush(uid);
     navigate({ to: "/", replace: true });
+
   };
 
   return (

@@ -9,6 +9,8 @@ import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
+import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
 

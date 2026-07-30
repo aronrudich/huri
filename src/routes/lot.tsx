@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { spotsForLot, lotOf, type LotId } from "@/lib/lot";
+import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+
 
 export const Route = createFileRoute("/lot")({
   head: () => ({ meta: [{ title: "Lot · Huri" }] }),

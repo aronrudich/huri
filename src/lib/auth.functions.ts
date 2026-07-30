@@ -89,16 +89,16 @@ export const confirmEmailForValidCredentials = createServerFn({ method: "POST" }
     throw new Error("Account not found for confirmation.");
   });
 
-/**
- * Temporarily off: new accounts are approved instantly instead of waiting in the
- * owner's approval queue. Flip back to `false` to require owner approval again.
- * (Role-change requests still always require approval.)
- */
-const AUTO_APPROVE_SIGNUPS = true;
-
 export const createConfirmedAccount = createServerFn({ method: "POST" })
   .inputValidator((data) => confirmedSignupSchema.parse(data))
   .handler(async ({ data }) => {
+    /**
+     * Temporarily off: new accounts are approved instantly instead of waiting in
+     * the owner's approval queue. Flip to `false` to require owner approval again.
+     * (Role-change requests still always require approval.)
+     */
+    const AUTO_APPROVE_SIGNUPS = true;
+
     const publishableKey =
       process.env.SUPABASE_PUBLISHABLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||

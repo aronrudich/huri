@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { spotsForLot, lotOf, type LotId } from "@/lib/lot";
+import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+
 
 export const Route = createFileRoute("/lot")({
   head: () => ({ meta: [{ title: "Lot · Huri" }] }),
@@ -129,7 +131,17 @@ function LotPage() {
           <TopActions />
         </div>
 
-        <div className="mb-3 flex gap-2">
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search"
+            className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
+          />
+        </div>
+
+        <div className="mt-3 flex gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -143,21 +155,16 @@ function LotPage() {
           ))}
         </div>
 
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search by spot, RO #, or model"
-            className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
-          />
-        </div>
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
           {tab === "lot1" && `${filled} of ${spots.length} spots occupied`}
           {tab === "lotC" && `${carsInLotC.length} car${carsInLotC.length === 1 ? "" : "s"} in Lot C`}
           {tab === "lotT" && `${carsInLotT.length} car${carsInLotT.length === 1 ? "" : "s"} in Lot T`}
         </p>
       </header>
+
+      <PeopleSearchResults q={q} />
+
+
 
       {tab === "lot1" ? (
         <ul className="mx-3 overflow-hidden rounded-2xl bg-background">

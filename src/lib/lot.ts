@@ -30,9 +30,15 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   return null;
 }
 
+/** Strict check for user-entered spots: only 1–147, C, or T are accepted. */
 export function isValidSpot(raw: string): boolean {
-  return normalizeSpot(raw) !== null;
+  const t = (raw ?? "").trim().toUpperCase();
+  if (t === "C" || t === "T") return true;
+  if (!/^[0-9]+$/.test(t)) return false;
+  const n = parseInt(t, 10);
+  return n >= MIN_SPOT && n <= MAX_SPOT;
 }
+
 
 /** Which lot a spot belongs to, or null for UNKNOWN. */
 export function lotOf(raw: string | null | undefined): LotId | null {

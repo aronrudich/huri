@@ -144,10 +144,11 @@ function AuthPage() {
     }
 
     setBusy(false);
-    toast.success("Account created — waiting for approval");
+    toast.success("Account created");
     try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
     subscribePush(uid);
     navigate({ to: "/", replace: true });
+
   };
 
   return (
@@ -280,8 +281,9 @@ function AuthPage() {
                 {busy ? "Creating…" : "Create Account"}
               </button>
               <p className="text-center text-xs text-muted-foreground">
-                No email or SMS verification required — waiting for owner approval.
+                No email or SMS verification required — you're in right away.
               </p>
+
             </form>
           )}
         </div>

@@ -9,8 +9,15 @@ import { formatDistanceToNow } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
+import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
+
+/** Pickups submitted from the tech side end up in Lot T / a bay after the claim window. */
+const isTechSource = (role: string | null | undefined) =>
+  role === "Technician" || role === "Shop Foreman";
+
 
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
@@ -105,14 +112,18 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive claimed pickups/parts after 60 minutes
+  // Auto-archive claimed pickups/parts after 60 minutes.
+  // Technician-submitted pickups land in Lot T (tech lot / bay); everything else becomes UNKNOWN.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then();
-          if (p.ro_number) supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("ro_number", p.ro_number).then();
+          if (p.ro_number) {
+            const nextSpot = isTechSource(p.source_role) ? "T" : "UNKNOWN";
+            supabase.from("parked_cars").update({ lot_position: nextSpot }).eq("ro_number", p.ro_number).then();
+          }
         }
       });
     };
@@ -144,12 +155,14 @@ function PickupPage() {
     if (error) return toast.error(error.message);
     setPickups((current) => current.map((item) => item.id === p.id ? { ...item, ...claimedSnapshot } : item));
     // Free the spot as soon as the pickup is claimed — the car is on its way out.
-    // The pickup card keeps showing RO / model / advisor from the pickup record itself.
+    // The car stays in the system with an UNKNOWN location so it can still be searched;
+    // 60 minutes later it becomes Lot T for technician pickups (see archiveExpired above).
     if (p.ro_number) {
-      await supabase.from("parked_cars").delete().eq("ro_number", p.ro_number);
+      await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("ro_number", p.ro_number);
     }
     toast.success("Claimed");
   };
+
 
   const matches = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -208,7 +221,10 @@ function PickupPage() {
         </p>
       </header>
 
+      <PeopleSearchResults q={q} />
+
       {q.trim() && (
+
         <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
           {matches.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">No cars match "{q}"</li>

@@ -12,6 +12,11 @@ import { getDirectory } from "@/lib/directory.functions";
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
 
+/** Pickups submitted from the tech side end up in Lot T / a bay after the claim window. */
+const isTechSource = (role: string | null | undefined) =>
+  role === "Technician" || role === "Shop Foreman";
+
+
 export const Route = createFileRoute("/pickup")({
   head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
   component: PickupPage,

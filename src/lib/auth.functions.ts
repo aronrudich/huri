@@ -128,7 +128,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           role_id: roleRow?.id ?? null,
           role_name: roleName,
           is_active: true,
-          status: "pending",
+          status: AUTO_APPROVE_SIGNUPS ? "approved" : "pending",
           deactivated_at: null,
           deactivated_by: null,
           dealership_id: data.dealershipId,

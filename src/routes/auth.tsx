@@ -281,8 +281,9 @@ function AuthPage() {
                 {busy ? "Creating…" : "Create Account"}
               </button>
               <p className="text-center text-xs text-muted-foreground">
-                No email or SMS verification required — waiting for owner approval.
+                No email or SMS verification required — you're in right away.
               </p>
+
             </form>
           )}
         </div>

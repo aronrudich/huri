@@ -370,9 +370,18 @@ function PickupPage() {
                         .update({ status: "completed", completed_at: new Date().toISOString() })
                         .eq("id", p.id);
                       if (error) return toast.error(error.message);
+                      // Canceling puts the car back where it was before the pickup was submitted.
+                      const originalSpot = p.lot_position;
+                      if (!isParts && p.ro_number && originalSpot && originalSpot !== "UNKNOWN") {
+                        await supabase.from("parked_cars")
+                          .update({ lot_position: originalSpot })
+                          .eq("ro_number", p.ro_number);
+                        await loadCars();
+                      }
                       setPickups((cur) => cur.filter((x) => x.id !== p.id));
                       toast.message("Canceled");
                     }}
+
                     className="rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent"
                   >
                     Cancel

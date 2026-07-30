@@ -160,6 +160,10 @@ function LotPage() {
         </p>
       </header>
 
+      <PeopleSearchResults q={q} />
+
+
+
       {tab === "lot1" ? (
         <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
           {filteredNumbered.map(({ spot, car }) => {

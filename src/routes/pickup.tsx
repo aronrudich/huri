@@ -219,7 +219,10 @@ function PickupPage() {
         </p>
       </header>
 
+      <PeopleSearchResults q={q} />
+
       {q.trim() && (
+
         <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
           {matches.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">No cars match "{q}"</li>

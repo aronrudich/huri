@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { X } from "lucide-react";
+import { useRef, useState } from "react";
+import { X, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -11,6 +11,29 @@ type Props = {
   onSaved: () => void;
 };
 
+/** Downscale a picked photo to a small square JPEG data URL so it can live on the profile row. */
+async function toAvatarDataUrl(file: File): Promise<string> {
+  const bitmap = await createImageBitmap(file);
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const side = Math.min(bitmap.width, bitmap.height);
+  ctx.drawImage(
+    bitmap,
+    (bitmap.width - side) / 2,
+    (bitmap.height - side) / 2,
+    side,
+    side,
+    0,
+    0,
+    size,
+    size,
+  );
+  return canvas.toDataURL("image/jpeg", 0.82);
+}
+
 export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   const [tab, setTab] = useState<"info" | "password">("info");
   const [busy, setBusy] = useState(false);
@@ -19,10 +42,26 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
   const [phone, setPhone] = useState(profile.phone_number ?? "");
+  const [avatar, setAvatar] = useState<string | null>(profile.avatar_url ?? null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   // password
   const [newPass, setNewPass] = useState("");
   const [confirmPass, setConfirmPass] = useState("");
+
+  const pickPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) return toast.error("Pick an image file");
+    try {
+      setBusy(true);
+      setAvatar(await toAvatarDataUrl(file));
+      toast.success("Photo ready — tap Save changes");
+    } catch {
+      toast.error("Couldn't read that photo");
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");
@@ -39,6 +78,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
         phone_number: phoneToSave,
+        avatar_url: avatar,
       })
       .eq("id", profile.id);
     setBusy(false);
@@ -47,6 +87,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
     onSaved();
     onClose();
   };
+
 
   const savePassword = async () => {
     if (newPass.length < 8) return toast.error("Password must be 8+ characters");

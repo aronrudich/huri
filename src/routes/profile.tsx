@@ -194,9 +194,14 @@ function ProfilePage() {
       {profile && (
         <section className="mx-3 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-3 px-4 py-4">
-            <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary">
-              {(profile.nickname || profile.full_name)[0]?.toUpperCase()}
-            </div>
+            {profile.avatar_url ? (
+              <img src={profile.avatar_url} alt={`${profile.full_name} profile photo`} className="h-14 w-14 rounded-full object-cover" />
+            ) : (
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary">
+                {(profile.nickname || profile.full_name)[0]?.toUpperCase()}
+              </div>
+            )}
+
             <div className="flex-1 min-w-0">
               <p className="text-lg font-semibold flex items-center gap-1.5">
                 {profile.full_name}

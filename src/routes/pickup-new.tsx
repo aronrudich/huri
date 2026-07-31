@@ -81,6 +81,19 @@ function NewPickupPage() {
           />
         </div>
         <Field label="Car Model" value={model} onChange={setModel} />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Add any details helpful for finding the car..."
+            className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
+          />
+        </div>
+        <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
+          {busy ? "Submitting…" : "Submit Request"}
+        </button>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit Request"}
         </button>

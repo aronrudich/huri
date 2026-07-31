@@ -7,6 +7,8 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
+import { Avatar, AvatarViewer } from "@/components/Avatar";
+
 import { formatDistanceToNow } from "date-fns";
 import { formatPhone } from "@/lib/phone";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
@@ -39,23 +41,27 @@ type ThreadSummary = {
   at: string;
   isGroup: boolean;
   unread?: boolean;
+  avatarUrl?: string | null;
 };
 
-type PersonHit = { id: string; name: string; phone: string | null };
+
+type PersonHit = { id: string; name: string; phone: string | null; avatarUrl: string | null };
 type CarHit = { id: string; ro_number: string | null; car_model: string | null; lot_position: string };
 
 function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { name: string }>>({});
+  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
   const [people, setPeople] = useState<PersonHit[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
+  const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
   const [carHits, setCarHits] = useState<CarHit[]>([]);
   const [threadCutoffs, setThreadCutoffs] = useState<ThreadCutoffs>(() => loadThreadCutoffs());
+
 
   const hideThread = (tid: string, latestAt: string) => {
     if (!user) return;
@@ -98,8 +104,10 @@ function InboxPage() {
     if (!user) return;
     getDirectory().then((data) => {
       if (data) {
-        const m: Record<string, { name: string }> = {};
-        data.forEach((p) => { if (p.id) m[p.id] = { name: p.nickname || p.full_name || "" }; });
+        const m: Record<string, { name: string; avatarUrl: string | null }> = {};
+        data.forEach((p) => {
+          if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
+        });
         setProfiles(m);
       }
     });
@@ -109,9 +117,11 @@ function InboxPage() {
           id: p.id,
           name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
           phone: p.phoneNumber ?? null,
+          avatarUrl: p.avatarUrl ?? null,
         })));
       }
     }).catch(() => {});
+
     supabase.from("roles").select("id, name").then(({ data }) => {
       if (data) {
         const m: Record<string, string> = {};
@@ -180,6 +190,7 @@ function InboxPage() {
       const groupMatch = m.thread_id.match(/^group:([^:]+):([^:]+)$/);
       const isGroup = !!groupMatch;
       let title: string;
+      let avatarUrl: string | null = null;
       if (groupMatch) {
         const [, rid, starterId] = groupMatch;
         const roleName = roles[rid] ?? "Group";
@@ -194,6 +205,7 @@ function InboxPage() {
       } else {
         const otherId = m.sender_id === user?.id ? m.recipient_id : m.sender_id;
         title = otherId ? (profiles[otherId]?.name ?? "Unknown") : "Unknown";
+        avatarUrl = otherId ? (profiles[otherId]?.avatarUrl ?? null) : null;
       }
       map.set(m.thread_id, {
         thread_id: m.thread_id,
@@ -201,8 +213,10 @@ function InboxPage() {
         preview: m.body,
         at: m.created_at,
         isGroup,
+        avatarUrl,
       });
     }
+
     for (const m of messages) {
       if (!isMessageAfterCutoff(m.created_at, threadCutoffs[m.thread_id])) continue;
       if (m.sender_id !== user?.id && !m.read_at) {
@@ -273,9 +287,8 @@ function InboxPage() {
                   onClick={() => setSelectedPerson(p)}
                   className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
                 >
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {p.name[0]?.toUpperCase() ?? "?"}
-                  </div>
+                  <Avatar url={p.avatarUrl} name={p.name} size={36} onExpand={(url, name) => setPhoto({ url, name })} />
+
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-medium">{p.name}</p>
                     {p.phone && <p className="text-xs text-muted-foreground">{formatPhone(p.phone)}</p>}
@@ -333,9 +346,14 @@ function InboxPage() {
                   aria-label={t.unread ? "Unread" : undefined}
                   className={`mt-4 h-2 w-2 shrink-0 rounded-full ${t.unread ? "bg-primary" : "bg-transparent"}`}
                 />
-                <div className={`mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full text-sm font-semibold ${t.isGroup ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
-                  {t.isGroup ? "👥" : t.title[0]?.toUpperCase() ?? "?"}
-                </div>
+                {t.isGroup ? (
+                  <div className="mt-1 grid h-10 w-10 shrink-0 place-items-center rounded-full bg-accent text-sm font-semibold text-accent-foreground">👥</div>
+                ) : (
+                  <div className="mt-1">
+                    <Avatar url={t.avatarUrl} name={t.title} size={40} onExpand={(url, name) => setPhoto({ url, name })} />
+                  </div>
+                )}
+
                 <div className="min-w-0 flex-1">
                   <div className="flex items-baseline justify-between gap-2">
                     <p className={`truncate text-base ${t.unread ? "font-bold" : "font-semibold"}`}>{t.title}</p>
@@ -370,9 +388,8 @@ function InboxPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-start gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded-full bg-primary/10 text-base font-semibold text-primary">
-                {selectedPerson.name[0]?.toUpperCase() ?? "?"}
-              </div>
+              <Avatar url={selectedPerson.avatarUrl} name={selectedPerson.name} size={44} onExpand={(url, name) => setPhoto({ url, name })} />
+
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold">{selectedPerson.name}</p>
                 {selectedPerson.phone && (
@@ -423,6 +440,9 @@ function InboxPage() {
       {viewProfileId && (
         <ProfileViewSheet userId={viewProfileId} onClose={() => setViewProfileId(null)} />
       )}
+
+      {photo && <AvatarViewer url={photo.url} name={photo.name} onClose={() => setPhoto(null)} />}
+
 
       <BottomBar active="inbox" />
     </div>

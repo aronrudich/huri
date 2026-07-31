@@ -10,6 +10,8 @@ import { getDirectory } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { formatPhone } from "@/lib/phone";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
+import { Avatar, AvatarViewer } from "@/components/Avatar";
+
 
 
 export const Route = createFileRoute("/thread/$threadId")({
@@ -28,13 +30,15 @@ function ThreadPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
   const [threadCutoffs, setThreadCutoffs] = useState(() => loadThreadCutoffs());
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
+
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -54,10 +58,13 @@ function ThreadPage() {
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => { setMsgs((data as Msg[]) ?? []); void markRead(); });
     getDirectory().then((data) => {
-      const m: Record<string, string> = {};
-      data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
+      const m: Record<string, { name: string; avatarUrl: string | null }> = {};
+      data?.forEach((p) => {
+        if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
+      });
       setProfiles(m);
     });
+
     supabase.from("roles").select("id, name").then(({ data }) => {
       const m: Record<string, string> = {};
       data?.forEach((r) => { m[r.id] = r.name; });
@@ -98,14 +105,15 @@ function ThreadPage() {
   }, [otherUserId]);
 
   const title = isGroup
-    ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId] ?? "someone"}` : ""}`
+    ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId]?.name ?? "someone"}` : ""}`
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
-        if (!last) return otherUserId ? (profiles[otherUserId] ?? "Direct message") : "Direct message";
+        if (!last) return otherUserId ? (profiles[otherUserId]?.name ?? "Direct message") : "Direct message";
         const otherId = last.sender_id === user?.id ? last.recipient_id : last.sender_id;
         if (!otherId) return "Unknown";
-        return profiles[otherId] ?? "Direct message";
+        return profiles[otherId]?.name ?? "Direct message";
       })();
+
 
   const send = async () => {
     if (!body.trim() || !user) return;
@@ -147,7 +155,16 @@ function ThreadPage() {
     <div className="flex min-h-screen flex-col bg-surface safe-top">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        {!isGroup && otherUserId && (
+          <Avatar
+            url={profiles[otherUserId]?.avatarUrl}
+            name={title}
+            size={32}
+            onExpand={(url, name) => setPhoto({ url, name })}
+          />
+        )}
         <h1 className="flex-1 truncate text-center text-base font-semibold">{title}</h1>
+
         {!isGroup && otherUserId && (
           <button
             type="button"
@@ -191,9 +208,18 @@ function ThreadPage() {
       <ol className="flex-1 space-y-2 px-3 py-4">
         {visibleMsgs.map((m) => {
           const mine = m.sender_id === user?.id;
-          const senderLabel = m.sender_id ? (profiles[m.sender_id] ?? "Unknown") : "Unknown";
+          const sender = m.sender_id ? profiles[m.sender_id] : undefined;
+          const senderLabel = sender?.name || "Unknown";
           return (
-            <li key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+            <li key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
+              {!mine && (
+                <Avatar
+                  url={sender?.avatarUrl}
+                  name={senderLabel}
+                  size={32}
+                  onExpand={(url, name) => setPhoto({ url, name })}
+                />
+              )}
               <div className={`max-w-[78%] rounded-2xl px-3.5 py-2 text-[15px] ${
                 mine ? "bg-primary text-primary-foreground" : "bg-background"
               }`}>
@@ -210,6 +236,7 @@ function ThreadPage() {
             </li>
           );
         })}
+
         <div ref={bottomRef} />
       </ol>
 
@@ -234,6 +261,9 @@ function ThreadPage() {
       {showProfile && otherUserId && (
         <ProfileViewSheet userId={otherUserId} onClose={() => setShowProfile(false)} />
       )}
+
+      {photo && <AvatarViewer url={photo.url} name={photo.name} onClose={() => setPhoto(null)} />}
+
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, ArrowRightLeft, Briefcase, Shuffle } from "lucide-react";
+import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, Briefcase, Shuffle } from "lucide-react";
 import { formatPhone } from "@/lib/phone";
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 
@@ -19,11 +19,11 @@ import {
   requestRoleChange,
   deleteOwnAccount,
   removeEmployee as removeEmployeeFn,
-  transferOwnership,
 } from "@/lib/admin.functions";
 import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
+import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -35,7 +35,7 @@ const ROLE_OPTIONS = [
   "Service Manager", "Service Director", "General Manager", "Manager", "Other",
 ];
 
-type Employee = { id: string; full_name: string; nickname: string | null; role_name: string; email: string; phone_number: string | null; is_owner?: boolean };
+type Employee = { id: string; full_name: string; nickname: string | null; role_name: string; email: string; phone_number: string | null; is_owner?: boolean; avatar_url?: string | null };
 type PendingAccount = { id: string; full_name: string; nickname: string | null; email: string; role_name: string; created_at: string };
 type PendingRole = { id: string; full_name: string; nickname: string | null; email: string; role_name: string; pending_role_name: string };
 
@@ -49,15 +49,21 @@ function ProfilePage() {
   const [pending, setPending] = useState<{ accounts: PendingAccount[]; roleChanges: PendingRole[] }>({ accounts: [], roleChanges: [] });
   const [confirmLeave, setConfirmLeave] = useState(false);
   const [confirmRemove, setConfirmRemove] = useState<Employee | null>(null);
-  const [transferTo, setTransferTo] = useState<Employee | null>(null);
   const [changeRoleFor, setChangeRoleFor] = useState<Employee | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
   const [dealershipName, setDealershipName] = useState<string>("");
+  const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
   const isOwner = !!profile?.is_owner;
-  const ADMIN_ROLES = ["Manager", "Service Manager", "Service Director", "General Manager", "Director"];
-  const isAdmin = isOwner || (profile ? ADMIN_ROLES.includes(profile.role_name) : false);
+  // Roster is visible to any management-type role plus Service Director / General Manager.
+  const ADMIN_ROLES = [
+    "Manager", "Service Manager", "Assistant Service Manager", "Parts Manager",
+    "Service Director", "General Manager", "Director",
+  ];
+  const role = profile?.role_name ?? "";
+  const isAdmin =
+    isOwner || ADMIN_ROLES.includes(role) || /manager|director/i.test(role);
 
 
   const fetchPending = useServerFn(listPendingApprovals);
@@ -68,7 +74,6 @@ function ProfilePage() {
   const requestRC = useServerFn(requestRoleChange);
   const deleteSelf = useServerFn(deleteOwnAccount);
   const removeFn = useServerFn(removeEmployeeFn);
-  const transferFn = useServerFn(transferOwnership);
   const sendTest = useServerFn(sendTestPush);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -82,7 +87,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from("profiles").select("id, full_name, nickname, role_name, email, phone_number, is_owner")
+    supabase.from("profiles").select("id, full_name, nickname, role_name, email, phone_number, is_owner, avatar_url")
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
   }, [isAdmin]);
@@ -147,15 +152,6 @@ function ProfilePage() {
     } catch (e) { toast.error((e as Error).message); }
   };
 
-  const handleTransfer = async (emp: Employee) => {
-    try {
-      await transferFn({ data: { userId: emp.id } });
-      toast.success(`${emp.full_name} is now the owner`);
-      setTransferTo(null);
-      await refreshProfile();
-    } catch (e) { toast.error((e as Error).message); }
-  };
-
   const handleApproveAcc = async (id: string) => {
     try { await approveAcc({ data: { userId: id } }); toast.success("Approved"); loadPending(); }
     catch (e) { toast.error((e as Error).message); }
@@ -195,7 +191,9 @@ function ProfilePage() {
         <section className="mx-3 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-3 px-4 py-4">
             {profile.avatar_url ? (
-              <img src={profile.avatar_url} alt={`${profile.full_name} profile photo`} className="h-14 w-14 rounded-full object-cover" />
+              <button type="button" onClick={() => setPhoto({ url: profile.avatar_url!, name: profile.full_name })} className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
+                <img src={profile.avatar_url} alt={`${profile.full_name} profile photo`} className="h-full w-full object-cover" />
+              </button>
             ) : (
               <div className="grid h-14 w-14 place-items-center rounded-full bg-primary/10 text-xl font-bold text-primary">
                 {(profile.nickname || profile.full_name)[0]?.toUpperCase()}
@@ -305,6 +303,7 @@ function ProfilePage() {
           <ul className="max-h-96 overflow-y-auto">
             {filtered.map((emp) => (
               <li key={emp.id} className="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+                <Avatar url={emp.avatar_url} name={emp.nickname || emp.full_name} size={36} onExpand={(url, name) => setPhoto({ url, name })} />
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium flex items-center gap-1.5">
                     {emp.full_name}
@@ -317,11 +316,6 @@ function ProfilePage() {
                     {isAdmin && (
                       <button onClick={() => setChangeRoleFor(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary" title="Change role">
                         <Shuffle className="h-4 w-4" />
-                      </button>
-                    )}
-                    {isOwner && (
-                      <button onClick={() => setTransferTo(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-amber-100 text-amber-700" title="Transfer ownership">
-                        <ArrowRightLeft className="h-4 w-4" />
                       </button>
                     )}
                     <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
@@ -362,12 +356,6 @@ function ProfilePage() {
           body={`${confirmRemove.role_name} · ${confirmRemove.email}. Their account will be permanently deleted from Huri. They can sign up again but will need your approval.`}
           confirmLabel="Remove & delete" onCancel={() => setConfirmRemove(null)} onConfirm={() => handleRemove(confirmRemove)} />
       )}
-      {transferTo && (
-        <ConfirmSheet title={`Transfer ownership to ${transferTo.full_name}?`}
-          body={`They will gain full Owner powers (approve accounts, change roles, remove people). You will lose those powers immediately. This cannot be undone without the new owner transferring back to you.`}
-          confirmLabel="Yes, transfer ownership" onCancel={() => setTransferTo(null)} onConfirm={() => handleTransfer(transferTo)} />
-      )}
-
       {editOpen && profile && (
         <EditProfileSheet profile={profile} onClose={() => setEditOpen(false)} onSaved={() => refreshProfile()} />
       )}
@@ -394,6 +382,8 @@ function ProfilePage() {
           }}
         />
       )}
+
+      {photo && <AvatarViewer url={photo.url} name={photo.name} onClose={() => setPhoto(null)} />}
 
       <BottomBar active="profile" />
     </div>

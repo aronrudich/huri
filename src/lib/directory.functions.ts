@@ -17,7 +17,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, phone_number")
+      .select("id, full_name, nickname, role_name, phone_number, avatar_url")
       .eq("is_active", true)
       .eq("status", "approved")
       .eq("dealership_id", dealershipId)
@@ -32,6 +32,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
       nickname: person.nickname,
       roleName: person.role_name,
       phoneNumber: person.phone_number,
+      avatarUrl: person.avatar_url ?? null,
     }));
   });
 
@@ -44,13 +45,14 @@ export const getDirectory = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, role_id, is_active, phone_number")
+      .select("id, full_name, nickname, role_name, role_id, is_active, phone_number, avatar_url")
       .eq("dealership_id", dealershipId);
 
     if (error) throw error;
 
     return data ?? [];
   });
+
 
 export const searchCars = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])

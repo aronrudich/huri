@@ -4,6 +4,8 @@ import { getPublicProfile } from "@/lib/directory.functions";
 import { formatPhone, isSyntheticEmail } from "@/lib/phone";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
+import { AvatarViewer } from "@/components/Avatar";
+
 
 type Profile = {
   id: string;
@@ -26,6 +28,8 @@ export function ProfileViewSheet({
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [photoOpen, setPhotoOpen] = useState(false);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -54,12 +58,20 @@ export function ProfileViewSheet({
       >
         <div className="mb-4 flex items-start gap-3">
           {profile?.avatarUrl ? (
-            <img src={profile.avatarUrl} alt={`${displayName} profile photo`} className="h-12 w-12 rounded-full object-cover" />
+            <button
+              type="button"
+              onClick={() => setPhotoOpen(true)}
+              aria-label={`View ${displayName} profile photo`}
+              className="h-12 w-12 shrink-0 overflow-hidden rounded-full"
+            >
+              <img src={profile.avatarUrl} alt={`${displayName} profile photo`} className="h-full w-full object-cover" />
+            </button>
           ) : (
             <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-lg font-semibold text-primary">
               {initials}
             </div>
           )}
+
           <div className="min-w-0 flex-1">
             <p className="truncate text-lg font-semibold">{displayName}</p>
             {profile?.roleName && (
@@ -123,6 +135,10 @@ export function ProfileViewSheet({
           </>
         )}
       </div>
+      {photoOpen && profile?.avatarUrl && (
+        <AvatarViewer url={profile.avatarUrl} name={displayName} onClose={() => setPhotoOpen(false)} />
+      )}
     </div>
+
   );
 }

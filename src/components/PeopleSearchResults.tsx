@@ -4,6 +4,7 @@ import { Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
 import { formatPhone } from "@/lib/phone";
+import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 type Person = {
   id: string;
@@ -11,13 +12,17 @@ type Person = {
   nickname: string | null;
   roleName: string | null;
   phoneNumber: string | null;
+  avatarUrl?: string | null;
 };
+
 
 /** People results for the shared search bar — available on every tab. */
 export function PeopleSearchResults({ q }: { q: string }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [people, setPeople] = useState<Person[]>([]);
+  const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
+
 
   useEffect(() => {
     if (!user) return;
@@ -60,9 +65,8 @@ export function PeopleSearchResults({ q }: { q: string }) {
                 onClick={() => openThread(p.id)}
                 className="flex min-w-0 flex-1 items-center gap-3 px-4 py-3 text-left active:bg-accent"
               >
-                <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                  {name[0]?.toUpperCase() ?? "?"}
-                </div>
+                <Avatar url={p.avatarUrl} name={name} size={36} onExpand={(url, n) => setPhoto({ url, name: n })} />
+
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-medium">{name}</p>
                   <p className="truncate text-xs text-muted-foreground">
@@ -83,6 +87,8 @@ export function PeopleSearchResults({ q }: { q: string }) {
           );
         })}
       </ul>
+      {photo && <AvatarViewer url={photo.url} name={photo.name} onClose={() => setPhoto(null)} />}
     </div>
+
   );
 }

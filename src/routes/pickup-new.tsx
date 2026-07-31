@@ -37,6 +37,7 @@ function NewPickupPage() {
       .select("lot_position, car_model, notes")
       .eq("ro_number", ro.trim())
       .maybeSingle();
+    const noteText = notes.trim();
     const { error } = await supabase.from("pickup_requests").insert({
       ro_number: ro.trim(),
       advisor_name: advisorName || null,
@@ -44,10 +45,13 @@ function NewPickupPage() {
       requested_by: user.id,
       source_role: sourceRole,
       lot_position: car?.lot_position ?? null,
-      car_notes: car?.notes ?? null,
+      car_notes: noteText || car?.notes || null,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (noteText && car) {
+      supabase.from("parked_cars").update({ notes: noteText }).eq("ro_number", ro.trim()).then();
+    }
     sendPickupAlert({
       data: {
         tag: null,

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Clock, CheckCircle2, AlertTriangle, Search } from "lucide-react";
+import { Clock, CheckCircle2, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
@@ -274,7 +274,6 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
-          const flagged = effectiveNotes && effectiveNotes.trim().length > 0;
           const isTech = p.source_role === "Technician";
           const ringClass = isParts
             ? "ring-2 ring-warning"
@@ -298,12 +297,6 @@ function PickupPage() {
                   {headerLabel}
                 </div>
               )}
-              {flagged && (
-                <div className="flex items-start gap-2 bg-warning/15 px-4 py-2 text-warning-foreground">
-                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
-                  <p className="text-xs font-medium"><span className="font-bold">Note:</span> {effectiveNotes}</p>
-                </div>
-              )}
               <div className="px-4 py-3">
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
@@ -313,9 +306,16 @@ function PickupPage() {
                         : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     {!isParts && (
-                      <p className="text-sm text-muted-foreground">
-                        {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
-                      </p>
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
+                        </p>
+                        {effectiveNotes && (
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            <span className="font-medium">Note:</span> {effectiveNotes}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                   {p.status === "claimed" ? (

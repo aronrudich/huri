@@ -94,9 +94,6 @@ function NewPickupPage() {
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit Request"}
         </button>
-        <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Submitting…" : "Submit Request"}
-        </button>
       </form>
     </div>
   );

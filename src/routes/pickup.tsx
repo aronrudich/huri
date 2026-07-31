@@ -274,7 +274,6 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
-          const flagged = effectiveNotes && effectiveNotes.trim().length > 0;
           const isTech = p.source_role === "Technician";
           const ringClass = isParts
             ? "ring-2 ring-warning"

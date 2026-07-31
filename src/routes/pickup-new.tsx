@@ -17,6 +17,7 @@ function NewPickupPage() {
   const { user, loading, profile } = useAuth();
   const [ro, setRo] = useState("");
   const [model, setModel] = useState("");
+  const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -36,6 +37,7 @@ function NewPickupPage() {
       .select("lot_position, car_model, notes")
       .eq("ro_number", ro.trim())
       .maybeSingle();
+    const noteText = notes.trim();
     const { error } = await supabase.from("pickup_requests").insert({
       ro_number: ro.trim(),
       advisor_name: advisorName || null,
@@ -43,10 +45,13 @@ function NewPickupPage() {
       requested_by: user.id,
       source_role: sourceRole,
       lot_position: car?.lot_position ?? null,
-      car_notes: car?.notes ?? null,
+      car_notes: noteText || car?.notes || null,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    if (noteText && car) {
+      supabase.from("parked_cars").update({ notes: noteText }).eq("ro_number", ro.trim()).then();
+    }
     sendPickupAlert({
       data: {
         tag: null,
@@ -80,6 +85,16 @@ function NewPickupPage() {
           />
         </div>
         <Field label="Car Model" value={model} onChange={setModel} />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={3}
+            placeholder="Add any details helpful for finding the car..."
+            className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
+          />
+        </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit Request"}
         </button>

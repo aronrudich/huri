@@ -17,6 +17,7 @@ function NewPickupPage() {
   const { user, loading, profile } = useAuth();
   const [ro, setRo] = useState("");
   const [model, setModel] = useState("");
+  const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);

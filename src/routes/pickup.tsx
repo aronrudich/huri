@@ -307,9 +307,16 @@ function PickupPage() {
                         : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     {!isParts && (
-                      <p className="text-sm text-muted-foreground">
-                        {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
-                      </p>
+                      <>
+                        <p className="text-sm text-muted-foreground">
+                          {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
+                        </p>
+                        {effectiveNotes && (
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            <span className="font-medium">Note:</span> {effectiveNotes}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                   {p.status === "claimed" ? (

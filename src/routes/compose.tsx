@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Search, Users, User as UserIcon } from "lucide-react";
+import { ArrowLeft, Search, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
 import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { HuriLogo } from "@/components/BottomBar";
+import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 export const Route = createFileRoute("/compose")({
   head: () => ({ meta: [{ title: "Compose · Huri" }] }),
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/compose")({
 });
 
 type Recipient =
-  | { kind: "user"; id: string; name: string; subtitle: string }
+  | { kind: "user"; id: string; name: string; subtitle: string; avatarUrl?: string | null }
   | { kind: "group"; id: string; name: string };
 
 function ComposePage() {
@@ -26,6 +27,7 @@ function ComposePage() {
   const [selected, setSelected] = useState<Recipient | null>(null);
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
+  const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -40,6 +42,7 @@ function ComposePage() {
         id: x.id,
         name: `${x.nickname || x.fullName}${x.roleName ? ` (${x.roleName})` : ""}`,
         subtitle: "",
+        avatarUrl: x.avatarUrl ?? null,
       })));
       if (r.data) setGroups(r.data.map((x: any) => ({ kind: "group", id: x.id, name: `${x.name}s` })));
     }).catch((error) => {
@@ -142,7 +145,7 @@ function ComposePage() {
             {filteredPeople.map((p) => (
               <li key={p.id}>
                 <button onClick={() => setSelected(p)} className="flex w-full items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent">
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary"><UserIcon className="h-4 w-4" /></div>
+                  <Avatar url={p.kind === "user" ? p.avatarUrl : null} name={p.name} size={36} onExpand={(url, name) => setPhoto({ url, name })} />
                   <div className="flex-1 text-left">
                     <p className="text-base font-medium">{p.name}</p>
                     {"subtitle" in p && p.subtitle && <p className="text-xs text-muted-foreground">{p.subtitle}</p>}
@@ -155,9 +158,13 @@ function ComposePage() {
       ) : (
         <div className="px-4 pt-3">
           <div className="mb-3 flex items-center gap-2 rounded-xl bg-background p-3">
-            <div className={`grid h-9 w-9 place-items-center rounded-full ${selected.kind === "group" ? "bg-accent text-accent-foreground" : "bg-primary/10 text-primary"}`}>
-              {selected.kind === "group" ? <Users className="h-4 w-4" /> : <UserIcon className="h-4 w-4" />}
-            </div>
+            {selected.kind === "group" ? (
+              <div className="grid h-9 w-9 place-items-center rounded-full bg-accent text-accent-foreground">
+                <Users className="h-4 w-4" />
+              </div>
+            ) : (
+              <Avatar url={selected.avatarUrl} name={selected.name} size={36} onExpand={(url, name) => setPhoto({ url, name })} />
+            )}
             <div className="flex-1">
               <p className="text-xs text-muted-foreground">To</p>
               <p className="font-medium">{selected.name}{selected.kind === "group" && " (group)"}</p>
@@ -175,6 +182,7 @@ function ComposePage() {
           />
         </div>
       )}
+      {photo && <AvatarViewer url={photo.url} name={photo.name} onClose={() => setPhoto(null)} />}
     </div>
   );
 }

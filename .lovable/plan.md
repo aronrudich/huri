@@ -1,29 +1,49 @@
-## 1. Show clock times on pickup cards
+## Short answer
 
-In the pickup list (`src/routes/pickup.tsx`):
+Huri's own code is in good shape — all 30-ish app files are real, used, and reasonably organized. What isn't polished is the **scaffolding around it**: starter-template files that were never used, 44 unused UI component files, unused libraries, and one leftover setting from the Vercel/GitHub experiment. None of it slows Huri down at runtime today, but it bloats the download file you keep asking for and makes the code look messier than it is.
 
-- Next to the submitter's name (the `car model · NAME` line), append the time the pickup was submitted, formatted as a clock time (e.g. `JOLEEN · 6:12 PM`), from the record's created timestamp.
-- Replace "Claimed by Carlos · about 1 hour ago" with "Claimed by Carlos · 6:28 PM" using the claim timestamp.
-- The unclaimed badge in the top-right keeps its relative "x min ago" wording so valets still see age at a glance (say the word if you'd rather it be a clock time too).
-- Times use the viewer's local time zone via `date-fns` `format` (already a dependency).
+Nothing below changes a single screen, button, notification, or database rule. It only deletes files no screen imports.
 
-## 2. Profile photos in New Message
+## What I found (verified against the code)
 
-The "New Message" screen (screenshot #2) is the one place still drawing the generic person icon. Its recipient list drops the avatar field that the directory already returns.
+**1. Unused UI library files — 44 of 46**
+Huri only uses two of the pre-installed shadcn components (`sonner` for toasts, `switch` for the notification toggle). The other 44 — calendar, carousel, charts, sidebar, pagination, menubar, command palette, OTP input, etc. — are never imported by any Huri screen.
 
-- Keep the avatar URL on each person when building the recipient list.
-- Render the shared `Avatar` component (photo, initial fallback, tap-to-enlarge) in the people list and in the selected-recipient "To" row, matching the inbox and threads.
-- Groups keep the multi-person icon.
-- All other icon spots (inbox, threads, search popups, roster) already use real photos.
+**2. Unused npm libraries**
+Chart, calendar, carousel, drawer, resizable-panel, OTP and form libraries are only referenced by those unused UI files. Removing both together is safe; removing only one side is not.
 
-## 3. Un-clip the card outlines
+**3. Leftover starter example**
+`src/lib/api/example.functions.ts` and `src/lib/config.server.ts` are template demo files ("Hello, Ada!") that nothing calls.
 
-The first pickup card's ring is being covered by the sticky header, which sits above the list with no gap.
+**4. Leftover from the Vercel experiment**
+`vite.config.ts` still sets the build target to `vercel`. Huri now runs on Lovable's own hosting, so this line is stale. This is the only change with any real risk, so I'll do it last and confirm the app still builds and loads before keeping it. If anything looks off, I revert that one line and keep everything else.
 
-- Add top spacing to the pickup list so the first card's ring sits fully below the header, and give the scroll container enough room that the ring is never overlapped.
-- Applies to all card colors (blue customer, red technician, yellow parts) since they share the same wrapper.
+**5. The `remotion` folder (2.7 MB)**
+A separate promo-video project (phone mockups, scene animations) that isn't part of the Huri app at all. It's dead weight in the download file, but it's *your* marketing asset — I'll leave it alone unless you tell me to strip it.
+
+## What I will NOT touch
+
+- Any route, form, notification, lot/blocking logic, roster, messaging, or approval code
+- Database tables, policies, or cron jobs
+- Branding, logo, colors, layout, or spacing
+- Push notification setup (working — leaving it exactly as is)
+
+## Plan
+
+1. Delete the 44 unused UI component files; keep `sonner` and `switch`.
+2. Remove the npm libraries that only those deleted files used.
+3. Delete the two starter template files.
+4. Remove the stale `vercel` build target from `vite.config.ts`.
+5. Verify: full build, then load the inbox, pickup list, park form, lot tabs, a message thread, and profile in a real browser to confirm everything renders and works identically.
+6. Produce a fresh single downloadable file with the entire cleaned Huri code.
 
 ### Technical notes
 
-- Files: `src/routes/pickup.tsx`, `src/routes/compose.tsx`.
-- No database or backend changes; `created_at` and `claimed_at` are already loaded, and `avatar_url` is already returned by `getMessageRecipients`.
+- Files removed: `src/components/ui/*` except `sonner.tsx` and `switch.tsx`; `src/lib/api/example.functions.ts`; `src/lib/config.server.ts`.
+- Dependencies removed: `recharts`, `embla-carousel-react`, `react-day-picker`, `input-otp`, `cmdk`, `vaul`, `react-resizable-panels`, `react-hook-form`, `@hookform/resolvers`, plus the Radix packages only those files import. `date-fns`, `zod`, `sonner`, `lucide-react`, `web-push`, Supabase and TanStack packages all stay — Huri uses them directly.
+- `vite.config.ts`: drop the `nitro: { preset: "vercel" }` block so the default Lovable target applies.
+- Expected effect: smaller download and faster builds; identical runtime behavior.
+
+## One question
+
+Should the `remotion` promo-video folder stay in the download, or be split out? Say the word either way — default is to keep it. No, you can get rid of the promo video.

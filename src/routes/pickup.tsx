@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { formatDistanceToNow, format } from "date-fns";
 import { adjacentSpots } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
@@ -254,7 +254,7 @@ function PickupPage() {
         </ul>
       )}
 
-      <ul className="space-y-2 px-3">
+      <ul className="space-y-2 px-3 pt-1">
         {sortedPickups.length === 0 && (
           <li className="rounded-2xl bg-background px-5 py-12 text-center text-sm text-muted-foreground">
             No active pickups.
@@ -308,7 +308,7 @@ function PickupPage() {
                     {!isParts && (
                       <>
                         <p className="text-sm text-muted-foreground">
-                          {[displayCar?.car_model ?? p.car_model, p.advisor_name].filter(Boolean).join(" · ")}
+                          {[displayCar?.car_model ?? p.car_model, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
                         </p>
                         {effectiveNotes && (
                           <p className="mt-0.5 text-sm text-muted-foreground">
@@ -360,7 +360,7 @@ function PickupPage() {
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
                       {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
-                      {p.claimed_at && ` · ${formatDistanceToNow(new Date(p.claimed_at), { addSuffix: true })}`}
+                      {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
                   <button

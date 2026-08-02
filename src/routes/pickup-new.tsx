@@ -91,7 +91,7 @@ function NewPickupPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             rows={3}
-            placeholder="Add any details helpful for finding the car..."
+            
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>

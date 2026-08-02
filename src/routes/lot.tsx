@@ -48,7 +48,7 @@ function LotPage() {
     const m: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
       if (!c.lot_position || c.lot_position === "UNKNOWN") return;
-      if (c.lot_position === "T" || c.lot_position === "C") return;
+      if (lotOf(c.lot_position) !== "lot1") return;
       m[c.lot_position.toUpperCase()] = c;
     });
     return m;
@@ -62,8 +62,9 @@ function LotPage() {
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "T"),
     [cars],
   );
-  const carsUnknown = useMemo(
-    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN"),
+  // Unknown location OR a custom/special location — not shown in any tab, only via search.
+  const carsOffLot = useMemo(
+    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN" || isCustomSpot(c.lot_position)),
     [cars],
   );
 

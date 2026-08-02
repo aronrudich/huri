@@ -4,7 +4,7 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { spotsForLot, lotOf, type LotId } from "@/lib/lot";
+import { spotsForLot, lotOf, isCustomSpot, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 
 
@@ -48,7 +48,7 @@ function LotPage() {
     const m: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
       if (!c.lot_position || c.lot_position === "UNKNOWN") return;
-      if (c.lot_position === "T" || c.lot_position === "C") return;
+      if (lotOf(c.lot_position) !== "lot1") return;
       m[c.lot_position.toUpperCase()] = c;
     });
     return m;
@@ -62,8 +62,9 @@ function LotPage() {
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "T"),
     [cars],
   );
-  const carsUnknown = useMemo(
-    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN"),
+  // Unknown location OR a custom/special location — not shown in any tab, only via search.
+  const carsOffLot = useMemo(
+    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN" || isCustomSpot(c.lot_position)),
     [cars],
   );
 
@@ -95,11 +96,12 @@ function LotPage() {
   const filteredUnknown = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return [];
-    return carsUnknown.filter((c) =>
+    return carsOffLot.filter((c) =>
       c.ro_number?.toLowerCase().includes(n) ||
-      c.car_model?.toLowerCase().includes(n),
+      c.car_model?.toLowerCase().includes(n) ||
+      c.lot_position?.toLowerCase().includes(n),
     );
-  }, [carsUnknown, q]);
+  }, [carsOffLot, q]);
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.
   useEffect(() => {
@@ -248,22 +250,25 @@ function LotPage() {
       {filteredUnknown.length > 0 && (
         <>
           <p className="mx-4 mt-4 mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Location unknown ({filteredUnknown.length})
+            Other locations ({filteredUnknown.length})
           </p>
           <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
             {filteredUnknown.map((car) => (
               <li key={car.id} className="border-b border-border last:border-b-0">
                 <Link to="/park" search={{ id: car.id }} className="flex items-center gap-3 px-4 py-3 active:bg-accent">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                    ?
+                    {isCustomSpot(car.lot_position) ? "★" : "?"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
                       {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
                       {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">Location unknown — not in any lot</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {isCustomSpot(car.lot_position) ? car.lot_position : "Location unknown — not in any lot"}
+                    </p>
                   </div>
+
                 </Link>
               </li>
             ))}

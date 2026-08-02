@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { isValidSpot, normalizeSpot } from "@/lib/lot";
+import { isValidSpot, normalizeSpot, isCustomSpot } from "@/lib/lot";
 
 type ParkSearch = { ro?: string; id?: string };
 
@@ -64,7 +64,7 @@ function ParkPage() {
 
     const normalizedRo = ro.trim();
     const normalizedPos = normalizeSpot(pos.trim())!;
-    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN";
+    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN" || isCustomSpot(normalizedPos);
     let targetId = existingId;
 
     // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.
@@ -137,12 +137,12 @@ function ParkPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <Field
-          label="Spot (1–147 for Lot 1, C for Lot C, T for Lot T / bay)"
+          label="Spot (1-147 or C or T)"
           required value={pos} onChange={setPos}
         />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes (battery dead, key fob broken, …)</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
           <textarea
             value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"

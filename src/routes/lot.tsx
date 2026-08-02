@@ -250,22 +250,25 @@ function LotPage() {
       {filteredUnknown.length > 0 && (
         <>
           <p className="mx-4 mt-4 mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-            Location unknown ({filteredUnknown.length})
+            Other locations ({filteredUnknown.length})
           </p>
           <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
             {filteredUnknown.map((car) => (
               <li key={car.id} className="border-b border-border last:border-b-0">
                 <Link to="/park" search={{ id: car.id }} className="flex items-center gap-3 px-4 py-3 active:bg-accent">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                    ?
+                    {isCustomSpot(car.lot_position) ? "★" : "?"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
                       {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
                       {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">Location unknown — not in any lot</p>
+                    <p className="truncate text-xs text-muted-foreground">
+                      {isCustomSpot(car.lot_position) ? car.lot_position : "Location unknown — not in any lot"}
+                    </p>
                   </div>
+
                 </Link>
               </li>
             ))}

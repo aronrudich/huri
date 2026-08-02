@@ -96,11 +96,12 @@ function LotPage() {
   const filteredUnknown = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return [];
-    return carsUnknown.filter((c) =>
+    return carsOffLot.filter((c) =>
       c.ro_number?.toLowerCase().includes(n) ||
-      c.car_model?.toLowerCase().includes(n),
+      c.car_model?.toLowerCase().includes(n) ||
+      c.lot_position?.toLowerCase().includes(n),
     );
-  }, [carsUnknown, q]);
+  }, [carsOffLot, q]);
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.
   useEffect(() => {

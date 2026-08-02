@@ -64,7 +64,7 @@ function ParkPage() {
 
     const normalizedRo = ro.trim();
     const normalizedPos = normalizeSpot(pos.trim())!;
-    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN";
+    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN" || isCustomSpot(normalizedPos);
     let targetId = existingId;
 
     // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.

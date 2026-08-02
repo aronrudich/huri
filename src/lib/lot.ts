@@ -27,17 +27,28 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
     const n = parseInt(t, 10);
     return n >= MIN_SPOT && n <= MAX_SPOT ? String(n) : null;
   }
-  return null;
+  // Anything else is a custom / special location, kept as typed (uppercased).
+  return t.slice(0, 60);
 }
 
-/** Strict check for user-entered spots: only 1–147, C, or T are accepted. */
+/** Spots users may enter: 1–147, C, T, or a custom free-text location. */
 export function isValidSpot(raw: string): boolean {
   const t = (raw ?? "").trim().toUpperCase();
-  if (t === "C" || t === "T") return true;
-  if (!/^[0-9]+$/.test(t)) return false;
-  const n = parseInt(t, 10);
-  return n >= MIN_SPOT && n <= MAX_SPOT;
+  if (t === "") return false;
+  if (/^[0-9]+$/.test(t)) {
+    const n = parseInt(t, 10);
+    return n >= MIN_SPOT && n <= MAX_SPOT;
+  }
+  return t.length <= 60;
 }
+
+/** True when the spot is a custom location, not Lot 1 / C / T / unknown. */
+export function isCustomSpot(raw: string | null | undefined): boolean {
+  const t = normalizeSpot(raw);
+  if (!t || t === "UNKNOWN" || t === "C" || t === "T") return false;
+  return !/^[0-9]+$/.test(t);
+}
+
 
 
 /** Which lot a spot belongs to, or null for UNKNOWN. */

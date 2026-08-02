@@ -51,12 +51,13 @@ export function isCustomSpot(raw: string | null | undefined): boolean {
 
 
 
-/** Which lot a spot belongs to, or null for UNKNOWN. */
+/** Which lot a spot belongs to, or null for UNKNOWN / custom locations. */
 export function lotOf(raw: string | null | undefined): LotId | null {
   const n = normalizeSpot(raw);
   if (!n || n === "UNKNOWN") return null;
   if (n === "C") return "lotC";
   if (n === "T") return "lotT";
+  if (!/^[0-9]+$/.test(n)) return null;
   return "lot1";
 }
 

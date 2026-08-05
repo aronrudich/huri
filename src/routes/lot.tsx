@@ -77,6 +77,7 @@ function LotPage() {
     if (!n) return list;
     return list.filter(({ spot, car }) =>
       spot.toLowerCase().includes(n) ||
+      car?.tag_number?.toLowerCase().includes(n) ||
       car?.ro_number?.toLowerCase().includes(n) ||
       car?.car_model?.toLowerCase().includes(n),
     );
@@ -87,6 +88,7 @@ function LotPage() {
     const n = q.trim().toLowerCase();
     if (!n) return source;
     return source.filter((c) =>
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n),
     );
@@ -97,6 +99,7 @@ function LotPage() {
     const n = q.trim().toLowerCase();
     if (!n) return [];
     return carsOffLot.filter((c) =>
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n) ||
       c.lot_position?.toLowerCase().includes(n),
@@ -109,6 +112,7 @@ function LotPage() {
     if (!n) return;
     const matches = (c: ParkedCar) =>
       c.lot_position?.toLowerCase().includes(n) ||
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n);
     const inCurrent = cars.some((c) => matches(c) && lotOf(c.lot_position) === tab);

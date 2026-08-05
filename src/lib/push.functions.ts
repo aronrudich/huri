@@ -52,13 +52,8 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     const { sendWebPush } = await import("./push-server.server");
 
     const { data: caller } = await supabaseAdmin
-      .from("profiles").select("dealership_id, role_name, is_active").eq("id", context.userId).maybeSingle();
+      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
     if (!caller?.dealership_id) return { sent: 0 };
-    const allowedRoles = [
-      "Technician", "Shop Foreman", "Manager", "Service Manager", "Assistant Service Manager",
-      "Parts Manager", "Director", "Service Director", "General Manager",
-    ];
-    if (!caller.is_active || !allowedRoles.includes(caller.role_name)) throw new Error("You do not have access to Parts requests");
 
     const { data: valets, error: vErr } = await supabaseAdmin
       .from("profiles")

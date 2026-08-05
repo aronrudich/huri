@@ -16,8 +16,8 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
     handlers: {
       POST: async ({ request }) => {
         const apiKey = request.headers.get("apikey");
-        const expected = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["SUPABASE_ANON_KEY"];
-        if (!apiKey || !expected || apiKey !== expected) return new Response("Unauthorized", { status: 401 });
+        const acceptedKeys = [process.env["SUPABASE_PUBLISHABLE_KEY"], process.env["SUPABASE_ANON_KEY"]].filter(Boolean);
+        if (!apiKey || !acceptedKeys.includes(apiKey)) return new Response("Unauthorized", { status: 401 });
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { sendWebPush } = await import("@/lib/push-server.server");
@@ -33,6 +33,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
 
         let sent = 0;
         for (const car of cars ?? []) {
+          let delivered = false;
           const { data: recipients } = await supabaseAdmin
             .from("profiles")
             .select("id")
@@ -63,6 +64,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
                   variant: "default",
                 });
                 sent += 1;
+                delivered = true;
               } catch (pushError) {
                 const status = (pushError as { statusCode?: number }).statusCode;
                 if (status === 404 || status === 410) staleSubscriptions.push(subscription.id);
@@ -72,7 +74,9 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
               await supabaseAdmin.from("push_subscriptions").delete().in("id", staleSubscriptions);
             }
           }
-          await supabaseAdmin.from("parked_cars").update({ stale_alerted_at: new Date().toISOString() }).eq("id", car.id);
+          if (delivered) {
+            await supabaseAdmin.from("parked_cars").update({ stale_alerted_at: new Date().toISOString() }).eq("id", car.id);
+          }
         }
 
         return Response.json({ processed: cars?.length ?? 0, sent });

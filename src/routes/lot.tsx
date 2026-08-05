@@ -163,8 +163,8 @@ function LotPage() {
 
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
            {tab === "sv" && `${filled} of ${spots.length} SV spots occupied`}
-           {tab === "cp" && `${carsInLotC.length} car${carsInLotC.length === 1 ? "" : "s"} in CP`}
-           {tab === "bl" && `${carsInLotT.length} car${carsInLotT.length === 1 ? "" : "s"} in BL`}
+           {tab === "cp" && `${carsInCP.length} car${carsInCP.length === 1 ? "" : "s"} in CP`}
+           {tab === "bl" && `${carsInBL.length} car${carsInBL.length === 1 ? "" : "s"} in BL`}
         </p>
       </header>
 

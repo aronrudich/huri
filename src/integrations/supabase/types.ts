@@ -92,10 +92,12 @@ export type Database = {
           created_at: string
           dealership_id: string
           id: string
+          located_at: string
           lot_position: string
           notes: string | null
           parked_by: string | null
           ro_number: string | null
+          stale_alerted_at: string | null
           tag_number: string | null
           updated_at: string
         }
@@ -104,10 +106,12 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          located_at?: string
           lot_position?: string
           notes?: string | null
           parked_by?: string | null
           ro_number?: string | null
+          stale_alerted_at?: string | null
           tag_number?: string | null
           updated_at?: string
         }
@@ -116,10 +120,12 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          located_at?: string
           lot_position?: string
           notes?: string | null
           parked_by?: string | null
           ro_number?: string | null
+          stale_alerted_at?: string | null
           tag_number?: string | null
           updated_at?: string
         }
@@ -345,6 +351,33 @@ export type Database = {
     }
     Functions: {
       archive_stale_pickups: { Args: never; Returns: undefined }
+      claim_pickup_request: {
+        Args: { _pickup_id: string }
+        Returns: {
+          advisor_name: string | null
+          car_model: string | null
+          car_notes: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          completed_at: string | null
+          created_at: string
+          dealership_id: string
+          id: string
+          kind: string
+          lot_position: string | null
+          requested_by: string | null
+          ro_number: string | null
+          source_role: string | null
+          status: string
+          tag_number: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pickup_requests"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       [_ in never]: never

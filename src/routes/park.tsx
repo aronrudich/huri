@@ -92,7 +92,7 @@ function ParkPage() {
       targetId = existing.id;
     }
 
-    // Only enforce uniqueness for numbered spots — C, T, UNKNOWN can have many cars.
+    // Only enforce uniqueness for numbered SV spots; BL, CP, custom, and unknown locations can hold many cars.
     if (!isPlaceholder) {
       const { data: occupant } = await supabase
         .from("parked_cars")

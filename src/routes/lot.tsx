@@ -54,11 +54,11 @@ function LotPage() {
     return m;
   }, [cars]);
 
-  const carsInLotC = useMemo(
+  const carsInCP = useMemo(
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "CP"),
     [cars],
   );
-  const carsInLotT = useMemo(
+  const carsInBL = useMemo(
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "BL"),
     [cars],
   );
@@ -84,7 +84,7 @@ function LotPage() {
   }, [spots, byPos, q, tab]);
 
   const filteredFreeform = useMemo(() => {
-    const source = tab === "cp" ? carsInLotC : tab === "bl" ? carsInLotT : [];
+    const source = tab === "cp" ? carsInCP : tab === "bl" ? carsInBL : [];
     const n = q.trim().toLowerCase();
     if (!n) return source;
     return source.filter((c) =>
@@ -92,7 +92,7 @@ function LotPage() {
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n),
     );
-  }, [tab, carsInLotC, carsInLotT, q]);
+  }, [tab, carsInCP, carsInBL, q]);
 
   // Cars with an UNKNOWN location that match the search — surfaced from every tab.
   const filteredUnknown = useMemo(() => {

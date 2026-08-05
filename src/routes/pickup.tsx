@@ -143,6 +143,7 @@ function PickupPage() {
     if (!n) return [];
     return allCars
       .filter((c) =>
+        c.tag_number?.toLowerCase().includes(n) ||
         c.ro_number?.toLowerCase().includes(n) ||
         c.car_model?.toLowerCase().includes(n) ||
         c.lot_position?.toLowerCase().includes(n),

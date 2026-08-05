@@ -27,6 +27,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
           .select("id, dealership_id, ro_number, tag_number, car_model, lot_position, notes, located_at")
           .is("stale_alerted_at", null)
           .neq("lot_position", "UNKNOWN")
+          .or("lot_position.eq.BL,lot_position.eq.CP,lot_position.like.SV %")
           .lte("located_at", cutoff);
         if (error) throw error;
 

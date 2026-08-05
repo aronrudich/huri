@@ -52,7 +52,7 @@ function PartsPage() {
           Tap submit to alert the parts valet to bring parts to your bay. Your name will be attached to the request.
         </p>
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Technician</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Requested by</label>
           <input
             value={techName}
             disabled

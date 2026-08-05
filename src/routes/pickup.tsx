@@ -111,8 +111,7 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive claimed pickups/parts after 60 minutes.
-  // Technician-submitted pickups land in Lot T (tech lot / bay); everything else becomes UNKNOWN.
+  // Auto-archive claimed pickups/parts after 60 minutes without changing their saved spot snapshot.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
@@ -253,7 +252,7 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
-          const isTech = p.source_role === "Technician";
+          const isTech = isTechSource(p.source_role);
           const ringClass = isParts
             ? "ring-2 ring-warning"
             : isTech

@@ -1,13 +1,12 @@
 // Lot helpers — Huri supports SV, CP, BL, and searchable custom locations.
 //
-// Lot 1 (Ontario JCD, main lot): 3-deep rows, spots 1..147.
+// SV: 3-deep rows, spots 1..147.
 //   Rows: (1,2,3), (4,5,6), ..., (145,146,147). 1 blocks 2, 2 blocks 3.
 //
-// Lot C (Ontario JCD): unnumbered — every car in Lot C is stored as "C".
-// Lot T (Ontario JCD): technician lot / in a bay — every car is stored as "T".
-//   Both allow many cars to share the same placeholder.
+// CP (customer parking) and BL (back lot) are unnumbered and allow many cars.
+// Custom locations are searchable but omitted from the three lot tabs.
 //
-// A raw spot string is one of: "UNKNOWN", "T", "C", or "1".."147". Stored uppercase.
+// Canonical values are: "UNKNOWN", "BL", "CP", "SV 1".."SV 147", or custom text.
 
 export type LotId = "sv" | "cp" | "bl";
 export type LocationChoice = "SV" | "CP" | "BL" | "OTHER" | null;
@@ -36,7 +35,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   return t.slice(0, 60);
 }
 
-/** Spots users may enter: 1–147, C, T, or a custom free-text location. */
+/** Locations accepted from the picker: SV 1–147, CP, BL, or custom text. */
 export function isValidSpot(raw: string): boolean {
   const t = (raw ?? "").trim().toUpperCase();
   if (t === "") return false;
@@ -47,7 +46,7 @@ export function isValidSpot(raw: string): boolean {
   return t.length <= 60;
 }
 
-/** True when the spot is a custom location, not Lot 1 / C / T / unknown. */
+/** True when the spot is a custom location, not SV / CP / BL / unknown. */
 export function isCustomSpot(raw: string | null | undefined): boolean {
   const t = normalizeSpot(raw);
   if (!t || t === "UNKNOWN" || t === "CP" || t === "BL") return false;
@@ -74,7 +73,7 @@ export function lotOf(raw: string | null | undefined): LotId | null {
   return "sv";
 }
 
-/** Numeric part of the spot; only meaningful for Lot 1. */
+/** Numeric part of the spot; only meaningful for SV. */
 export function parseSpot(raw: string | null | undefined): number | null {
   const t = normalizeSpot(raw);
   if (!t || !t.startsWith("SV ")) return null;
@@ -83,8 +82,8 @@ export function parseSpot(raw: string | null | undefined): number | null {
 }
 
 /** Spots that would block the given spot from leaving.
- *  Only applies to Lot 1: (n-1)%3 blockers within its group of 3.
- *  Lot C and Lot T never have blockers. */
+ *  Only applies to SV: (n-1)%3 blockers within its group of 3.
+ *  CP, BL, and custom locations never have blockers. */
 export function adjacentSpots(raw: string | null | undefined): string[] {
   const t = normalizeSpot(raw);
   if (!t || !t.startsWith("SV ")) return [];
@@ -103,6 +102,6 @@ export function spotsForLot(lot: LotId): string[] {
     for (let i = MIN_SPOT; i <= MAX_SPOT; i++) out.push(`SV ${i}`);
     return out;
   }
-  // Lot C and Lot T have no numbered spots — the list view enumerates cars, not spots.
+  // CP and BL have no numbered spots — the list view enumerates cars, not spots.
   return [];
 }

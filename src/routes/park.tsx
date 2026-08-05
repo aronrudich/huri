@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { isValidSpot, normalizeSpot, isCustomSpot } from "@/lib/lot";
+import { LocationPicker } from "@/components/LocationPicker";
 
 type ParkSearch = { ro?: string; id?: string };
 
@@ -63,8 +64,9 @@ function ParkPage() {
     if (!user) return;
 
     const normalizedRo = ro.trim();
-    const normalizedPos = normalizeSpot(pos.trim())!;
-    const isPlaceholder = normalizedPos === "T" || normalizedPos === "C" || normalizedPos === "UNKNOWN" || isCustomSpot(normalizedPos);
+    const normalizedPos = normalizeSpot(pos.trim());
+    if (!normalizedPos) return toast.error("Invalid spot");
+    const isPlaceholder = normalizedPos === "BL" || normalizedPos === "CP" || normalizedPos === "UNKNOWN" || isCustomSpot(normalizedPos);
     let targetId = existingId;
 
     // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.
@@ -76,7 +78,7 @@ function ParkPage() {
     if (existing && existing.id !== existingId) {
       const existingSpot = existing.lot_position?.toUpperCase();
       const bothReal =
-        existingSpot && !["T", "C", "UNKNOWN"].includes(existingSpot) &&
+        existingSpot && !["BL", "CP", "UNKNOWN"].includes(existingSpot) &&
         !isPlaceholder && existingSpot !== normalizedPos;
       if (bothReal) {
         const carModel = existing.car_model ? ` (${existing.car_model})` : "";
@@ -136,10 +138,7 @@ function ParkPage() {
 
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
-        <Field
-          label="Spot (1-147 or C or T)"
-          required value={pos} onChange={setPos}
-        />
+        <LocationPicker required value={pos} onChange={setPos} />
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>

@@ -37,13 +37,17 @@ export function HuriLogo() {
   );
 }
 
-/** Park + Pickup buttons shown in the top-right corner of every authenticated page. Techs also see Parts. */
+/** Park + Pickup buttons shown in every authenticated header. Operational leadership also sees Parts. */
 export function TopActions() {
   const { profile } = useAuth();
-  const isTech = profile?.role_name === "Technician";
+  const partsRoles = new Set([
+    "Technician", "Shop Foreman", "Manager", "Service Manager", "Assistant Service Manager",
+    "Parts Manager", "Director", "Service Director", "General Manager",
+  ]);
+  const canRequestParts = partsRoles.has(profile?.role_name ?? "");
   return (
     <div className="flex items-center gap-2">
-      {isTech && (
+      {canRequestParts && (
         <Link
           to="/parts"
           className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"

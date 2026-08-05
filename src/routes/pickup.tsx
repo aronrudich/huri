@@ -14,7 +14,6 @@ import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
 
-/** Pickups submitted from the tech side end up in Lot T / a bay after the claim window. */
 const isTechSource = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";
 
@@ -120,10 +119,6 @@ function PickupPage() {
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then();
-          if (p.ro_number) {
-            const nextSpot = isTechSource(p.source_role) ? "T" : "UNKNOWN";
-            supabase.from("parked_cars").update({ lot_position: nextSpot }).eq("ro_number", p.ro_number).then();
-          }
         }
       });
     };
@@ -136,30 +131,10 @@ function PickupPage() {
 
   const claim = async (p: Pickup) => {
     if (!user) return;
-    const liveCar = p.ro_number ? carsByRo[p.ro_number] : undefined;
-    const snapshotSpot = liveCar?.lot_position ?? p.lot_position ?? "UNKNOWN";
-    const snapshotModel = liveCar?.car_model ?? p.car_model ?? null;
-    const snapshotNotes = liveCar?.notes ?? p.car_notes ?? null;
-    const claimedAt = new Date().toISOString();
-    const claimedSnapshot = {
-      status: "claimed",
-      claimed_by: user.id,
-      claimed_at: claimedAt,
-      lot_position: snapshotSpot,
-      car_model: snapshotModel,
-      car_notes: snapshotNotes,
-    };
-    const { error } = await supabase
-      .from("pickup_requests").update(claimedSnapshot)
-      .eq("id", p.id).eq("status", "unclaimed");
+    const { data: claimed, error } = await supabase.rpc("claim_pickup_request", { _pickup_id: p.id });
     if (error) return toast.error(error.message);
-    setPickups((current) => current.map((item) => item.id === p.id ? { ...item, ...claimedSnapshot } : item));
-    // Free the spot as soon as the pickup is claimed — the car is on its way out.
-    // The car stays in the system with an UNKNOWN location so it can still be searched;
-    // 60 minutes later it becomes Lot T for technician pickups (see archiveExpired above).
-    if (p.ro_number) {
-      await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("ro_number", p.ro_number);
-    }
+    if (claimed) setPickups((current) => current.map((item) => item.id === p.id ? claimed as Pickup : item));
+    await loadCars();
     toast.success("Claimed");
   };
 
@@ -188,15 +163,19 @@ function PickupPage() {
   );
 
 
-  // Sort: unclaimed first (oldest first), then claimed (oldest claim first)
+  // Unclaimed customer pickups first, then unclaimed technician pickups, each oldest first.
   const sortedPickups = useMemo(() => {
-    const unclaimed = visiblePickups
+    const unclaimedCustomer = visiblePickups
       .filter((p) => p.status === "unclaimed")
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      .filter((p) => p.kind === "parts" || !isTechSource(p.source_role))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const unclaimedTech = visiblePickups
+      .filter((p) => p.status === "unclaimed" && p.kind !== "parts" && isTechSource(p.source_role))
+      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
-      .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
-    return [...unclaimed, ...claimed];
+      .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
+    return [...unclaimedCustomer, ...unclaimedTech, ...claimed];
   }, [visiblePickups]);
 
   return (
@@ -302,7 +281,7 @@ function PickupPage() {
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
                       {isParts
-                        ? `Parts for ${p.advisor_name ?? "technician"}`
+                        ? `Parts for ${p.advisor_name ?? "employee"}`
                         : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
                     {!isParts && (
@@ -315,6 +294,12 @@ function PickupPage() {
                             <span className="font-medium">Note:</span> {effectiveNotes}
                           </p>
                         )}
+                      </>
+                    )}
+                    {isParts && (
+                      <>
+                        {p.ro_number && <p className="text-sm text-muted-foreground">RO #{p.ro_number}</p>}
+                        {p.car_notes && <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes}</p>}
                       </>
                     )}
                   </div>

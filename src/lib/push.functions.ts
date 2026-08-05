@@ -202,7 +202,7 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 
 export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { techName?: string | null }) => d)
+  .inputValidator((d: { techName?: string | null; ro?: string | null; notes?: string | null }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
@@ -216,6 +216,8 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       kind: "parts",
       source_role: "Technician",
       advisor_name: data.techName ?? null,
+      ro_number: data.ro ?? null,
+      car_notes: data.notes ?? null,
       requested_by: context.userId,
       status: "unclaimed",
       dealership_id: caller.dealership_id,
@@ -237,9 +239,8 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .in("user_id", recipients.map((r) => r.id));
     if (!subs?.length) return { sent: 0 };
 
-    const body = data.techName
-      ? `${data.techName} needs parts brought to their bay.`
-      : "A technician needs parts brought to their bay.";
+    const body = [data.techName, data.ro && `RO #${data.ro}`, data.notes]
+      .filter(Boolean).join(" · ") || "A parts pickup was requested.";
     const payload = {
       title: "🚨 Parts request",
       body,

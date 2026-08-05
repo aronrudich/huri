@@ -19,6 +19,7 @@ import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
@@ -70,6 +71,11 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
+  id: '/api/public/hooks/stale-cars',
+  path: '/api/public/hooks/stale-cars',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/thread/$threadId'
+    | '/api/public/hooks/stale-cars'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -133,6 +143,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/thread/$threadId'
+    | '/api/public/hooks/stale-cars'
   id:
     | '__root__'
     | '/'
@@ -145,6 +156,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/thread/$threadId'
+    | '/api/public/hooks/stale-cars'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -158,6 +170,7 @@ export interface RootRouteChildren {
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
+  ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -232,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/stale-cars': {
+      id: '/api/public/hooks/stale-cars'
+      path: '/api/public/hooks/stale-cars'
+      fullPath: '/api/public/hooks/stale-cars'
+      preLoaderRoute: typeof ApiPublicHooksStaleCarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -246,17 +266,8 @@ const rootRouteChildren: RootRouteChildren = {
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
+  ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

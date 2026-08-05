@@ -202,20 +202,27 @@ export const sendMessagePush = createServerFn({ method: "POST" })
 
 export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { techName?: string | null }) => d)
+  .inputValidator((d: { techName?: string | null; ro?: string | null; notes?: string | null }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
     const { data: caller } = await supabaseAdmin
-      .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
+      .from("profiles").select("dealership_id, role_name, is_active").eq("id", context.userId).maybeSingle();
     if (!caller?.dealership_id) return { sent: 0 };
+    const allowedRoles = [
+      "Technician", "Shop Foreman", "Manager", "Service Manager", "Assistant Service Manager",
+      "Parts Manager", "Director", "Service Director", "General Manager",
+    ];
+    if (!caller.is_active || !allowedRoles.includes(caller.role_name)) throw new Error("You do not have access to Parts requests");
 
     // Insert a parts request into the pickup queue so Valet & Parts can see it in the list.
     await supabaseAdmin.from("pickup_requests").insert({
       kind: "parts",
-      source_role: "Technician",
+      source_role: caller.role_name,
       advisor_name: data.techName ?? null,
+      ro_number: data.ro ?? null,
+      car_notes: data.notes ?? null,
       requested_by: context.userId,
       status: "unclaimed",
       dealership_id: caller.dealership_id,
@@ -237,9 +244,8 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .in("user_id", recipients.map((r) => r.id));
     if (!subs?.length) return { sent: 0 };
 
-    const body = data.techName
-      ? `${data.techName} needs parts brought to their bay.`
-      : "A technician needs parts brought to their bay.";
+    const body = [data.techName, data.ro && `RO #${data.ro}`, data.notes]
+      .filter(Boolean).join(" · ") || "A parts pickup was requested.";
     const payload = {
       title: "🚨 Parts request",
       body,

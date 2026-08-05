@@ -19,9 +19,9 @@ type ParkedCar = {
 };
 
 const TABS: { id: LotId; label: string }[] = [
-  { id: "lot1", label: "Lot 1" },
-  { id: "lotC", label: "Lot C" },
-  { id: "lotT", label: "Lot T" },
+  { id: "sv", label: "SV" },
+  { id: "cp", label: "CP" },
+  { id: "bl", label: "BL" },
 ];
 
 function LotPage() {
@@ -29,7 +29,7 @@ function LotPage() {
   const { user, loading } = useAuth();
   const [cars, setCars] = useState<ParkedCar[]>([]);
   const [q, setQ] = useState("");
-  const [tab, setTab] = useState<LotId>("lot1");
+  const [tab, setTab] = useState<LotId>("sv");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -48,18 +48,18 @@ function LotPage() {
     const m: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
       if (!c.lot_position || c.lot_position === "UNKNOWN") return;
-      if (lotOf(c.lot_position) !== "lot1") return;
+      if (lotOf(c.lot_position) !== "sv") return;
       m[c.lot_position.toUpperCase()] = c;
     });
     return m;
   }, [cars]);
 
-  const carsInLotC = useMemo(
-    () => cars.filter((c) => c.lot_position?.toUpperCase() === "C"),
+  const carsInCP = useMemo(
+    () => cars.filter((c) => c.lot_position?.toUpperCase() === "CP"),
     [cars],
   );
-  const carsInLotT = useMemo(
-    () => cars.filter((c) => c.lot_position?.toUpperCase() === "T"),
+  const carsInBL = useMemo(
+    () => cars.filter((c) => c.lot_position?.toUpperCase() === "BL"),
     [cars],
   );
   // Unknown location OR a custom/special location — not shown in any tab, only via search.
@@ -71,32 +71,35 @@ function LotPage() {
   const spots = useMemo(() => spotsForLot(tab), [tab]);
 
   const filteredNumbered = useMemo(() => {
-    if (tab !== "lot1") return [];
+    if (tab !== "sv") return [];
     const list = spots.map((s) => ({ spot: s, car: byPos[s] }));
     const n = q.trim().toLowerCase();
     if (!n) return list;
     return list.filter(({ spot, car }) =>
       spot.toLowerCase().includes(n) ||
+      car?.tag_number?.toLowerCase().includes(n) ||
       car?.ro_number?.toLowerCase().includes(n) ||
       car?.car_model?.toLowerCase().includes(n),
     );
   }, [spots, byPos, q, tab]);
 
   const filteredFreeform = useMemo(() => {
-    const source = tab === "lotC" ? carsInLotC : tab === "lotT" ? carsInLotT : [];
+    const source = tab === "cp" ? carsInCP : tab === "bl" ? carsInBL : [];
     const n = q.trim().toLowerCase();
     if (!n) return source;
     return source.filter((c) =>
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n),
     );
-  }, [tab, carsInLotC, carsInLotT, q]);
+  }, [tab, carsInCP, carsInBL, q]);
 
   // Cars with an UNKNOWN location that match the search — surfaced from every tab.
   const filteredUnknown = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return [];
     return carsOffLot.filter((c) =>
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n) ||
       c.lot_position?.toLowerCase().includes(n),
@@ -109,6 +112,7 @@ function LotPage() {
     if (!n) return;
     const matches = (c: ParkedCar) =>
       c.lot_position?.toLowerCase().includes(n) ||
+      c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
       c.car_model?.toLowerCase().includes(n);
     const inCurrent = cars.some((c) => matches(c) && lotOf(c.lot_position) === tab);
@@ -122,7 +126,7 @@ function LotPage() {
     }
   }, [q, cars, tab]);
 
-  const filled = tab === "lot1" ? spots.filter((s) => byPos[s]).length : 0;
+  const filled = tab === "sv" ? spots.filter((s) => byPos[s]).length : 0;
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -158,9 +162,9 @@ function LotPage() {
         </div>
 
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-          {tab === "lot1" && `${filled} of ${spots.length} spots occupied`}
-          {tab === "lotC" && `${carsInLotC.length} car${carsInLotC.length === 1 ? "" : "s"} in Lot C`}
-          {tab === "lotT" && `${carsInLotT.length} car${carsInLotT.length === 1 ? "" : "s"} in Lot T`}
+           {tab === "sv" && `${filled} of ${spots.length} SV spots occupied`}
+           {tab === "cp" && `${carsInCP.length} car${carsInCP.length === 1 ? "" : "s"} in CP`}
+           {tab === "bl" && `${carsInBL.length} car${carsInBL.length === 1 ? "" : "s"} in BL`}
         </p>
       </header>
 
@@ -168,7 +172,7 @@ function LotPage() {
 
 
 
-      {tab === "lot1" ? (
+      {tab === "sv" ? (
         <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
           {filteredNumbered.map(({ spot, car }) => {
             const inner = (
@@ -176,7 +180,7 @@ function LotPage() {
                 <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
                   car ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
                 }`}>
-                  {spot}
+                   {spot.replace("SV ", "")}
                 </div>
                 <div className="min-w-0 flex-1">
                   {car ? (
@@ -241,7 +245,7 @@ function LotPage() {
           ))}
           {filteredFreeform.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-              {tab === "lotC" ? "No cars in Lot C." : "No cars in Lot T."}
+               {tab === "cp" ? "No cars in CP." : "No cars in BL."}
             </li>
           )}
         </ul>

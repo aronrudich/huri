@@ -15,6 +15,8 @@ function PartsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [busy, setBusy] = useState(false);
+  const [ro, setRo] = useState("");
+  const [notes, setNotes] = useState("");
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -25,7 +27,8 @@ function PartsPage() {
     if (!user) return;
     setBusy(true);
     try {
-      await sendPartsAlert({ data: { techName: techName || null } });
+      if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+      await sendPartsAlert({ data: { techName: techName || null, ro: ro.trim() || null, notes: notes.trim() || null } });
       toast.success("Parts request sent");
       navigate({ to: "/", replace: true });
     } catch (err) {
@@ -49,12 +52,20 @@ function PartsPage() {
           Tap submit to alert the parts valet to bring parts to your bay. Your name will be attached to the request.
         </p>
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Technician</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Requested by</label>
           <input
             value={techName}
             disabled
             className="w-full rounded-xl border border-input bg-muted px-3 py-3 text-base text-muted-foreground"
           />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">RO Number</label>
+          <input value={ro} onChange={(event) => setRo(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
+          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
         </div>
         <button
           disabled={busy}

@@ -9,7 +9,7 @@
 // Canonical values are: "UNKNOWN", "BL", "CP", "SV 1".."SV 147", or custom text.
 
 export type LotId = "sv" | "cp" | "bl";
-export type LocationChoice = "SV" | "CP" | "BL" | "OTHER" | null;
+export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "OTHER" | null;
 
 export const MIN_SPOT = 1;
 export const MAX_SPOT = 147;

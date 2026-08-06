@@ -410,12 +410,12 @@ function PickupPage() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-3 pb-8">
+          <div className="flex-1 overflow-hidden px-3 py-3 pb-6">
             <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}
               highlightSpot={mapSpot}
-              onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+              staticView
             />
           </div>
         </div>

@@ -1,15 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Clock, CheckCircle2, Search } from "lucide-react";
+import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
-import { adjacentSpots } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+import { LotMap } from "@/components/LotMap";
 
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;

@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { spotsForLot, lotOf, isCustomSpot, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+import { LotMap } from "@/components/LotMap";
 
 
 export const Route = createFileRoute("/lot")({

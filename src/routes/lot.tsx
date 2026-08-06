@@ -62,9 +62,9 @@ function LotPage() {
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "BL"),
     [cars],
   );
-  // Unknown location OR a custom/special location — not shown in any tab, only via search.
+  // Unknown location OR a location without a tab (BAY / custom) — only via search.
   const carsOffLot = useMemo(
-    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN" || isCustomSpot(c.lot_position)),
+    () => cars.filter((c) => lotOf(c.lot_position) === null),
     [cars],
   );
 

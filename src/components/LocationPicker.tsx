@@ -12,6 +12,7 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "BL", label: "BL", detail: "Back Lot" },
   { id: "CP", label: "CP", detail: "Customer Parking" },
   { id: "SV", label: "SV", detail: "Spots 1–147" },
+  { id: "BAY", label: "Bay", detail: "In a bay" },
   { id: "OTHER", label: "Other", detail: "Custom location" },
 ];
 

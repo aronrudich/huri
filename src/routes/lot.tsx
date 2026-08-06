@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
@@ -19,6 +19,11 @@ type ParkedCar = {
   car_model: string | null; lot_position: string; notes: string | null;
 };
 
+type ActivePickup = {
+  ro_number: string | null; lot_position: string | null;
+  kind: string | null; status: string;
+};
+
 const TABS: { id: LotId; label: string }[] = [
   { id: "sv", label: "SV" },
   { id: "cp", label: "CP" },
@@ -29,8 +34,13 @@ function LotPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [cars, setCars] = useState<ParkedCar[]>([]);
+  const [activePickups, setActivePickups] = useState<ActivePickup[]>([]);
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
+  const [pickupSpots, setPickupSpots] = useState<Set<string>>(new Set());
+  // Empty SV stall tapped on the map (spot label), shown in a details modal.
+  const [emptySpot, setEmptySpot] = useState<string | null>(null);
+  const [suggestOpen, setSuggestOpen] = useState(false);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -39,8 +49,15 @@ function LotPage() {
     const load = () => supabase.from("parked_cars").select("*")
       .then(({ data }) => setCars((data as ParkedCar[]) ?? []));
     load();
+    const loadPickups = () =>
+      supabase.from("pickup_requests")
+        .select("ro_number, lot_position, kind, status")
+        .neq("status", "completed")
+        .then(({ data }) => setActivePickups((data as ActivePickup[]) ?? []));
+    loadPickups();
     const chan = supabase.channel("lot-all-spots")
       .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, load)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, loadPickups)
       .subscribe();
     return () => { supabase.removeChannel(chan); };
   }, [user]);
@@ -54,6 +71,24 @@ function LotPage() {
     });
     return m;
   }, [cars]);
+
+  // A stall turns blue while its car is on the active pickup list. If a
+  // different car has since been parked there, the stall stays red.
+  useEffect(() => {
+    const next = new Set<string>();
+    activePickups.forEach((p) => {
+      if (p.kind === "parts") return;
+      const live = p.ro_number
+        ? cars.find((c) => c.ro_number === p.ro_number)
+        : undefined;
+      const spot = normalizeSpot(live?.lot_position ?? p.lot_position);
+      if (!spot || lotOf(spot) !== "sv") return;
+      const occupant = byPos[spot];
+      if (occupant && occupant.ro_number !== p.ro_number) return;
+      next.add(spot);
+    });
+    setPickupSpots(next);
+  }, [activePickups, cars, byPos]);
 
   const carsInCP = useMemo(
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "CP"),
@@ -127,6 +162,20 @@ function LotPage() {
     }
   }, [q, cars, tab]);
 
+  // Live dropdown suggestions across every lot, like the Park tab.
+  const suggestions = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    return cars
+      .filter((c) =>
+        c.ro_number?.toLowerCase().includes(n) ||
+        c.tag_number?.toLowerCase().includes(n) ||
+        c.car_model?.toLowerCase().includes(n) ||
+        c.lot_position?.toLowerCase().includes(n),
+      )
+      .slice(0, 8);
+  }, [cars, q]);
+
   const filled = tab === "sv" ? spots.filter((s) => byPos[s]).length : 0;
 
   return (
@@ -142,10 +191,39 @@ function LotPage() {
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             value={q}
-            onChange={(e) => setQ(e.target.value)}
+            onChange={(e) => { setQ(e.target.value); setSuggestOpen(true); }}
+            onFocus={() => setSuggestOpen(true)}
             placeholder="Search"
             className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
           />
+          {suggestOpen && q.trim() && suggestions.length > 0 && (
+            <ul className="absolute inset-x-0 top-full z-30 mt-1 max-h-72 overflow-y-auto overflow-hidden rounded-xl border border-border bg-popover shadow-lg">
+              {suggestions.map((c) => (
+                <li key={c.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuggestOpen(false);
+                      navigate({ to: "/park", search: { id: c.id } });
+                    }}
+                    className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left last:border-b-0 active:bg-accent"
+                  >
+                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
+                      {normalizeSpot(c.lot_position) === "UNKNOWN" ? "?" : normalizeSpot(c.lot_position)?.replace("SV ", "")}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">
+                        {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {c.car_model ?? "—"} · {normalizeSpot(c.lot_position) === "UNKNOWN" ? "Location unknown" : c.lot_position}
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="mt-3 flex gap-2">
@@ -178,7 +256,9 @@ function LotPage() {
           <LotMap
             spots={filteredNumbered.map(({ spot }) => spot)}
             carsBySpot={byPos}
+            pickupSpots={pickupSpots}
             onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+            onSelectEmpty={(spot) => setEmptySpot(spot)}
           />
         </div>
       ) : (
@@ -234,7 +314,7 @@ function LotPage() {
                       {normalizeSpot(car.lot_position) === "UNKNOWN"
                         ? "Location unknown — not in any lot"
                         : normalizeSpot(car.lot_position) === "BAY"
-                          ? "In a bay"
+                          ? "Technician Bay"
                           : car.lot_position}
                     </p>
                   </div>
@@ -246,6 +326,39 @@ function LotPage() {
         </>
       )}
 
+
+      {emptySpot && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-background/70 p-4 backdrop-blur">
+          <div className="w-full max-w-sm rounded-2xl bg-background p-5 shadow-xl">
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <p className="text-lg font-semibold">Spot {emptySpot}</p>
+                <p className="text-sm text-muted-foreground">
+                  {pickupSpots.has(emptySpot) ? "On the pickup list" : "Open — no car logged here"}
+                </p>
+              </div>
+              <button
+                onClick={() => setEmptySpot(null)}
+                aria-label="Close"
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-muted active:bg-accent"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <dl className="mb-4 space-y-1 rounded-xl bg-surface px-3 py-2 text-sm">
+              <div className="flex justify-between"><dt className="text-muted-foreground">Lot</dt><dd className="font-medium">SV</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Spot</dt><dd className="font-medium">{emptySpot.replace("SV ", "")}</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd className="font-medium">Empty</dd></div>
+            </dl>
+            <button
+              onClick={() => { const spot = emptySpot; setEmptySpot(null); navigate({ to: "/park", search: { spot } }); }}
+              className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground active:scale-[0.98]"
+            >
+              Add A Car To This Spot
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomBar active="lot" />
     </div>

@@ -46,6 +46,9 @@ function PickupPage() {
   const [carsByPos, setCarsByPos] = useState<Record<string, ParkedCar>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  // Spot to locate on the SV map overlay (null = overlay closed).
+  const [mapSpot, setMapSpot] = useState<string | null>(null);
+  const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 

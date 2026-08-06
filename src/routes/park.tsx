@@ -8,13 +8,14 @@ import { toast } from "sonner";
 import { isValidSpot, normalizeSpot, isCustomSpot } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 
-type ParkSearch = { ro?: string; id?: string };
+type ParkSearch = { ro?: string; id?: string; spot?: string };
 
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
   validateSearch: (s: Record<string, unknown>): ParkSearch => ({
     ro: typeof s.ro === "string" ? s.ro : undefined,
     id: typeof s.id === "string" ? s.id : undefined,
+    spot: typeof s.spot === "string" ? s.spot : undefined,
   }),
   component: ParkPage,
 });
@@ -22,9 +23,9 @@ export const Route = createFileRoute("/park")({
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const { ro: roParam, id: idParam } = Route.useSearch();
+  const { ro: roParam, id: idParam, spot: spotParam } = Route.useSearch();
   const [ro, setRo] = useState(roParam ?? "");
-  const [pos, setPos] = useState("");
+  const [pos, setPos] = useState(spotParam ?? "");
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);

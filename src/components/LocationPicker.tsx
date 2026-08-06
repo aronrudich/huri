@@ -12,8 +12,8 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "BL", label: "BL", detail: "Back Lot" },
   { id: "CP", label: "CP", detail: "Customer Parking" },
   { id: "SV", label: "SV", detail: "Spots 1–147" },
-  { id: "BAY", label: "Bay", detail: "In a bay" },
-  { id: "OTHER", label: "Other", detail: "Custom location" },
+  { id: "BAY", label: "Bay", detail: "Technician Bay" },
+  { id: "OTHER", label: "Other", detail: "Custom Location" },
 ];
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
@@ -69,7 +69,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
           className="flex w-full items-center justify-between rounded-xl border border-input bg-background px-3 py-3 text-left text-base outline-none focus:border-primary"
         >
           <span className={selected ? "text-foreground" : "text-muted-foreground"}>
-            {selected ? `${selected.label} · ${selected.detail}` : "Choose a location"}
+            {selected ? `${selected.label} · ${selected.detail}` : "Choose A Location"}
           </span>
           <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${open ? "rotate-180" : ""}`} />
         </button>
@@ -92,7 +92,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
 
       {choice === "SV" && (
         <div className="mt-2">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">SV spot number</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">SV Spot Number</label>
           <input
             value={detail}
             onChange={(event) => {
@@ -110,7 +110,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
 
       {choice === "OTHER" && (
         <div className="mt-2">
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Other location</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Other Location</label>
           <input
             value={detail}
             onChange={(event) => {

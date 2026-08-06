@@ -391,6 +391,34 @@ function PickupPage() {
         })}
       </ul>
 
+      {mapSpot && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold">SV lot map</p>
+              <p className="text-xs text-muted-foreground">
+                Pick up <span className="font-semibold text-primary">{mapSpot}</span> (blue)
+              </p>
+            </div>
+            <button
+              onClick={() => setMapSpot(null)}
+              aria-label="Close map"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted active:bg-accent"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3 pb-8">
+            <LotMap
+              spots={svSpots}
+              carsBySpot={carsByPos}
+              highlightSpot={mapSpot}
+              onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+            />
+          </div>
+        </div>
+      )}
+
       <BottomBar active="pickup" />
     </div>
   );

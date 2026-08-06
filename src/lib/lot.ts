@@ -9,7 +9,7 @@
 // Canonical values are: "UNKNOWN", "BL", "CP", "SV 1".."SV 147", or custom text.
 
 export type LotId = "sv" | "cp" | "bl";
-export type LocationChoice = "SV" | "CP" | "BL" | "OTHER" | null;
+export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "OTHER" | null;
 
 export const MIN_SPOT = 1;
 export const MAX_SPOT = 147;
@@ -19,7 +19,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   if (raw == null) return null;
   const t = raw.trim().toUpperCase();
   if (t === "" || t === "UNKNOWN") return "UNKNOWN";
-  if (t === "BL" || t === "CP") return t;
+  if (t === "BL" || t === "CP" || t === "BAY") return t;
   if (/^SV\s*[0-9]+$/.test(t)) {
     const n = parseInt(t.replace(/^SV\s*/, ""), 10);
     return n >= MIN_SPOT && n <= MAX_SPOT ? `SV ${n}` : null;
@@ -35,7 +35,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   return t.slice(0, 60);
 }
 
-/** Locations accepted from the picker: SV 1–147, CP, BL, or custom text. */
+/** Locations accepted from the picker: SV 1–147, CP, BL, BAY, or custom text. */
 export function isValidSpot(raw: string): boolean {
   const t = (raw ?? "").trim().toUpperCase();
   if (t === "") return false;
@@ -46,17 +46,17 @@ export function isValidSpot(raw: string): boolean {
   return t.length <= 60;
 }
 
-/** True when the spot is a custom location, not SV / CP / BL / unknown. */
+/** True when the spot is a custom location, not SV / CP / BL / BAY / unknown. */
 export function isCustomSpot(raw: string | null | undefined): boolean {
   const t = normalizeSpot(raw);
-  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL") return false;
+  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL" || t === "BAY") return false;
   return !/^SV [0-9]+$/.test(t);
 }
 
 export function locationChoice(raw: string | null | undefined): LocationChoice {
   const normalized = normalizeSpot(raw);
   if (!normalized || normalized === "UNKNOWN") return null;
-  if (normalized === "CP" || normalized === "BL") return normalized;
+  if (normalized === "CP" || normalized === "BL" || normalized === "BAY") return normalized;
   if (normalized.startsWith("SV ")) return "SV";
   return "OTHER";
 }

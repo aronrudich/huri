@@ -12,6 +12,7 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "BL", label: "BL", detail: "Back Lot" },
   { id: "CP", label: "CP", detail: "Customer Parking" },
   { id: "SV", label: "SV", detail: "Spots 1–147" },
+  { id: "BAY", label: "Bay", detail: "In a bay" },
   { id: "OTHER", label: "Other", detail: "Custom location" },
 ];
 
@@ -44,7 +45,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   const select = (next: LocationChoice) => {
     setChoice(next);
     setOpen(false);
-    if (next === "BL" || next === "CP") {
+    if (next === "BL" || next === "CP" || next === "BAY") {
       setDetail("");
       onChange(next);
     } else {

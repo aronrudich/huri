@@ -4,8 +4,9 @@ import { Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { spotsForLot, lotOf, isCustomSpot, type LotId } from "@/lib/lot";
+import { spotsForLot, lotOf, normalizeSpot, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+import { LotMap } from "@/components/LotMap";
 
 
 export const Route = createFileRoute("/lot")({
@@ -62,9 +63,9 @@ function LotPage() {
     () => cars.filter((c) => c.lot_position?.toUpperCase() === "BL"),
     [cars],
   );
-  // Unknown location OR a custom/special location — not shown in any tab, only via search.
+  // Unknown location OR a location without a tab (BAY / custom) — only via search.
   const carsOffLot = useMemo(
-    () => cars.filter((c) => !c.lot_position || c.lot_position.toUpperCase() === "UNKNOWN" || isCustomSpot(c.lot_position)),
+    () => cars.filter((c) => lotOf(c.lot_position) === null),
     [cars],
   );
 
@@ -173,52 +174,13 @@ function LotPage() {
 
 
       {tab === "sv" ? (
-        <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
-          {filteredNumbered.map(({ spot, car }) => {
-            const inner = (
-              <>
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                  car ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                }`}>
-                   {spot.replace("SV ", "")}
-                </div>
-                <div className="min-w-0 flex-1">
-                  {car ? (
-                    <>
-                      <p className="truncate text-sm font-semibold">
-                        {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
-                        {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
-                      </p>
-                      {car.notes && (
-                        <p className="truncate text-xs text-warning">Note: {car.notes}</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Empty</p>
-                  )}
-                </div>
-              </>
-            );
-            return (
-              <li key={spot} className="border-b border-border last:border-b-0">
-                {car ? (
-                  <Link
-                    to="/park"
-                    search={{ id: car.id }}
-                    className="flex items-center gap-3 px-4 py-3 active:bg-accent"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-3 px-4 py-3">{inner}</div>
-                )}
-              </li>
-            );
-          })}
-          {filteredNumbered.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-muted-foreground">No matches</li>
-          )}
-        </ul>
+        <div className="px-3">
+          <LotMap
+            spots={filteredNumbered.map(({ spot }) => spot)}
+            carsBySpot={byPos}
+            onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+          />
+        </div>
       ) : (
         <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
           {filteredFreeform.map((car) => (
@@ -261,7 +223,7 @@ function LotPage() {
               <li key={car.id} className="border-b border-border last:border-b-0">
                 <Link to="/park" search={{ id: car.id }} className="flex items-center gap-3 px-4 py-3 active:bg-accent">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                    {isCustomSpot(car.lot_position) ? "★" : "?"}
+                    {normalizeSpot(car.lot_position) === "UNKNOWN" ? "?" : "★"}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">
@@ -269,7 +231,11 @@ function LotPage() {
                       {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {isCustomSpot(car.lot_position) ? car.lot_position : "Location unknown — not in any lot"}
+                      {normalizeSpot(car.lot_position) === "UNKNOWN"
+                        ? "Location unknown — not in any lot"
+                        : normalizeSpot(car.lot_position) === "BAY"
+                          ? "In a bay"
+                          : car.lot_position}
                     </p>
                   </div>
 

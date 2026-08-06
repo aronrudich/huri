@@ -1,15 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Clock, CheckCircle2, Search } from "lucide-react";
+import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
-import { adjacentSpots } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
+import { LotMap } from "@/components/LotMap";
 
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
@@ -45,6 +46,9 @@ function PickupPage() {
   const [carsByPos, setCarsByPos] = useState<Record<string, ParkedCar>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
+  // Spot to locate on the SV map overlay (null = overlay closed).
+  const [mapSpot, setMapSpot] = useState<string | null>(null);
+  const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -348,6 +352,15 @@ function PickupPage() {
                       {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
+                  {!isParts && effectiveSpot && lotOf(effectiveSpot) === "sv" && (
+                    <button
+                      onClick={() => setMapSpot(effectiveSpot)}
+                      aria-label="Show on lot map"
+                      className="flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent"
+                    >
+                      <MapIcon className="h-4 w-4" /> Map
+                    </button>
+                  )}
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
@@ -377,6 +390,34 @@ function PickupPage() {
           );
         })}
       </ul>
+
+      {mapSpot && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold">SV lot map</p>
+              <p className="text-xs text-muted-foreground">
+                Pick up <span className="font-semibold text-primary">{mapSpot}</span> (blue)
+              </p>
+            </div>
+            <button
+              onClick={() => setMapSpot(null)}
+              aria-label="Close map"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted active:bg-accent"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3 pb-8">
+            <LotMap
+              spots={svSpots}
+              carsBySpot={carsByPos}
+              highlightSpot={mapSpot}
+              onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+            />
+          </div>
+        </div>
+      )}
 
       <BottomBar active="pickup" />
     </div>

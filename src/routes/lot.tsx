@@ -173,52 +173,13 @@ function LotPage() {
 
 
       {tab === "sv" ? (
-        <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
-          {filteredNumbered.map(({ spot, car }) => {
-            const inner = (
-              <>
-                <div className={`grid h-10 w-10 shrink-0 place-items-center rounded-full text-xs font-bold ${
-                  car ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-                }`}>
-                   {spot.replace("SV ", "")}
-                </div>
-                <div className="min-w-0 flex-1">
-                  {car ? (
-                    <>
-                      <p className="truncate text-sm font-semibold">
-                        {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
-                        {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
-                      </p>
-                      {car.notes && (
-                        <p className="truncate text-xs text-warning">Note: {car.notes}</p>
-                      )}
-                    </>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">Empty</p>
-                  )}
-                </div>
-              </>
-            );
-            return (
-              <li key={spot} className="border-b border-border last:border-b-0">
-                {car ? (
-                  <Link
-                    to="/park"
-                    search={{ id: car.id }}
-                    className="flex items-center gap-3 px-4 py-3 active:bg-accent"
-                  >
-                    {inner}
-                  </Link>
-                ) : (
-                  <div className="flex items-center gap-3 px-4 py-3">{inner}</div>
-                )}
-              </li>
-            );
-          })}
-          {filteredNumbered.length === 0 && (
-            <li className="px-4 py-6 text-center text-sm text-muted-foreground">No matches</li>
-          )}
-        </ul>
+        <div className="px-3">
+          <LotMap
+            spots={filteredNumbered.map(({ spot }) => spot)}
+            carsBySpot={byPos}
+            onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
+          />
+        </div>
       ) : (
         <ul className="mx-3 overflow-hidden rounded-2xl bg-background">
           {filteredFreeform.map((car) => (

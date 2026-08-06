@@ -45,7 +45,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   const select = (next: LocationChoice) => {
     setChoice(next);
     setOpen(false);
-    if (next === "BL" || next === "CP") {
+    if (next === "BL" || next === "CP" || next === "BAY") {
       setDetail("");
       onChange(next);
     } else {

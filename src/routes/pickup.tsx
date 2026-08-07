@@ -444,7 +444,16 @@ function PickupPage() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-hidden px-3 py-3 pb-6">
+          {/* Mobile: full-height map that scrolls, so every spot is reachable. */}
+          <div className="flex-1 overflow-y-auto px-3 py-3 pb-10 md:hidden">
+            <LotMap
+              spots={svSpots}
+              carsBySpot={carsByPos}
+              highlightSpot={mapSpot}
+            />
+          </div>
+          {/* Desktop: whole lot fitted on screen at once. */}
+          <div className="hidden flex-1 overflow-hidden px-3 py-3 pb-6 md:block">
             <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}

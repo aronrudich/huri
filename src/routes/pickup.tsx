@@ -15,6 +15,13 @@ import { LotMap } from "@/components/LotMap";
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
 
+/** Black-and-white checker used for staged cars (matches the lot map). */
+const CHECKER = {
+  backgroundImage:
+    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
+  backgroundSize: "10px 10px",
+} as const;
+
 const isTechSource = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";
 

@@ -131,7 +131,17 @@ export function LotMap({
           staticView ? "text-[7px] leading-none" : "text-[13px]"
         } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "active:brightness-90"}`}
       >
-        <span className={s.plain ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]" : ""}>{n}</span>
+        <span
+          className={
+            s.isStaged
+              ? "rounded bg-background/90 px-1 text-foreground"
+              : s.plain
+                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                : ""
+          }
+        >
+          {n}
+        </span>
       </button>,
     );
   }

@@ -7,12 +7,13 @@ import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { sendPickupAlert } from "@/lib/push.functions";
 
-type PickupNewSearch = { staged?: boolean };
+type PickupNewSearch = { staged?: boolean; ro?: string };
 
 export const Route = createFileRoute("/pickup-new")({
   head: () => ({ meta: [{ title: "New Pickup · Huri" }] }),
   validateSearch: (s: Record<string, unknown>): PickupNewSearch => ({
     staged: s.staged === true || s.staged === "true" ? true : undefined,
+    ro: typeof s.ro === "string" ? s.ro : undefined,
   }),
   component: NewPickupPage,
 });
@@ -20,9 +21,9 @@ export const Route = createFileRoute("/pickup-new")({
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const { staged } = Route.useSearch();
+  const { staged, ro: roParam } = Route.useSearch();
   const isStage = !!staged;
-  const [ro, setRo] = useState("");
+  const [ro, setRo] = useState(roParam ?? "");
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);

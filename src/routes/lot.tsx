@@ -265,6 +265,7 @@ function LotPage() {
             spots={filteredNumbered.map(({ spot }) => spot)}
             carsBySpot={byPos}
             pickupSpots={pickupSpots}
+            stagedSpots={stagedSpots}
             onSelect={(car) => navigate({ to: "/park", search: { id: car.id } })}
             onSelectEmpty={(spot) => setEmptySpot(spot)}
           />

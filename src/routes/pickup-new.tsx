@@ -53,7 +53,7 @@ function NewPickupPage() {
       source_role: sourceRole,
       lot_position: car?.lot_position ?? null,
       car_notes: noteText || car?.notes || null,
-      is_staged: isStage || !!car?.is_staged,
+      is_staged: isStage,
     });
     setBusy(false);
     if (error) return toast.error(error.message);

@@ -45,10 +45,12 @@ const ROWS = Math.ceil((MAX_SPOT - MIN_SPOT + 1) / COLS); // 49
 // Photo is cropped to the painted grid: 825 x 4611 px.
 const ASPECT = 825 / 4611;
 
+// Softened checker so the stall number stays readable on top of it.
 const CHECKER = {
   backgroundImage:
-    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
-  backgroundSize: "10px 10px",
+    "repeating-conic-gradient(var(--muted-foreground) 0% 25%, var(--background) 0% 50%)",
+  backgroundSize: "8px 8px",
+  opacity: 0.85,
 } as const;
 
 export function LotMap({

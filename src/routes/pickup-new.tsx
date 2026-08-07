@@ -93,6 +93,12 @@ function NewPickupPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
+        <h1 className="text-lg font-semibold">{isStage ? "Stage Car" : "New Pickup"}</h1>
+        {isStage && (
+          <p className="text-sm text-muted-foreground">
+            Staged means the car is finished but the customer has not arrived yet. Valets are not notified.
+          </p>
+        )}
         <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
@@ -114,9 +120,10 @@ function NewPickupPage() {
           />
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Submitting…" : "Submit Request"}
+          {busy ? "Submitting…" : isStage ? "Submit Stage" : "Submit Request"}
         </button>
       </form>
+
     </div>
   );
 }

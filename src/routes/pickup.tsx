@@ -105,6 +105,8 @@ function PickupPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
         if (p.kind === "parts" && role !== "Valet & Parts") return;
+        // Staged cars are already handled ahead of time — no alert for them.
+        if (p.is_staged) return;
         const title = p.kind === "parts" ? "🔧 Parts request" : "New pickup request";
         notify(
           title,

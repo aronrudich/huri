@@ -342,7 +342,7 @@ function PickupPage() {
                   ) : (
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
                       <Clock className="h-3 w-3" />
-                      {p.is_staged && <span className="font-semibold">Staged ·</span>}
+                      
                       {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
                     </span>
                   )}

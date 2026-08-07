@@ -51,7 +51,8 @@ export function TopActions() {
     <div className="flex items-center gap-2">
       {canStage && (
         <Link
-          to="/stage"
+          to="/pickup-new"
+          search={{ staged: true }}
           className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
         >
           Stage

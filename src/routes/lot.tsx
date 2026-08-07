@@ -17,6 +17,7 @@ export const Route = createFileRoute("/lot")({
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
+  is_staged?: boolean | null;
 };
 
 type ActivePickup = {

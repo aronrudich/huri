@@ -140,9 +140,9 @@ function ParkPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <HuriLogo />
         <div className="flex-1" />
-        {/* Staging is submitted through the pickup form; the only Stage button
-            lives in TopActions / below the form. */}
-        <TopActions />
+        {/* Staging is submitted through the pickup form; a staged car shows no
+            Stage button here — canceling a stage happens in the pickup list. */}
+        <TopActions hideStage={editing && staged} />
         <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
@@ -177,6 +177,26 @@ function ParkPage() {
           >
             Delete Car
           </button>
+        )}
+        {editing && existingId && (
+          <div className="flex gap-2 pt-1">
+            <Link
+              to="/pickup-new"
+              search={{ ro: ro.trim() || undefined }}
+              className="flex-1 rounded-xl bg-primary py-3 text-center text-base font-semibold text-primary-foreground"
+            >
+              Pickup
+            </Link>
+            {canStage && !staged && (
+              <Link
+                to="/pickup-new"
+                search={{ staged: true, ro: ro.trim() || undefined }}
+                className="flex-1 rounded-xl border border-primary bg-background py-3 text-center text-base font-semibold text-primary"
+              >
+                Stage
+              </Link>
+            )}
+          </div>
         )}
       </form>
     </div>

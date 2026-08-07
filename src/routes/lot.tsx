@@ -53,7 +53,7 @@ function LotPage() {
     load();
     const loadPickups = () =>
       supabase.from("pickup_requests")
-        .select("ro_number, lot_position, kind, status")
+        .select("ro_number, lot_position, kind, status, is_staged")
         .neq("status", "completed")
         .then(({ data }) => setActivePickups((data as ActivePickup[]) ?? []));
     loadPickups();
@@ -74,10 +74,12 @@ function LotPage() {
     return m;
   }, [cars]);
 
-  // A stall turns blue while its car is on the active pickup list. If a
-  // different car has since been parked there, the stall stays red.
+  // A stall turns blue while its car is on the active pickup list, and
+  // checkered while it is only staged. If a different car has since been
+  // parked there, the stall stays red.
   useEffect(() => {
     const next = new Set<string>();
+    const staged = new Set<string>();
     activePickups.forEach((p) => {
       if (p.kind === "parts") return;
       const live = p.ro_number
@@ -87,9 +89,13 @@ function LotPage() {
       if (!spot || lotOf(spot) !== "sv") return;
       const occupant = byPos[spot];
       if (occupant && occupant.ro_number !== p.ro_number) return;
-      next.add(spot);
+      if (p.is_staged) staged.add(spot);
+      else next.add(spot);
     });
+    // A real pickup always wins over a stage on the same spot.
+    next.forEach((s) => staged.delete(s));
     setPickupSpots(next);
+    setStagedSpots(staged);
   }, [activePickups, cars, byPos]);
 
   const carsInCP = useMemo(

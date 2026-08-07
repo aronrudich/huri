@@ -373,7 +373,7 @@ function PickupPage() {
 
                 <div className="flex items-center gap-2">
                   {p.status === "unclaimed" ? (
-                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                       {isParts ? "On it" : "Claim"}
                     </button>
                   ) : (

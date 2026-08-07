@@ -60,7 +60,7 @@ function NewPickupPage() {
     // Staging flags the car so its map spot shows the checkered pattern; a real
     // pickup on an already-staged car clears that flag instead.
     if (car) {
-      const patch: Record<string, unknown> = {};
+      const patch: { is_staged?: boolean; notes?: string } = {};
       if (isStage) patch.is_staged = true;
       else if (car.is_staged) patch.is_staged = false;
       if (noteText) patch.notes = noteText;

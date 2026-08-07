@@ -15,6 +15,13 @@ import { LotMap } from "@/components/LotMap";
 
 const CLAIM_HIDE_MS = 60 * 60 * 1000;
 
+/** Black-and-white checker used for staged cars (matches the lot map). */
+const CHECKER = {
+  backgroundImage:
+    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
+  backgroundSize: "10px 10px",
+} as const;
+
 const isTechSource = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";
 
@@ -267,26 +274,38 @@ function PickupPage() {
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);
-          const ringClass = isParts
-            ? "ring-2 ring-warning"
-            : isTech
-              ? "ring-2 ring-destructive"
-              : "ring-2 ring-primary";
-          const headerBar = isParts
-            ? "bg-warning text-warning-foreground"
-            : isTech
-              ? "bg-destructive text-destructive-foreground"
-              : null;
-          const headerLabel = isParts
-            ? "🔧 Parts request"
-            : isTech
-              ? "🚨 Technician pickup"
-              : null;
+          const isStaged = !!p.is_staged;
+          const ringClass = isStaged
+            ? "ring-2 ring-foreground"
+            : isParts
+              ? "ring-2 ring-warning"
+              : isTech
+                ? "ring-2 ring-destructive"
+                : "ring-2 ring-primary";
+          const headerBar = isStaged
+            ? "text-foreground"
+            : isParts
+              ? "bg-warning text-warning-foreground"
+              : isTech
+                ? "bg-destructive text-destructive-foreground"
+                : null;
+          const headerLabel = isStaged
+            ? "Staged"
+            : isParts
+              ? "🔧 Parts request"
+              : isTech
+                ? "🚨 Technician pickup"
+                : null;
           return (
             <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${ringClass}`}>
               {headerBar && (
-                <div className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}>
-                  {headerLabel}
+                <div
+                  className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}
+                  style={isStaged ? CHECKER : undefined}
+                >
+                  <span className={isStaged ? "rounded bg-background/90 px-1.5 py-0.5" : undefined}>
+                    {headerLabel}
+                  </span>
                 </div>
               )}
               <div className="px-4 py-3">
@@ -323,7 +342,7 @@ function PickupPage() {
                   ) : (
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
                       <Clock className="h-3 w-3" />
-                      {p.is_staged && <span className="font-semibold">Staged ·</span>}
+                      
                       {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
                     </span>
                   )}
@@ -354,7 +373,7 @@ function PickupPage() {
 
                 <div className="flex items-center gap-2">
                   {p.status === "unclaimed" ? (
-                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
+                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                       {isParts ? "On it" : "Claim"}
                     </button>
                   ) : (

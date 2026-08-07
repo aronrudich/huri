@@ -7,14 +7,21 @@ import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { sendPickupAlert } from "@/lib/push.functions";
 
+type PickupNewSearch = { staged?: boolean };
+
 export const Route = createFileRoute("/pickup-new")({
   head: () => ({ meta: [{ title: "New Pickup · Huri" }] }),
+  validateSearch: (s: Record<string, unknown>): PickupNewSearch => ({
+    staged: s.staged === true || s.staged === "true" ? true : undefined,
+  }),
   component: NewPickupPage,
 });
 
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const { staged } = Route.useSearch();
+  const isStage = !!staged;
   const [ro, setRo] = useState("");
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
@@ -46,20 +53,23 @@ function NewPickupPage() {
       source_role: sourceRole,
       lot_position: car?.lot_position ?? null,
       car_notes: noteText || car?.notes || null,
-      is_staged: !!car?.is_staged,
+      is_staged: isStage || !!car?.is_staged,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    // A staged car is already handled: the pickup drops to the bottom of the
-    // list and the valets get no alert. Its spot goes back to the normal
-    // pickup-in-progress state.
-    if (car?.is_staged) {
-      supabase.from("parked_cars").update({ is_staged: false }).eq("ro_number", ro.trim()).then();
+    // Staging flags the car so its map spot shows the checkered pattern; a real
+    // pickup on an already-staged car clears that flag instead.
+    if (car) {
+      const patch: { is_staged?: boolean; notes?: string } = {};
+      if (isStage) patch.is_staged = true;
+      else if (car.is_staged) patch.is_staged = false;
+      if (noteText) patch.notes = noteText;
+      if (Object.keys(patch).length) {
+        supabase.from("parked_cars").update(patch).eq("ro_number", ro.trim()).then();
+      }
     }
-    if (noteText && car) {
-      supabase.from("parked_cars").update({ notes: noteText }).eq("ro_number", ro.trim()).then();
-    }
-    if (!car?.is_staged) sendPickupAlert({
+    // Staged submissions never alert the valets.
+    if (!isStage && !car?.is_staged) sendPickupAlert({
       data: {
         tag: null,
         ro: ro.trim(),
@@ -68,9 +78,10 @@ function NewPickupPage() {
         sourceRole,
       },
     }).catch((e) => console.warn("push fan-out failed", e));
-    toast.success("Pickup submitted");
+    toast.success(isStage ? "Stage submitted" : "Pickup submitted");
     navigate({ to: "/pickup", replace: true });
   };
+
 
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
@@ -82,6 +93,12 @@ function NewPickupPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
+        <h1 className="text-lg font-semibold">{isStage ? "Stage Car" : "New Pickup"}</h1>
+        {isStage && (
+          <p className="text-sm text-muted-foreground">
+            Staged means the car is finished but the customer has not arrived yet. Valets are not notified.
+          </p>
+        )}
         <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
@@ -103,9 +120,10 @@ function NewPickupPage() {
           />
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Submitting…" : "Submit Request"}
+          {busy ? "Submitting…" : isStage ? "Submit Stage" : "Submit Request"}
         </button>
       </form>
+
     </div>
   );
 }

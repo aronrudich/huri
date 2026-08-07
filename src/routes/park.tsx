@@ -22,7 +22,7 @@ export const Route = createFileRoute("/park")({
 
 function ParkPage() {
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const { ro: roParam, id: idParam, spot: spotParam } = Route.useSearch();
   const [ro, setRo] = useState(roParam ?? "");
   const [pos, setPos] = useState(spotParam ?? "");
@@ -31,12 +31,18 @@ function ParkPage() {
   const [busy, setBusy] = useState(false);
   const [editing, setEditing] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
+  const [staged, setStaged] = useState(false);
+
+  // Advisors, managers and directors can mark a finished car as staged.
+  const role = profile?.role_name ?? "";
+  const canStage =
+    role === "Advisor" || /manager|director/i.test(role);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
     const load = async () => {
-      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null };
+      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null };
       let data: Row | null = null;
       if (idParam) {
         const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
@@ -52,6 +58,7 @@ function ParkPage() {
       setModel(data.car_model ?? "");
       setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
       setNotes(data.notes ?? "");
+      setStaged(!!data.is_staged);
     };
     void load();
   }, [roParam, idParam]);
@@ -133,6 +140,29 @@ function ParkPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <HuriLogo />
         <div className="flex-1" />
+        {editing && existingId && canStage && (
+          <button
+            type="button"
+            onClick={async () => {
+              const next = !staged;
+              const { error } = await supabase
+                .from("parked_cars")
+                .update({ is_staged: next })
+                .eq("id", existingId);
+              if (error) return toast.error(error.message);
+              setStaged(next);
+              toast.success(next ? "Car staged for the customer" : "Staging removed");
+            }}
+            aria-pressed={staged}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
+              staged
+                ? "border border-primary bg-background text-primary"
+                : "bg-primary text-primary-foreground"
+            }`}
+          >
+            {staged ? "Staged" : "Stage"}
+          </button>
+        )}
         <TopActions />
         <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>

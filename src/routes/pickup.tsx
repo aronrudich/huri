@@ -30,11 +30,13 @@ type Pickup = {
   claimed_by: string | null; claimed_at: string | null; created_at: string;
   source_role: string | null; kind: string | null;
   lot_position: string | null; car_notes: string | null;
+  is_staged?: boolean | null;
 };
 
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
+  is_staged?: boolean | null;
 };
 
 function PickupPage() {
@@ -103,6 +105,8 @@ function PickupPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
         if (p.kind === "parts" && role !== "Valet & Parts") return;
+        // Staged cars are already handled ahead of time — no alert for them.
+        if (p.is_staged) return;
         const title = p.kind === "parts" ? "🔧 Parts request" : "New pickup request";
         notify(
           title,
@@ -167,19 +171,24 @@ function PickupPage() {
   );
 
 
-  // Unclaimed customer pickups first, then unclaimed technician pickups, each oldest first.
+  // Unclaimed customer pickups first, then unclaimed technician pickups, then
+  // staged cars (lowest priority of all), each oldest first.
   const sortedPickups = useMemo(() => {
-    const unclaimedCustomer = visiblePickups
-      .filter((p) => p.status === "unclaimed")
+    const byAge = (a: Pickup, b: Pickup) =>
+      new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    const unclaimed = visiblePickups.filter((p) => p.status === "unclaimed");
+    const unclaimedCustomer = unclaimed
+      .filter((p) => !p.is_staged)
       .filter((p) => p.kind === "parts" || !isTechSource(p.source_role))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const unclaimedTech = visiblePickups
-      .filter((p) => p.status === "unclaimed" && p.kind !== "parts" && isTechSource(p.source_role))
-      .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      .sort(byAge);
+    const unclaimedTech = unclaimed
+      .filter((p) => !p.is_staged && p.kind !== "parts" && isTechSource(p.source_role))
+      .sort(byAge);
+    const unclaimedStaged = unclaimed.filter((p) => !!p.is_staged).sort(byAge);
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
-    return [...unclaimedCustomer, ...unclaimedTech, ...claimed];
+    return [...unclaimedCustomer, ...unclaimedTech, ...unclaimedStaged, ...claimed];
   }, [visiblePickups]);
 
   return (
@@ -313,7 +322,9 @@ function PickupPage() {
                     </span>
                   ) : (
                     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                      <Clock className="h-3 w-3" /> {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
+                      <Clock className="h-3 w-3" />
+                      {p.is_staged && <span className="font-semibold">Staged ·</span>}
+                      {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
                     </span>
                   )}
                 </div>

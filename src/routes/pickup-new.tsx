@@ -34,7 +34,7 @@ function NewPickupPage() {
     // Snapshot the car's current spot + notes so valets can still find it after the spot is freed on claim.
     const { data: car } = await supabase
       .from("parked_cars")
-      .select("lot_position, car_model, notes")
+      .select("lot_position, car_model, notes, is_staged")
       .eq("ro_number", ro.trim())
       .maybeSingle();
     const noteText = notes.trim();
@@ -46,13 +46,20 @@ function NewPickupPage() {
       source_role: sourceRole,
       lot_position: car?.lot_position ?? null,
       car_notes: noteText || car?.notes || null,
+      is_staged: !!car?.is_staged,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
+    // A staged car is already handled: the pickup drops to the bottom of the
+    // list and the valets get no alert. Its spot goes back to the normal
+    // pickup-in-progress state.
+    if (car?.is_staged) {
+      supabase.from("parked_cars").update({ is_staged: false }).eq("ro_number", ro.trim()).then();
+    }
     if (noteText && car) {
       supabase.from("parked_cars").update({ notes: noteText }).eq("ro_number", ro.trim()).then();
     }
-    sendPickupAlert({
+    if (!car?.is_staged) sendPickupAlert({
       data: {
         tag: null,
         ro: ro.trim(),

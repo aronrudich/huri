@@ -159,7 +159,7 @@ export function LotMap({
             size === "xs" ? "text-[6px] leading-none" : "text-[10px]"
           } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "hover:brightness-95"}`}
         >
-          {n}
+          <span className={s.isStaged ? "rounded bg-background/90 px-0.5 text-foreground" : ""}>{n}</span>
         </button>,
       );
     }

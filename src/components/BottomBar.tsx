@@ -45,8 +45,18 @@ export function TopActions() {
     "Parts Manager", "Director", "Service Director", "General Manager",
   ]);
   const canRequestParts = partsRoles.has(profile?.role_name ?? "");
+  const role = profile?.role_name ?? "";
+  const canStage = role === "Advisor" || /manager|director/i.test(role);
   return (
     <div className="flex items-center gap-2">
+      {canStage && (
+        <Link
+          to="/stage"
+          className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+        >
+          Stage
+        </Link>
+      )}
       {canRequestParts && (
         <Link
           to="/parts"
@@ -55,6 +65,7 @@ export function TopActions() {
           Parts
         </Link>
       )}
+
       <Link
         to="/park"
         className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"

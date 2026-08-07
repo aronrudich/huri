@@ -22,7 +22,7 @@ type ParkedCar = {
 
 type ActivePickup = {
   ro_number: string | null; lot_position: string | null;
-  kind: string | null; status: string;
+  kind: string | null; status: string; is_staged?: boolean | null;
 };
 
 const TABS: { id: LotId; label: string }[] = [
@@ -39,6 +39,7 @@ function LotPage() {
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
   const [pickupSpots, setPickupSpots] = useState<Set<string>>(new Set());
+  const [stagedSpots, setStagedSpots] = useState<Set<string>>(new Set());
   // Empty SV stall tapped on the map (spot label), shown in a details modal.
   const [emptySpot, setEmptySpot] = useState<string | null>(null);
   const [suggestOpen, setSuggestOpen] = useState(false);

@@ -267,26 +267,38 @@ function PickupPage() {
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);
-          const ringClass = isParts
-            ? "ring-2 ring-warning"
-            : isTech
-              ? "ring-2 ring-destructive"
-              : "ring-2 ring-primary";
-          const headerBar = isParts
-            ? "bg-warning text-warning-foreground"
-            : isTech
-              ? "bg-destructive text-destructive-foreground"
-              : null;
-          const headerLabel = isParts
-            ? "🔧 Parts request"
-            : isTech
-              ? "🚨 Technician pickup"
-              : null;
+          const isStaged = !!p.is_staged;
+          const ringClass = isStaged
+            ? "ring-2 ring-foreground"
+            : isParts
+              ? "ring-2 ring-warning"
+              : isTech
+                ? "ring-2 ring-destructive"
+                : "ring-2 ring-primary";
+          const headerBar = isStaged
+            ? "text-foreground"
+            : isParts
+              ? "bg-warning text-warning-foreground"
+              : isTech
+                ? "bg-destructive text-destructive-foreground"
+                : null;
+          const headerLabel = isStaged
+            ? "Staged"
+            : isParts
+              ? "🔧 Parts request"
+              : isTech
+                ? "🚨 Technician pickup"
+                : null;
           return (
             <li key={p.id} className={`overflow-hidden rounded-2xl bg-background ${ringClass}`}>
               {headerBar && (
-                <div className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}>
-                  {headerLabel}
+                <div
+                  className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}
+                  style={isStaged ? CHECKER : undefined}
+                >
+                  <span className={isStaged ? "rounded bg-background/90 px-1.5 py-0.5" : undefined}>
+                    {headerLabel}
+                  </span>
                 </div>
               )}
               <div className="px-4 py-3">

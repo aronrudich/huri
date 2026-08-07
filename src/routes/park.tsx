@@ -140,30 +140,9 @@ function ParkPage() {
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <HuriLogo />
         <div className="flex-1" />
-        {editing && existingId && canStage && (
-          <button
-            type="button"
-            onClick={async () => {
-              const next = !staged;
-              const { error } = await supabase
-                .from("parked_cars")
-                .update({ is_staged: next })
-                .eq("id", existingId);
-              if (error) return toast.error(error.message);
-              setStaged(next);
-              toast.success(next ? "Car staged for the customer" : "Staging removed");
-            }}
-            aria-pressed={staged}
-            className={`rounded-full px-3 py-1.5 text-xs font-semibold ${
-              staged
-                ? "border border-primary bg-background text-primary"
-                : "bg-primary text-primary-foreground"
-            }`}
-          >
-            {staged ? "Staged" : "Stage"}
-          </button>
-        )}
-        <TopActions />
+        {/* Staging is submitted through the pickup form; a staged car shows no
+            Stage button here — canceling a stage happens in the pickup list. */}
+        <TopActions hideStage={editing && staged} />
         <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
@@ -198,6 +177,26 @@ function ParkPage() {
           >
             Delete Car
           </button>
+        )}
+        {editing && existingId && (
+          <div className="flex gap-2 pt-1">
+            <Link
+              to="/pickup-new"
+              search={{ ro: ro.trim() || undefined }}
+              className="flex-1 rounded-xl bg-primary py-3 text-center text-base font-semibold text-primary-foreground"
+            >
+              Pickup
+            </Link>
+            {canStage && !staged && (
+              <Link
+                to="/pickup-new"
+                search={{ staged: true, ro: ro.trim() || undefined }}
+                className="flex-1 rounded-xl border border-primary bg-background py-3 text-center text-base font-semibold text-primary"
+              >
+                Stage
+              </Link>
+            )}
+          </div>
         )}
       </form>
     </div>

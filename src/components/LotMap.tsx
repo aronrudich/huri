@@ -45,10 +45,12 @@ const ROWS = Math.ceil((MAX_SPOT - MIN_SPOT + 1) / COLS); // 49
 // Photo is cropped to the painted grid: 825 x 4611 px.
 const ASPECT = 825 / 4611;
 
+// Softened checker so the stall number stays readable on top of it.
 const CHECKER = {
   backgroundImage:
-    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
-  backgroundSize: "10px 10px",
+    "repeating-conic-gradient(var(--muted-foreground) 0% 25%, var(--background) 0% 50%)",
+  backgroundSize: "8px 8px",
+  opacity: 0.85,
 } as const;
 
 export function LotMap({
@@ -129,7 +131,17 @@ export function LotMap({
           staticView ? "text-[7px] leading-none" : "text-[13px]"
         } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "active:brightness-90"}`}
       >
-        <span className={s.plain ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]" : ""}>{n}</span>
+        <span
+          className={
+            s.isStaged
+              ? "rounded bg-background/90 px-1 text-foreground"
+              : s.plain
+                ? "text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)]"
+                : ""
+          }
+        >
+          {n}
+        </span>
       </button>,
     );
   }
@@ -147,7 +159,7 @@ export function LotMap({
             size === "xs" ? "text-[6px] leading-none" : "text-[10px]"
           } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "hover:brightness-95"}`}
         >
-          {n}
+          <span className={s.isStaged ? "rounded bg-background/90 px-0.5 text-foreground" : ""}>{n}</span>
         </button>,
       );
     }

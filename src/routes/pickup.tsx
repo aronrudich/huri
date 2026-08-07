@@ -401,12 +401,16 @@ function PickupPage() {
                         .eq("id", p.id);
                       if (error) return toast.error(error.message);
                       // Canceling puts the car back where it was before the pickup was submitted.
+                      // Canceling a stage also clears the car's staged flag so its map spot returns to red.
                       const originalSpot = p.lot_position;
-                      if (!isParts && p.ro_number && originalSpot && originalSpot !== "UNKNOWN") {
-                        await supabase.from("parked_cars")
-                          .update({ lot_position: originalSpot })
-                          .eq("ro_number", p.ro_number);
-                        await loadCars();
+                      if (!isParts && p.ro_number) {
+                        const patch: { lot_position?: string; is_staged?: boolean } = {};
+                        if (originalSpot && originalSpot !== "UNKNOWN") patch.lot_position = originalSpot;
+                        if (isStaged) patch.is_staged = false;
+                        if (Object.keys(patch).length) {
+                          await supabase.from("parked_cars").update(patch).eq("ro_number", p.ro_number);
+                          await loadCars();
+                        }
                       }
                       setPickups((cur) => cur.filter((x) => x.id !== p.id));
                       toast.message("Canceled");
@@ -440,7 +444,16 @@ function PickupPage() {
               <X className="h-4 w-4" />
             </button>
           </div>
-          <div className="flex-1 overflow-hidden px-3 py-3 pb-6">
+          {/* Mobile: full-height map that scrolls, so every spot is reachable. */}
+          <div className="flex-1 overflow-y-auto px-3 py-3 pb-10 md:hidden">
+            <LotMap
+              spots={svSpots}
+              carsBySpot={carsByPos}
+              highlightSpot={mapSpot}
+            />
+          </div>
+          {/* Desktop: whole lot fitted on screen at once. */}
+          <div className="hidden flex-1 overflow-hidden px-3 py-3 pb-6 md:block">
             <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}

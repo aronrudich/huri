@@ -92,6 +92,7 @@ export type Database = {
           created_at: string
           dealership_id: string
           id: string
+          is_staged: boolean
           located_at: string
           lot_position: string
           notes: string | null
@@ -106,6 +107,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          is_staged?: boolean
           located_at?: string
           lot_position?: string
           notes?: string | null
@@ -120,6 +122,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          is_staged?: boolean
           located_at?: string
           lot_position?: string
           notes?: string | null
@@ -150,6 +153,7 @@ export type Database = {
           created_at: string
           dealership_id: string
           id: string
+          is_staged: boolean
           kind: string
           lot_position: string | null
           requested_by: string | null
@@ -168,6 +172,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          is_staged?: boolean
           kind?: string
           lot_position?: string | null
           requested_by?: string | null
@@ -186,6 +191,7 @@ export type Database = {
           created_at?: string
           dealership_id?: string
           id?: string
+          is_staged?: boolean
           kind?: string
           lot_position?: string | null
           requested_by?: string | null
@@ -363,6 +369,7 @@ export type Database = {
           created_at: string
           dealership_id: string
           id: string
+          is_staged: boolean
           kind: string
           lot_position: string | null
           requested_by: string | null

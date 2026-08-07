@@ -38,7 +38,7 @@ export function HuriLogo() {
 }
 
 /** Park + Pickup buttons shown in every authenticated header. Operational leadership also sees Parts. */
-export function TopActions() {
+export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   const { profile } = useAuth();
   const partsRoles = new Set([
     "Technician", "Shop Foreman", "Manager", "Service Manager", "Assistant Service Manager",
@@ -46,7 +46,7 @@ export function TopActions() {
   ]);
   const canRequestParts = partsRoles.has(profile?.role_name ?? "");
   const role = profile?.role_name ?? "";
-  const canStage = role === "Advisor" || /manager|director/i.test(role);
+  const canStage = (role === "Advisor" || /manager|director/i.test(role)) && !hideStage;
   return (
     <div className="flex items-center gap-2">
       {canStage && (

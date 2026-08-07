@@ -30,11 +30,13 @@ type Pickup = {
   claimed_by: string | null; claimed_at: string | null; created_at: string;
   source_role: string | null; kind: string | null;
   lot_position: string | null; car_notes: string | null;
+  is_staged?: boolean | null;
 };
 
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
+  is_staged?: boolean | null;
 };
 
 function PickupPage() {

@@ -47,7 +47,7 @@ const ASPECT = 825 / 4611;
 
 const CHECKER = {
   backgroundImage:
-    "repeating-conic-gradient(hsl(var(--foreground)) 0% 25%, hsl(var(--background)) 0% 50%)",
+    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
   backgroundSize: "10px 10px",
 } as const;
 

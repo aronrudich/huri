@@ -196,7 +196,7 @@ export function LotMap({
             gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs")}
+          {gridCells("xs", "v")}
         </div>
         <div
           className="hidden h-full w-full md:grid"
@@ -205,7 +205,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs", true)}
+          {gridCells("xs", "h")}
         </div>
 
       </div>
@@ -239,7 +239,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm", true)}
+          {gridCells("sm", "h")}
         </div>
 
       </div>

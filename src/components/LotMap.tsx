@@ -226,14 +226,15 @@ export function LotMap({
       {/* Desktop: whole lot laid out horizontally, 49 groups of 3 across. */}
       <div className="hidden md:block">
         <div
-          className="grid w-full grid-flow-col overflow-hidden rounded-2xl bg-muted"
+          className="grid w-full overflow-hidden rounded-2xl bg-muted"
           style={{
             gridTemplateRows: `repeat(${COLS}, 3rem)`,
-            gridAutoColumns: "minmax(0, 1fr)",
+            gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm")}
+          {gridCells("sm", true)}
         </div>
+
       </div>
     </>
   );

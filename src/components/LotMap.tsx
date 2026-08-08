@@ -192,14 +192,15 @@ export function LotMap({
           {gridCells("xs")}
         </div>
         <div
-          className="hidden h-full w-full grid-flow-col md:grid"
+          className="hidden h-full w-full md:grid"
           style={{
             gridTemplateRows: `repeat(${COLS}, minmax(0, 1fr))`,
-            gridAutoColumns: "minmax(0, 1fr)",
+            gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs")}
+          {gridCells("xs", true)}
         </div>
+
       </div>
     );
   }

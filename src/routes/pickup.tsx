@@ -127,12 +127,20 @@ function PickupPage() {
   }, [profile]);
 
   // Auto-archive claimed pickups/parts after 60 minutes without changing their saved spot snapshot.
+  // Staged cars that were claimed land in the CP lot at the same 60-minute mark.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
-          supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then();
+          supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then(() => {
+            if (p.is_staged && p.kind !== "parts" && p.ro_number) {
+              supabase.from("parked_cars")
+                .update({ lot_position: "CP", is_staged: false })
+                .eq("ro_number", p.ro_number)
+                .then(() => loadCars());
+            }
+          });
         }
       });
     };
@@ -142,6 +150,7 @@ function PickupPage() {
     }, 30000);
     return () => clearInterval(t);
   }, [pickups]);
+
 
   const claim = async (p: Pickup) => {
     if (!user) return;

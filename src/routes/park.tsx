@@ -191,7 +191,7 @@ function ParkPage() {
               <Link
                 to="/pickup-new"
                 search={{ staged: true, ro: ro.trim() || undefined }}
-                className="flex-1 rounded-xl border border-primary bg-background py-3 text-center text-base font-semibold text-primary"
+                className="flex-1 rounded-xl bg-primary py-3 text-center text-base font-semibold text-primary-foreground"
               >
                 Stage
               </Link>

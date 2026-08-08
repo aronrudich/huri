@@ -146,15 +146,26 @@ export function LotMap({
     );
   }
 
-  /** Plain CSS-grid stalls, used for the horizontal desktop map and snapshots. */
-  const gridCells = (size: "sm" | "xs") => {
+  /**
+   * Plain CSS-grid stalls, used for the horizontal desktop map and snapshots.
+   * `mirror` places spot 1 in the BOTTOM row of its column, so numbers run
+   * bottom-to-top, left-to-right like the real lot.
+   */
+  const gridCells = (size: "sm" | "xs", mirror = false) => {
     const out = [];
     for (let n = MIN_SPOT; n <= MAX_SPOT; n++) {
       const { s, key, ...rest } = cellProps(n);
+      const place = mirror
+        ? {
+            gridColumn: Math.floor((n - 1) / COLS) + 1,
+            gridRow: COLS - ((n - 1) % COLS),
+          }
+        : {};
       out.push(
         <button
           key={key}
           {...rest}
+          style={{ ...(rest.style ?? {}), ...place }}
           className={`flex h-full w-full items-center justify-center border border-border font-extrabold tabular-nums ${
             size === "xs" ? "text-[6px] leading-none" : "text-[10px]"
           } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "hover:brightness-95"}`}
@@ -165,6 +176,7 @@ export function LotMap({
     }
     return out;
   };
+
 
   // Read-only snapshot: pure grid that always fits its container, no scrolling.
   if (staticView) {
@@ -180,14 +192,15 @@ export function LotMap({
           {gridCells("xs")}
         </div>
         <div
-          className="hidden h-full w-full grid-flow-col md:grid"
+          className="hidden h-full w-full md:grid"
           style={{
             gridTemplateRows: `repeat(${COLS}, minmax(0, 1fr))`,
-            gridAutoColumns: "minmax(0, 1fr)",
+            gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs")}
+          {gridCells("xs", true)}
         </div>
+
       </div>
     );
   }
@@ -213,14 +226,15 @@ export function LotMap({
       {/* Desktop: whole lot laid out horizontally, 49 groups of 3 across. */}
       <div className="hidden md:block">
         <div
-          className="grid w-full grid-flow-col overflow-hidden rounded-2xl bg-muted"
+          className="grid w-full overflow-hidden rounded-2xl bg-muted"
           style={{
             gridTemplateRows: `repeat(${COLS}, 3rem)`,
-            gridAutoColumns: "minmax(0, 1fr)",
+            gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm")}
+          {gridCells("sm", true)}
         </div>
+
       </div>
     </>
   );

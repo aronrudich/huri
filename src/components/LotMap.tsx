@@ -151,23 +151,29 @@ export function LotMap({
    * `mirror` places spot 1 in the BOTTOM row of its column, so numbers run
    * bottom-to-top, left-to-right like the real lot.
    */
-  const gridCells = (size: "sm" | "xs", mirror = false) => {
+  const gridCells = (size: "sm" | "xs", mirror: false | "h" | "v" = false) => {
     const out = [];
     for (let n = MIN_SPOT; n <= MAX_SPOT; n++) {
       const { s, key, ...rest } = cellProps(n);
-      const place = mirror
-        ? {
-            gridColumn: Math.floor((n - 1) / COLS) + 1,
-            gridRow: COLS - ((n - 1) % COLS),
-          }
-        : {};
+      const place =
+        mirror === "h"
+          ? {
+              gridColumn: Math.floor((n - 1) / COLS) + 1,
+              gridRow: COLS - ((n - 1) % COLS),
+            }
+          : mirror === "v"
+            ? {
+                gridColumn: ((n - 1) % COLS) + 1,
+                gridRow: ROWS - Math.floor((n - 1) / COLS),
+              }
+            : {};
       out.push(
         <button
           key={key}
           {...rest}
           style={{ ...(rest.style ?? {}), ...place }}
           className={`flex h-full w-full items-center justify-center border border-border font-extrabold tabular-nums ${
-            size === "xs" ? "text-[6px] leading-none" : "text-[10px]"
+            size === "xs" ? "text-[7px] leading-none" : "text-[10px]"
           } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "hover:brightness-95"}`}
         >
           <span className={s.isStaged ? "rounded bg-background/90 px-0.5 text-foreground" : ""}>{n}</span>
@@ -176,6 +182,7 @@ export function LotMap({
     }
     return out;
   };
+
 
 
   // Read-only snapshot: pure grid that always fits its container, no scrolling.
@@ -189,7 +196,7 @@ export function LotMap({
             gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs")}
+          {gridCells("xs", "v")}
         </div>
         <div
           className="hidden h-full w-full md:grid"
@@ -198,7 +205,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs", true)}
+          {gridCells("xs", "h")}
         </div>
 
       </div>
@@ -232,7 +239,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm", true)}
+          {gridCells("sm", "h")}
         </div>
 
       </div>

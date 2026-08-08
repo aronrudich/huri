@@ -146,15 +146,26 @@ export function LotMap({
     );
   }
 
-  /** Plain CSS-grid stalls, used for the horizontal desktop map and snapshots. */
-  const gridCells = (size: "sm" | "xs") => {
+  /**
+   * Plain CSS-grid stalls, used for the horizontal desktop map and snapshots.
+   * `mirror` places spot 1 in the BOTTOM row of its column, so numbers run
+   * bottom-to-top, left-to-right like the real lot.
+   */
+  const gridCells = (size: "sm" | "xs", mirror = false) => {
     const out = [];
     for (let n = MIN_SPOT; n <= MAX_SPOT; n++) {
       const { s, key, ...rest } = cellProps(n);
+      const place = mirror
+        ? {
+            gridColumn: Math.floor((n - 1) / COLS) + 1,
+            gridRow: COLS - ((n - 1) % COLS),
+          }
+        : {};
       out.push(
         <button
           key={key}
           {...rest}
+          style={{ ...(rest.style ?? {}), ...place }}
           className={`flex h-full w-full items-center justify-center border border-border font-extrabold tabular-nums ${
             size === "xs" ? "text-[6px] leading-none" : "text-[10px]"
           } ${s.tone} ${s.dimmed ? "opacity-30" : ""} ${staticView ? "pointer-events-none" : "hover:brightness-95"}`}
@@ -165,6 +176,7 @@ export function LotMap({
     }
     return out;
   };
+
 
   // Read-only snapshot: pure grid that always fits its container, no scrolling.
   if (staticView) {

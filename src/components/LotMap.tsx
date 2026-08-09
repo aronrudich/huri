@@ -248,7 +248,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm", "h")}
+          {gridCells("sm", "reading-h")}
         </div>
 
       </div>

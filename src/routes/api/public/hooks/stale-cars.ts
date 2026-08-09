@@ -41,19 +41,45 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
             .eq("is_active", true)
             .in("role_name", MANAGEMENT_ROLES);
           const ids = (recipients ?? []).map((profile) => profile.id);
+          const body = [
+            car.ro_number && `RO #${car.ro_number}`,
+            car.tag_number && `Tag #${car.tag_number}`,
+            car.car_model,
+            car.lot_position,
+            car.notes,
+          ].filter(Boolean).join(" · ");
+
+          // Inbox message from Huri with the full car info.
+          if (ids.length) {
+            const days = Math.floor((Date.now() - new Date(car.located_at).getTime()) / 86400000);
+            const messageBody = [
+              `This car has been parked for ${days} days.`,
+              car.ro_number ? `RO #: ${car.ro_number}` : null,
+              car.tag_number ? `Tag #: ${car.tag_number}` : null,
+              car.car_model ? `Car: ${car.car_model}` : null,
+              `Location: ${car.lot_position}`,
+              car.notes ? `Notes: ${car.notes}` : null,
+              `Parked since: ${new Date(car.located_at).toLocaleString("en-US")}`,
+            ].filter(Boolean).join("\n");
+            await supabaseAdmin.from("messages").insert(
+              ids.map((id) => ({
+                thread_id: `huri:${id}`,
+                sender_id: null,
+                recipient_id: id,
+                dealership_id: car.dealership_id,
+                body: messageBody,
+              })),
+            );
+          }
+
           if (ids.length) {
             const { data: subscriptions } = await supabaseAdmin
               .from("push_subscriptions")
               .select("id, endpoint, p256dh, auth")
               .in("user_id", ids);
             const staleSubscriptions: string[] = [];
-            const body = [
-              car.ro_number && `RO #${car.ro_number}`,
-              car.tag_number && `Tag #${car.tag_number}`,
-              car.car_model,
-              car.lot_position,
-              car.notes,
-            ].filter(Boolean).join(" · ");
+
+
             await Promise.all((subscriptions ?? []).map(async (subscription) => {
               try {
                 await sendWebPush(subscription, {

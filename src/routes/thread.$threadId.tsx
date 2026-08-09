@@ -104,7 +104,9 @@ function ThreadPage() {
       .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
   }, [otherUserId]);
 
-  const title = isGroup
+  const title = threadId.startsWith("huri:")
+    ? "Huri"
+    : isGroup
     ? `${roles[groupRoleId!] ?? "Group"} (group)${groupStarterId && groupStarterId !== user?.id ? ` · started by ${profiles[groupStarterId]?.name ?? "someone"}` : ""}`
     : (() => {
         const last = visibleMsgs[visibleMsgs.length - 1] ?? visibleMsgs[0];
@@ -113,6 +115,7 @@ function ThreadPage() {
         if (!otherId) return "Unknown";
         return profiles[otherId]?.name ?? "Direct message";
       })();
+
 
 
   const send = async () => {

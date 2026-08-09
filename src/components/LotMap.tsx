@@ -151,7 +151,7 @@ export function LotMap({
    * `mirror` places spot 1 in the BOTTOM row of its column, so numbers run
    * bottom-to-top, left-to-right like the real lot.
    */
-  const gridCells = (size: "sm" | "xs", mirror: false | "h" | "v" = false) => {
+  const gridCells = (size: "sm" | "xs", mirror: false | "h" | "v" | "reading-h" = false) => {
     const out = [];
     for (let n = MIN_SPOT; n <= MAX_SPOT; n++) {
       const { s, key, ...rest } = cellProps(n);
@@ -161,12 +161,18 @@ export function LotMap({
               gridColumn: Math.floor((n - 1) / COLS) + 1,
               gridRow: COLS - ((n - 1) % COLS),
             }
-          : mirror === "v"
+          : mirror === "reading-h"
             ? {
-                gridColumn: ((n - 1) % COLS) + 1,
-                gridRow: ROWS - Math.floor((n - 1) / COLS),
+                gridColumn: Math.floor((n - 1) / COLS) + 1,
+                gridRow: ((n - 1) % COLS) + 1,
               }
-            : {};
+            : mirror === "v"
+              ? {
+                  gridColumn: ((n - 1) % COLS) + 1,
+                  gridRow: ROWS - Math.floor((n - 1) / COLS),
+                }
+              : {};
+
       out.push(
         <button
           key={key}
@@ -185,32 +191,35 @@ export function LotMap({
 
 
 
-  // Read-only snapshot: pure grid that always fits its container, no scrolling.
+  // Read-only snapshot: numbered in reading order (1 top-left, 147
+  // bottom-right). Rows keep a readable minimum height, so if the whole lot
+  // can't fit the container scrolls vertically.
   if (staticView) {
     return (
-      <div className="h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-y-auto overflow-x-hidden">
         <div
-          className="grid h-full w-full md:hidden"
+          className="grid min-h-full w-full md:hidden"
           style={{
             gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${ROWS}, minmax(13px, 1fr))`,
           }}
         >
-          {gridCells("xs", "v")}
+          {gridCells("xs")}
         </div>
         <div
-          className="hidden h-full w-full md:grid"
+          className="hidden min-h-full w-full md:grid"
           style={{
-            gridTemplateRows: `repeat(${COLS}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${COLS}, minmax(18px, 1fr))`,
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs", "h")}
+          {gridCells("xs", "reading-h")}
         </div>
 
       </div>
     );
   }
+
 
   return (
     <>
@@ -239,7 +248,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("sm", "h")}
+          {gridCells("sm", "reading-h")}
         </div>
 
       </div>

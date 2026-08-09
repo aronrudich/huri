@@ -200,6 +200,8 @@ function InboxPage() {
           const starterName = profiles[starterId]?.name ?? "someone";
           title = `${roleName} (group) · ${starterName}`;
         }
+      } else if (m.thread_id.startsWith("huri:")) {
+        title = "Huri";
       } else if (m.thread_id.startsWith("group:")) {
         title = `${roles[m.thread_id.slice(6)] ?? "Group"} (group)`;
       } else {
@@ -207,6 +209,7 @@ function InboxPage() {
         title = otherId ? (profiles[otherId]?.name ?? "Unknown") : "Unknown";
         avatarUrl = otherId ? (profiles[otherId]?.avatarUrl ?? null) : null;
       }
+
       map.set(m.thread_id, {
         thread_id: m.thread_id,
         title,

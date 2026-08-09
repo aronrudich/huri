@@ -454,7 +454,8 @@ function PickupPage() {
             </button>
           </div>
           {/* Whole lot fitted on screen at once, mobile and desktop. */}
-          <div className="min-h-0 flex-1 overflow-hidden px-3 py-3 pb-6">
+          <div className="min-h-0 flex-1 overflow-hidden px-3 py-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-6">
+
             <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}

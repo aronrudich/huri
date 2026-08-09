@@ -73,6 +73,12 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
           }
 
           if (ids.length) {
+            const { data: subscriptions } = await supabaseAdmin
+              .from("push_subscriptions")
+              .select("id, endpoint, p256dh, auth")
+              .in("user_id", ids);
+            const staleSubscriptions: string[] = [];
+
 
             await Promise.all((subscriptions ?? []).map(async (subscription) => {
               try {

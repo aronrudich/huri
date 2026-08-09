@@ -185,32 +185,35 @@ export function LotMap({
 
 
 
-  // Read-only snapshot: pure grid that always fits its container, no scrolling.
+  // Read-only snapshot: numbered in reading order (1 top-left, 147
+  // bottom-right). Rows keep a readable minimum height, so if the whole lot
+  // can't fit the container scrolls vertically.
   if (staticView) {
     return (
-      <div className="h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-y-auto overflow-x-hidden">
         <div
-          className="grid h-full w-full md:hidden"
+          className="grid min-h-full w-full md:hidden"
           style={{
             gridTemplateColumns: `repeat(${COLS}, minmax(0, 1fr))`,
-            gridTemplateRows: `repeat(${ROWS}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${ROWS}, minmax(13px, 1fr))`,
           }}
         >
-          {gridCells("xs", "v")}
+          {gridCells("xs")}
         </div>
         <div
-          className="hidden h-full w-full md:grid"
+          className="hidden min-h-full w-full md:grid"
           style={{
-            gridTemplateRows: `repeat(${COLS}, minmax(0, 1fr))`,
+            gridTemplateRows: `repeat(${COLS}, minmax(18px, 1fr))`,
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs", "h")}
+          {gridCells("xs", "reading-h")}
         </div>
 
       </div>
     );
   }
+
 
   return (
     <>

@@ -151,7 +151,7 @@ export function LotMap({
    * `mirror` places spot 1 in the BOTTOM row of its column, so numbers run
    * bottom-to-top, left-to-right like the real lot.
    */
-  const gridCells = (size: "sm" | "xs", mirror: false | "h" | "v" = false) => {
+  const gridCells = (size: "sm" | "xs", mirror: false | "h" | "v" | "reading-h" = false) => {
     const out = [];
     for (let n = MIN_SPOT; n <= MAX_SPOT; n++) {
       const { s, key, ...rest } = cellProps(n);
@@ -161,12 +161,18 @@ export function LotMap({
               gridColumn: Math.floor((n - 1) / COLS) + 1,
               gridRow: COLS - ((n - 1) % COLS),
             }
-          : mirror === "v"
+          : mirror === "reading-h"
             ? {
-                gridColumn: ((n - 1) % COLS) + 1,
-                gridRow: ROWS - Math.floor((n - 1) / COLS),
+                gridColumn: Math.floor((n - 1) / COLS) + 1,
+                gridRow: ((n - 1) % COLS) + 1,
               }
-            : {};
+            : mirror === "v"
+              ? {
+                  gridColumn: ((n - 1) % COLS) + 1,
+                  gridRow: ROWS - Math.floor((n - 1) / COLS),
+                }
+              : {};
+
       out.push(
         <button
           key={key}

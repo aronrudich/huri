@@ -78,6 +78,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "parts": return { to: "/parts" };
       case "shuttle": return { to: "/shuttle" };
       case "park": return { to: "/park-request" };
+      default: return { to: "/pickup" };
     }
   };
 

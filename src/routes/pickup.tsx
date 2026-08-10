@@ -144,9 +144,20 @@ function PickupPage() {
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then(() => {
-            if (p.is_staged && p.kind !== "parts" && p.ro_number) {
+            if (p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" && p.ro_number) {
               supabase.from("parked_cars")
                 .update({ lot_position: "CP", is_staged: false })
+                .eq("ro_number", p.ro_number)
+                .then(() => loadCars());
+            } else if (
+              !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" &&
+              p.ro_number && isTechSource(p.source_role)
+            ) {
+              // A technician's car ends up in their bay an hour after the claim.
+              const patch: { lot_position: string; notes?: string } = { lot_position: "BAY" };
+              if (p.advisor_name) patch.notes = `Bay — ${p.advisor_name}`;
+              supabase.from("parked_cars")
+                .update(patch)
                 .eq("ro_number", p.ro_number)
                 .then(() => loadCars());
             }
@@ -427,7 +438,7 @@ function PickupPage() {
                   </div>
                 )}
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (
                     <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
                       {isParts ? "On it" : isShuttle ? "On it" : "Claim"}

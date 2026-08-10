@@ -46,6 +46,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     advisor?: string | null;
     model?: string | null;
     sourceRole?: string | null;
+    kind?: string | null;
   }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -59,7 +60,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts"])
+      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
@@ -72,17 +73,21 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     if (!subs?.length) return { sent: 0 };
 
 
-    const isTech = data.sourceRole === "Technician";
+    const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";
+    const isPark = data.kind === "park";
     const body =
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
     const payload = {
-      title: isTech ? "🚨 Tech pickup request" : "New pickup request",
+      title: isPark
+        ? "🅿️ Park request — come to the bay"
+        : isTech ? "🚨 Tech pickup request" : "New pickup request",
       body,
       url: "/pickup",
-      tag: "pickup",
-      variant: isTech ? "tech" : "default",
+      tag: isPark ? "park" : "pickup",
+      variant: isTech || isPark ? "tech" : "default",
     };
+
 
     let sent = 0;
     const stale: string[] = [];

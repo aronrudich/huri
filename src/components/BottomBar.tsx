@@ -1,6 +1,8 @@
 import { Link } from "@tanstack/react-router";
-import { Inbox, Car, List, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Inbox, Car, List, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
+import { actionsForRole, type ActionId } from "@/lib/roles";
 import huriLogo from "@/assets/huri-logo.png.asset.json";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {

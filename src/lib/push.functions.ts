@@ -274,3 +274,74 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
     if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     return { sent, pruned: stale.length };
   });
+
+export const sendShuttleAlert = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: {
+    customerName: string;
+    customerPhone: string;
+    ro?: string | null;
+    notes?: string | null;
+    requesterName?: string | null;
+  }) => d)
+  .handler(async ({ data, context }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { sendWebPush } = await import("./push-server.server");
+
+    const { data: caller } = await supabaseAdmin
+      .from("profiles").select("dealership_id, role_name, is_active").eq("id", context.userId).maybeSingle();
+    if (!caller?.dealership_id || !caller.is_active) throw new Error("You do not have access to shuttle requests");
+
+    await supabaseAdmin.from("pickup_requests").insert({
+      kind: "shuttle",
+      source_role: caller.role_name,
+      advisor_name: data.requesterName ?? null,
+      customer_name: data.customerName,
+      customer_phone: data.customerPhone,
+      ro_number: data.ro ?? null,
+      car_notes: data.notes ?? null,
+      requested_by: context.userId,
+      status: "unclaimed",
+      dealership_id: caller.dealership_id,
+    });
+
+    // Shuttle + Valet & Shuttle drivers get the alert.
+    const { data: recipients } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .eq("dealership_id", caller.dealership_id)
+      .in("role_name", ["Shuttle", "Valet & Shuttle"])
+      .eq("is_active", true);
+    if (!recipients?.length) return { sent: 0 };
+
+    const { data: subs } = await supabaseAdmin
+      .from("push_subscriptions")
+      .select("id, endpoint, p256dh, auth")
+      .in("user_id", recipients.map((r) => r.id));
+    if (!subs?.length) return { sent: 0 };
+
+    const body = [data.customerName, data.customerPhone, data.ro && `RO #${data.ro}`, data.requesterName]
+      .filter(Boolean).join(" · ");
+    const payload = {
+      title: "🚐 Shuttle request",
+      body: body || "A shuttle was requested.",
+      url: "/pickup",
+      tag: "shuttle",
+      variant: "default",
+    };
+
+    let sent = 0;
+    const stale: string[] = [];
+    await Promise.all(subs.map(async (s) => {
+      try {
+        await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
+        sent++;
+      } catch (e: unknown) {
+        const code = (e as { statusCode?: number })?.statusCode;
+        if (code === 404 || code === 410) stale.push(s.id);
+        else console.warn("shuttle push fail", code, (e as Error)?.message);
+      }
+    }));
+    if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
+    return { sent, pruned: stale.length };
+  });

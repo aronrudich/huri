@@ -25,8 +25,19 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
     return locationChoice(value) === "OTHER" ? value : "";
   });
   const rootRef = useRef<HTMLDivElement>(null);
+  // Everything this picker itself emits is remembered so the sync effect below
+  // can ignore it. Without this, choosing "SV" (which emits "") or clearing the
+  // spot number would bounce the dropdown back to "Choose A Location".
+  const emitted = useRef<string>(value);
+
+  const emit = (next: string) => {
+    emitted.current = next;
+    onChange(next);
+  };
 
   useEffect(() => {
+    if (value === emitted.current) return; // our own change — keep local state
+    emitted.current = value;
     const normalized = normalizeSpot(value);
     const nextChoice = locationChoice(value);
     setChoice(nextChoice);
@@ -45,14 +56,10 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   const select = (next: LocationChoice) => {
     setChoice(next);
     setOpen(false);
-    if (next === "BL" || next === "CP" || next === "BAY") {
-      setDetail("");
-      onChange(next);
-    } else {
-      setDetail("");
-      onChange("");
-    }
+    setDetail("");
+    emit(next === "BL" || next === "CP" || next === "BAY" ? next : "");
   };
+
 
   const selected = OPTIONS.find((option) => option.id === choice);
 

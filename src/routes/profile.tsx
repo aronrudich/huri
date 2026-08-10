@@ -24,16 +24,14 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isApproverRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
   component: ProfilePage,
 });
 
-const ROLE_OPTIONS = [
-  "Valet", "Valet & Parts", "Advisor", "Technician", "Shop Foreman",
-  "Service Manager", "Service Director", "General Manager", "Manager", "Other",
-];
+
 
 type Employee = { id: string; full_name: string; nickname: string | null; role_name: string; email: string; phone_number: string | null; is_owner?: boolean; avatar_url?: string | null };
 type PendingAccount = { id: string; full_name: string; nickname: string | null; email: string; role_name: string; created_at: string };
@@ -57,13 +55,11 @@ function ProfilePage() {
 
   const isOwner = !!profile?.is_owner;
   // Roster is visible to any management-type role plus Service Director / General Manager.
-  const ADMIN_ROLES = [
-    "Manager", "Service Manager", "Assistant Service Manager", "Parts Manager",
-    "Service Director", "General Manager", "Director",
-  ];
   const role = profile?.role_name ?? "";
   const isAdmin =
-    isOwner || ADMIN_ROLES.includes(role) || /manager|director/i.test(role);
+    isOwner || MANAGEMENT_ROLES.includes(role) || /manager|director/i.test(role);
+  // Only Admins (and the owner, as a lockout safety net) handle approvals.
+  const isApprover = isOwner || isApproverRole(role);
 
 
   const fetchPending = useServerFn(listPendingApprovals);
@@ -104,12 +100,12 @@ function ProfilePage() {
     catch (e) { console.warn(e); }
   };
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!isApprover) return;
     loadPending();
     const t = setInterval(loadPending, 15000);
     return () => clearInterval(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin]);
+  }, [isApprover]);
 
 
   const logout = async () => { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
@@ -231,7 +227,7 @@ function ProfilePage() {
         </section>
       )}
 
-      {isAdmin && (
+      {isApprover && (
 
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center justify-between px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -423,7 +419,7 @@ function RequestRoleSheet({ currentRole, pendingRole, onClose, onSubmit }:
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold">Request role change</h2>
-        <p className="mt-1 text-xs text-muted-foreground">Current role: <span className="font-medium text-foreground">{currentRole}</span>. The owner must approve before it takes effect.</p>
+        <p className="mt-1 text-xs text-muted-foreground">Current role: <span className="font-medium text-foreground">{currentRole}</span>. An admin must approve before it takes effect.</p>
         <div className="mt-4 max-h-72 space-y-1 overflow-y-auto">
           {ROLE_OPTIONS.map((r) => (
             <button key={r} onClick={() => setPick(r)}

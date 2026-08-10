@@ -9,6 +9,43 @@ export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park"
 export const VALET_ROLES = ["Valet", "Valet & Parts", "Valet & Shuttle"];
 export const SHUTTLE_ROLES = ["Shuttle", "Valet & Shuttle"];
 
+/** Every role a user can be assigned, in display order. */
+export const ROLE_OPTIONS = [
+  "Valet",
+  "Valet & Parts",
+  "Shuttle",
+  "Valet & Shuttle",
+  "Advisor",
+  "Technician",
+  "Shop Foreman",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Manager",
+  "Director",
+  "Admin",
+  "Other",
+];
+
+/** Roles that handle join requests and role change approvals. */
+export const APPROVER_ROLES = ["Admin"];
+
+export const isApproverRole = (role: string | null | undefined) =>
+  APPROVER_ROLES.includes(role ?? "");
+
+/** Roles that can see the employee roster. */
+export const MANAGEMENT_ROLES = [
+  "Admin",
+  "Manager",
+  "Service Manager",
+  "Assistant Service Manager",
+  "Parts Manager",
+  "Service Director",
+  "General Manager",
+  "Director",
+];
+
+
 export const isTechRole = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";
 

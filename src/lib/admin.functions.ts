@@ -5,13 +5,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
-const ADMIN_ROLES = new Set([
-  "Manager",
-  "Service Manager",
-  "Service Director",
-  "General Manager",
-  "Director",
-]);
+// Only the Admin role (plus the owner) handles approvals and role changes.
+const ADMIN_ROLES = new Set(["Admin"]);
 
 type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
 
@@ -33,7 +28,7 @@ async function callerContext(userId: string): Promise<CallerCtx> {
 
 async function assertAdmin(userId: string): Promise<CallerCtx> {
   const ctx = await callerContext(userId);
-  if (!ctx.isAdmin) throw new Error("Manager or owner only.");
+  if (!ctx.isAdmin) throw new Error("Admins only.");
   return ctx;
 }
 

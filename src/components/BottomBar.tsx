@@ -37,48 +37,94 @@ export function HuriLogo() {
   );
 }
 
-/** Park + Pickup buttons shown in every authenticated header. Operational leadership also sees Parts. */
+/**
+ * Role-based action menu in every authenticated header.
+ * Valet-type roles get a single "New" button; Shuttle gets nothing.
+ */
 export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   const { profile } = useAuth();
-  const partsRoles = new Set([
-    "Technician", "Shop Foreman", "Manager", "Service Manager", "Assistant Service Manager",
-    "Parts Manager", "Director", "Service Director", "General Manager",
-  ]);
-  const canRequestParts = partsRoles.has(profile?.role_name ?? "");
   const role = profile?.role_name ?? "";
-  const canStage = (role === "Advisor" || /manager|director/i.test(role)) && !hideStage;
-  return (
-    <div className="flex items-center gap-2">
-      {canStage && (
-        <Link
-          to="/pickup-new"
-          search={{ staged: true }}
-          className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          Stage
-        </Link>
-      )}
-      {canRequestParts && (
-        <Link
-          to="/parts"
-          className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
-        >
-          Parts
-        </Link>
-      )}
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!open) return;
+    const close = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, [open]);
+
+  const items: ActionId[] = actionsForRole(role).filter((id) => !(id === "stage" && hideStage));
+  if (items.length === 0) return null;
+
+  const LABELS: Record<ActionId, string> = {
+    pickup: "Pickup",
+    new: "New",
+    stage: "Stage",
+    parts: "Parts",
+    shuttle: "Shuttle",
+    park: "Park",
+  };
+
+  const linkProps = (id: ActionId): { to: string; search?: Record<string, unknown> } => {
+    switch (id) {
+      case "pickup": return { to: "/pickup-new" };
+      case "stage": return { to: "/pickup-new", search: { staged: true } };
+      case "new": return { to: "/park" };
+      case "parts": return { to: "/parts" };
+      case "shuttle": return { to: "/shuttle" };
+      case "park": return { to: "/park-request" };
+    }
+  };
+
+  // Single-action roles (valets) skip the dropdown entirely.
+  if (items.length === 1) {
+    const only = items[0]!;
+    const props = linkProps(only);
+    return (
       <Link
-        to="/park"
-        className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+        to={props.to}
+        search={props.search as never}
+        className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground md:px-6 md:py-3 md:text-base"
       >
-        Park
+        {LABELS[only]}
       </Link>
-      <Link
-        to="/pickup-new"
-        className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground"
+    );
+  }
+
+  return (
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-label="Actions"
+        onClick={() => setOpen((cur) => !cur)}
+        className="flex items-center gap-1 rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground md:gap-2 md:px-7 md:py-3.5 md:text-lg"
       >
-        Pickup
-      </Link>
+        Actions
+        <ChevronDown className={`h-4 w-4 transition-transform md:h-5 md:w-5 ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full z-40 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-56">
+          {items.map((id) => {
+            const props = linkProps(id);
+            return (
+              <Link
+                key={id}
+                to={props.to}
+                search={props.search as never}
+                onClick={() => setOpen(false)}
+                className="block border-b border-border px-4 py-3 text-sm font-semibold last:border-b-0 active:bg-accent md:text-base"
+              >
+                {LABELS[id]}
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
+

@@ -105,7 +105,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
             onChange={(event) => {
               const next = event.target.value.replace(/\D/g, "").slice(0, 3);
               setDetail(next);
-              onChange(next ? `SV ${next}` : "");
+              emit(next ? `SV ${next}` : "");
             }}
             inputMode="numeric"
             placeholder="1–147"
@@ -123,7 +123,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
             onChange={(event) => {
               const next = event.target.value.slice(0, 60);
               setDetail(next);
-              onChange(next);
+              emit(next);
             }}
             maxLength={60}
             autoFocus

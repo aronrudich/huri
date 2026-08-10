@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
 import { normalizePhone, formatPhone } from "@/lib/phone";
+import { ROLE_OPTIONS } from "@/lib/roles";
 import huriLogo from "@/assets/huri-logo.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -19,17 +20,7 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
 });
 
-const DEFAULT_ROLES = [
-  "Valet",
-  "Valet & Parts",
-  "Advisor",
-  "Technician",
-  "Shop Foreman",
-  "Service Manager",
-  "Service Director",
-  "General Manager",
-  "Other",
-];
+const DEFAULT_ROLES = ROLE_OPTIONS;
 const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";

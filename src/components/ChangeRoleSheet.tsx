@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { setEmployeeRole } from "@/lib/admin.functions";
 import { toast } from "sonner";
+import { ROLE_OPTIONS } from "@/lib/roles";
 
 type Props = {
   employeeId: string;
@@ -13,7 +14,7 @@ type Props = {
   onSaved: (newRole: string) => void;
 };
 
-const FALLBACK = ["Advisor", "Technician", "Valet", "Valet & Parts", "Shuttle", "Valet & Shuttle", "Manager", "Director", "General Manager"];
+const FALLBACK = ROLE_OPTIONS;
 
 export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose, onSaved }: Props) {
   const [roles, setRoles] = useState<string[]>(FALLBACK);
@@ -23,7 +24,7 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
   useEffect(() => {
     supabase.from("roles").select("name").order("created_at", { ascending: true }).then(({ data }) => {
       if (data && data.length) {
-        const names = Array.from(new Set([...data.map((r) => r.name as string), currentRole]));
+        const names = Array.from(new Set([...ROLE_OPTIONS, ...data.map((r) => r.name as string), currentRole]));
         setRoles(names);
       }
     });

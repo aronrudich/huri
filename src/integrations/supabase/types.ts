@@ -151,6 +151,8 @@ export type Database = {
           claimed_by: string | null
           completed_at: string | null
           created_at: string
+          customer_name: string | null
+          customer_phone: string | null
           dealership_id: string
           id: string
           is_staged: boolean
@@ -170,6 +172,8 @@ export type Database = {
           claimed_by?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
           dealership_id?: string
           id?: string
           is_staged?: boolean
@@ -189,6 +193,8 @@ export type Database = {
           claimed_by?: string | null
           completed_at?: string | null
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
           dealership_id?: string
           id?: string
           is_staged?: boolean
@@ -367,6 +373,8 @@ export type Database = {
           claimed_by: string | null
           completed_at: string | null
           created_at: string
+          customer_name: string | null
+          customer_phone: string | null
           dealership_id: string
           id: string
           is_staged: boolean

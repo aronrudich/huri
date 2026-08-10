@@ -9,10 +9,12 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ShuttleRouteImport } from './routes/shuttle'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
 import { Route as PickupRouteImport } from './routes/pickup'
 import { Route as PartsRouteImport } from './routes/parts'
+import { Route as ParkRequestRouteImport } from './routes/park-request'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as LotRouteImport } from './routes/lot'
 import { Route as ComposeRouteImport } from './routes/compose'
@@ -21,6 +23,11 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
 
+const ShuttleRoute = ShuttleRouteImport.update({
+  id: '/shuttle',
+  path: '/shuttle',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -39,6 +46,11 @@ const PickupRoute = PickupRouteImport.update({
 const PartsRoute = PartsRouteImport.update({
   id: '/parts',
   path: '/parts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkRequestRoute = ParkRequestRouteImport.update({
+  id: '/park-request',
+  path: '/park-request',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkRoute = ParkRouteImport.update({
@@ -83,10 +95,12 @@ export interface FileRoutesByFullPath {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
@@ -96,10 +110,12 @@ export interface FileRoutesByTo {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
@@ -110,10 +126,12 @@ export interface FileRoutesById {
   '/compose': typeof ComposeRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
+  '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
 }
@@ -125,10 +143,12 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/park-request'
     | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
   fileRoutesByTo: FileRoutesByTo
@@ -138,10 +158,12 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/park-request'
     | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
   id:
@@ -151,10 +173,12 @@ export interface FileRouteTypes {
     | '/compose'
     | '/lot'
     | '/park'
+    | '/park-request'
     | '/parts'
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
   fileRoutesById: FileRoutesById
@@ -165,16 +189,25 @@ export interface RootRouteChildren {
   ComposeRoute: typeof ComposeRoute
   LotRoute: typeof LotRoute
   ParkRoute: typeof ParkRoute
+  ParkRequestRoute: typeof ParkRequestRoute
   PartsRoute: typeof PartsRoute
   PickupRoute: typeof PickupRoute
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
+  ShuttleRoute: typeof ShuttleRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/shuttle': {
+      id: '/shuttle'
+      path: '/shuttle'
+      fullPath: '/shuttle'
+      preLoaderRoute: typeof ShuttleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -201,6 +234,13 @@ declare module '@tanstack/react-router' {
       path: '/parts'
       fullPath: '/parts'
       preLoaderRoute: typeof PartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/park-request': {
+      id: '/park-request'
+      path: '/park-request'
+      fullPath: '/park-request'
+      preLoaderRoute: typeof ParkRequestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/park': {
@@ -261,23 +301,15 @@ const rootRouteChildren: RootRouteChildren = {
   ComposeRoute: ComposeRoute,
   LotRoute: LotRoute,
   ParkRoute: ParkRoute,
+  ParkRequestRoute: ParkRequestRoute,
   PartsRoute: PartsRoute,
   PickupRoute: PickupRoute,
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
+  ShuttleRoute: ShuttleRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -22,7 +22,7 @@ async function callerContext(userId: string): Promise<CallerCtx> {
     (!!data &&
       data.is_active === true &&
       data.status === "approved" &&
-      ADMIN_ROLES.has(data.role_name ?? ""));
+      isApproverRole(data.role_name));
   return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
 }
 

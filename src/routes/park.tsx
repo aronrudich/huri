@@ -269,6 +269,49 @@ function ParkPage() {
   );
 }
 
+/** Small "who's in the way" panel for the loaded car. SV is the only lot with
+ *  numbered, stacked spots, so it's the only lot with real blocking info. */
+function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: Record<string, MapCar> }) {
+  const normalized = normalizeSpot(spot);
+  const isSv = lotOf(normalized) === "sv";
+  const blockedBy = isSv
+    ? (adjacentSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
+    : [];
+  const blocking = isSv
+    ? (blockedSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
+    : [];
+  const describe = (c: MapCar) =>
+    `${c.lot_position} (${c.ro_number ? `RO #${c.ro_number}` : "no RO"}${c.car_model ? ` · ${c.car_model}` : ""})`;
+
+  return (
+    <div className="rounded-xl bg-surface px-3 py-2 text-sm">
+      <p>
+        <span className="text-muted-foreground">Location:</span>{" "}
+        <span className="font-semibold">{locationLabel(normalized)}</span>
+      </p>
+      {!isSv ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {normalized && normalized !== "UNKNOWN"
+            ? "Unnumbered lot — no blocking info"
+            : "No location logged — no blocking info"}
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Blocked by:</span>{" "}
+            {blockedBy.length ? blockedBy.map(describe).join(" and ") : "Not blocked — clear to pull out"}
+          </p>
+          {blocking.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, value, onChange, required, placeholder, inputMode, maxLength }:
   { label: string; value: string; onChange: (v: string) => void; required?: boolean; placeholder?: string; inputMode?: "numeric" | "text"; maxLength?: number }) {
   return (

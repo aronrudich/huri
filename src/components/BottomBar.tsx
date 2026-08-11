@@ -120,7 +120,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
         <ChevronDown className={`h-4 w-4 transition-transform md:h-5 md:w-5 ${open ? "rotate-180" : ""}`} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-1 w-44 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-56">
+        <div className="absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-64">
           {items.map((id) => {
             const props = linkProps(id);
             return (
@@ -129,9 +129,12 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
                 to={props.to}
                 search={props.search as never}
                 onClick={() => setOpen(false)}
-                className="block border-b border-border px-4 py-3 text-sm font-semibold last:border-b-0 active:bg-accent md:text-base"
+                className="block border-b border-border px-4 py-2.5 last:border-b-0 active:bg-accent"
               >
-                {LABELS[id]}
+                <span className="block text-sm font-semibold leading-tight md:text-base">{LABELS[id]}</span>
+                <span className="block whitespace-nowrap text-[11px] leading-tight text-muted-foreground md:text-xs">
+                  {HINTS[id]}
+                </span>
               </Link>
             );
           })}

@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
-import { adjacentSpots, spotsForLot, lotOf } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf, locationLabel } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
@@ -313,6 +313,10 @@ function PickupPage() {
               : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
             : null;
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
+          // A pickup submitted for an RO that was never logged into Huri has no
+          // spot snapshot and no live car row — say so instead of "Unknown".
+          const hasCarRecord = !isParts && !isShuttle && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
+          const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);
@@ -430,28 +434,37 @@ function PickupPage() {
                   )}
                 </div>
 
-                {!isParts && !isShuttle && effectiveSpot && (
+                {!isParts && !isShuttle && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Location:</span>{" "}
                       <span className="font-semibold">
-                        {effectiveSpot === "UNKNOWN" ? "Unknown" : effectiveSpot}
+                        {hasCarRecord
+                          ? locationLabel(effectiveSpot)
+                          : "Not parked in Huri — location unknown"}
                       </span>
                     </p>
-                    {blockers.length > 0 && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                        {blockers.map((b, i) => (
-                          <span key={b.id}>
-                            {i > 0 && " and "}
-                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
-                            {b.car_model && ` · ${b.car_model}`})
-                          </span>
-                        ))}
-                      </p>
-                    )}
+                    {isSvSpot ? (
+                      blockers.length > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                          {blockers.map((b, i) => (
+                            <span key={b.id}>
+                              {i > 0 && " and "}
+                              {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
+                              {b.car_model && ` · ${b.car_model}`})
+                            </span>
+                          ))}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-muted-foreground">Not blocked — clear to pull out</p>
+                      )
+                    ) : hasCarRecord && effectiveSpot !== "UNKNOWN" ? (
+                      <p className="mt-1 text-xs text-muted-foreground">Unnumbered lot — no blocking info</p>
+                    ) : null}
                   </div>
                 )}
+
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (

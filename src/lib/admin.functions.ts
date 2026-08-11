@@ -1,12 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// Only approver roles (Admin, Service Manager) plus the owner handle approvals.
+import { isApproverRole } from "@/lib/roles";
 
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
-// Only the Admin role (plus the owner) handles approvals and role changes.
-const ADMIN_ROLES = new Set(["Admin"]);
 
 type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
 
@@ -22,7 +22,7 @@ async function callerContext(userId: string): Promise<CallerCtx> {
     (!!data &&
       data.is_active === true &&
       data.status === "approved" &&
-      ADMIN_ROLES.has(data.role_name ?? ""));
+      isApproverRole(data.role_name));
   return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
 }
 
@@ -57,7 +57,7 @@ async function notifyAdmins(dealershipId: string, title: string, body: string, u
     .eq("is_active", true)
     .eq("status", "approved");
   const adminIds = (admins ?? [])
-    .filter((p) => p.is_owner || ADMIN_ROLES.has(p.role_name ?? ""))
+    .filter((p) => p.is_owner || isApproverRole(p.role_name))
     .map((p) => p.id);
   if (!adminIds.length) return;
   const { data: subs } = await supabaseAdmin

@@ -95,6 +95,29 @@ export function adjacentSpots(raw: string | null | undefined): string[] {
   return out;
 }
 
+/** Spots this car is blocking in (the reverse of adjacentSpots). SV only. */
+export function blockedSpots(raw: string | null | undefined): string[] {
+  const t = normalizeSpot(raw);
+  if (!t || !t.startsWith("SV ")) return [];
+  const n = parseInt(t.slice(3), 10);
+  if (!Number.isFinite(n) || n < 1) return [];
+  const posInGroup = (n - 1) % 3; // 0=front, 1=middle, 2=back
+  const out: string[] = [];
+  for (let i = 1; i <= 2 - posInGroup; i++) out.push(`SV ${n + i}`);
+  return out.filter((s) => parseSpot(s) !== null && parseSpot(s)! <= MAX_SPOT);
+}
+
+/** Human label for a location value. */
+export function locationLabel(raw: string | null | undefined): string {
+  const t = normalizeSpot(raw);
+  if (!t || t === "UNKNOWN") return "Unknown";
+  if (t === "CP") return "CP · Customer Parking";
+  if (t === "BL") return "BL · Back Lot";
+  if (t === "BAY") return "Technician Bay";
+  return t;
+}
+
+
 /** Ordered list of all spot labels for a given lot. */
 export function spotsForLot(lot: LotId): string[] {
   if (lot === "sv") {

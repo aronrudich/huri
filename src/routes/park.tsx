@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot } from "@/lib/lot";
+import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { canStageRole } from "@/lib/roles";
@@ -81,8 +81,8 @@ function ParkPage() {
     void load();
   }, [roParam, idParam]);
 
+  // Loaded up front: powers both the map overlay and the blocking section.
   useEffect(() => {
-    if (!showMap) return;
     supabase
       .from("parked_cars")
       .select("id, ro_number, car_model, lot_position, notes, is_staged")
@@ -93,7 +93,7 @@ function ParkPage() {
         });
         setCarsBySpot(by);
       });
-  }, [showMap]);
+  }, [savedPos]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -181,6 +181,7 @@ function ParkPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
+        {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
@@ -263,6 +264,49 @@ function ParkPage() {
             <LotMap spots={svSpots} carsBySpot={carsBySpot} highlightSpot={mapSpot} staticView />
           </div>
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Small "who's in the way" panel for the loaded car. SV is the only lot with
+ *  numbered, stacked spots, so it's the only lot with real blocking info. */
+function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: Record<string, MapCar> }) {
+  const normalized = normalizeSpot(spot);
+  const isSv = lotOf(normalized) === "sv";
+  const blockedBy = isSv
+    ? (adjacentSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
+    : [];
+  const blocking = isSv
+    ? (blockedSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
+    : [];
+  const describe = (c: MapCar) =>
+    `${c.lot_position} (${c.ro_number ? `RO #${c.ro_number}` : "no RO"}${c.car_model ? ` · ${c.car_model}` : ""})`;
+
+  return (
+    <div className="rounded-xl bg-surface px-3 py-2 text-sm">
+      <p>
+        <span className="text-muted-foreground">Location:</span>{" "}
+        <span className="font-semibold">{locationLabel(normalized)}</span>
+      </p>
+      {!isSv ? (
+        <p className="mt-1 text-xs text-muted-foreground">
+          {normalized && normalized !== "UNKNOWN"
+            ? "Unnumbered lot — no blocking info"
+            : "No location logged — no blocking info"}
+        </p>
+      ) : (
+        <>
+          <p className="mt-1 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Blocked by:</span>{" "}
+            {blockedBy.length ? blockedBy.map(describe).join(" and ") : "Not blocked — clear to pull out"}
+          </p>
+          {blocking.length > 0 && (
+            <p className="mt-1 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
+            </p>
+          )}
+        </>
       )}
     </div>
   );

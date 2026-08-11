@@ -313,6 +313,10 @@ function PickupPage() {
               : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
             : null;
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
+          // A pickup submitted for an RO that was never logged into Huri has no
+          // spot snapshot and no live car row — say so instead of "Unknown".
+          const hasCarRecord = !isParts && !isShuttle && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
+          const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);

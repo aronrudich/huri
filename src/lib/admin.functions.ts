@@ -5,8 +5,9 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
-// Only the Admin role (plus the owner) handles approvals and role changes.
-const ADMIN_ROLES = new Set(["Admin"]);
+// Only approver roles (plus the owner) handle approvals and role changes.
+import { APPROVER_ROLES } from "@/lib/roles";
+const ADMIN_ROLES = new Set(APPROVER_ROLES);
 
 type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
 

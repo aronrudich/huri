@@ -57,7 +57,7 @@ async function notifyAdmins(dealershipId: string, title: string, body: string, u
     .eq("is_active", true)
     .eq("status", "approved");
   const adminIds = (admins ?? [])
-    .filter((p) => p.is_owner || ADMIN_ROLES.has(p.role_name ?? ""))
+    .filter((p) => p.is_owner || isApproverRole(p.role_name))
     .map((p) => p.id);
   if (!adminIds.length) return;
   const { data: subs } = await supabaseAdmin

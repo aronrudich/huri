@@ -430,28 +430,37 @@ function PickupPage() {
                   )}
                 </div>
 
-                {!isParts && !isShuttle && effectiveSpot && (
+                {!isParts && !isShuttle && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Location:</span>{" "}
                       <span className="font-semibold">
-                        {effectiveSpot === "UNKNOWN" ? "Unknown" : effectiveSpot}
+                        {hasCarRecord
+                          ? locationLabel(effectiveSpot)
+                          : "Not parked in Huri — location unknown"}
                       </span>
                     </p>
-                    {blockers.length > 0 && (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                        {blockers.map((b, i) => (
-                          <span key={b.id}>
-                            {i > 0 && " and "}
-                            Spot {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
-                            {b.car_model && ` · ${b.car_model}`})
-                          </span>
-                        ))}
-                      </p>
-                    )}
+                    {isSvSpot ? (
+                      blockers.length > 0 ? (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                          {blockers.map((b, i) => (
+                            <span key={b.id}>
+                              {i > 0 && " and "}
+                              {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
+                              {b.car_model && ` · ${b.car_model}`})
+                            </span>
+                          ))}
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-muted-foreground">Not blocked — clear to pull out</p>
+                      )
+                    ) : hasCarRecord && effectiveSpot !== "UNKNOWN" ? (
+                      <p className="mt-1 text-xs text-muted-foreground">Unnumbered lot — no blocking info</p>
+                    ) : null}
                   </div>
                 )}
+
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (

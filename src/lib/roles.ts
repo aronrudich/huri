@@ -28,7 +28,7 @@ export const ROLE_OPTIONS = [
 ];
 
 /** Roles that handle join requests and role change approvals. */
-export const APPROVER_ROLES = ["Admin"];
+export const APPROVER_ROLES = ["Admin", "Service Manager"];
 
 export const isApproverRole = (role: string | null | undefined) =>
   APPROVER_ROLES.includes(role ?? "");

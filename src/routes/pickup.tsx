@@ -146,8 +146,11 @@ function PickupPage() {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
           const car = p.ro_number ? carsByRo[p.ro_number] : undefined;
           // Someone re-parked the car after the claim: keep the newer location.
+          // Claiming itself frees the spot (location becomes UNKNOWN), so only a
+          // real location logged after the claim counts as "the car moved".
           const movedSinceClaim =
             !!car?.located_at && !!p.claimed_at &&
+            car.lot_position !== "UNKNOWN" &&
             new Date(car.located_at).getTime() > new Date(p.claimed_at).getTime();
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then(() => {
             if (movedSinceClaim) { void loadCars(); return; }

@@ -1,13 +1,12 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+// Only approver roles (Admin, Service Manager) plus the owner handle approvals.
+import { isApproverRole } from "@/lib/roles";
 
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
-// Only approver roles (plus the owner) handle approvals and role changes.
-import { APPROVER_ROLES } from "@/lib/roles";
-const ADMIN_ROLES = new Set(APPROVER_ROLES);
 
 type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
 

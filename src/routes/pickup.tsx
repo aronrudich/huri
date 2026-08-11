@@ -40,12 +40,13 @@ type Pickup = {
   lot_position: string | null; car_notes: string | null;
   is_staged?: boolean | null;
   customer_name?: string | null; customer_phone?: string | null;
+  shuttle_kind?: string | null; customer_address?: string | null;
 };
 
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
-  is_staged?: boolean | null;
+  is_staged?: boolean | null; located_at?: string | null;
 };
 
 function PickupPage() {
@@ -116,9 +117,9 @@ function PickupPage() {
         const p = payload.new as Pickup;
         if (!canSeeKind(role, p.kind)) return;
         if (p.kind === "parts" && role !== "Valet & Parts") return;
-        // Staged cars are already handled ahead of time — no alert for them.
-        if (p.is_staged) return;
-        const title = p.kind === "parts"
+        const title = p.is_staged
+          ? "🏁 Car staged — bring to CP"
+          : p.kind === "parts"
           ? "🔧 Parts request"
           : p.kind === "shuttle"
             ? "🚐 Shuttle request"
@@ -143,7 +144,16 @@ function PickupPage() {
       const now = Date.now();
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
+          const car = p.ro_number ? carsByRo[p.ro_number] : undefined;
+          // Someone re-parked the car after the claim: keep the newer location.
+          // Claiming itself frees the spot (location becomes UNKNOWN), so only a
+          // real location logged after the claim counts as "the car moved".
+          const movedSinceClaim =
+            !!car?.located_at && !!p.claimed_at &&
+            car.lot_position !== "UNKNOWN" &&
+            new Date(car.located_at).getTime() > new Date(p.claimed_at).getTime();
           supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then(() => {
+            if (movedSinceClaim) { void loadCars(); return; }
             if (p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" && p.ro_number) {
               supabase.from("parked_cars")
                 .update({ lot_position: "CP", is_staged: false })
@@ -170,7 +180,7 @@ function PickupPage() {
       archiveExpired();
     }, 30000);
     return () => clearInterval(t);
-  }, [pickups]);
+  }, [pickups, carsByRo]);
 
 
   const claim = async (p: Pickup) => {
@@ -326,7 +336,7 @@ function PickupPage() {
                 ? "bg-destructive text-destructive-foreground"
                 : null;
           const headerLabel = isShuttle
-            ? "🚐 Shuttle request"
+            ? p.shuttle_kind === "dropoff" ? "🚐 Shuttle drop off" : "🚐 Shuttle pickup"
             : isStaged
             ? "Staged"
             : isParts
@@ -372,6 +382,11 @@ function PickupPage() {
                           >
                             {p.customer_phone}
                           </a>
+                        )}
+                        {p.customer_address && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium">Address:</span> {p.customer_address}
+                          </p>
                         )}
                         <p className="text-sm text-muted-foreground">
                           {[p.ro_number && `RO #${p.ro_number}`, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
@@ -535,7 +550,9 @@ function PickupPage() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Shuttle request</h2>
+              <h2 className="text-lg font-semibold">
+                Shuttle {detail.shuttle_kind === "dropoff" ? "drop off" : "pickup"}
+              </h2>
               <button onClick={() => setDetail(null)} aria-label="Close" className="rounded-full p-1 text-muted-foreground">
                 <X className="h-5 w-5" />
               </button>
@@ -555,6 +572,12 @@ function PickupPage() {
                   ) : "—"}
                 </dd>
               </div>
+              {detail.customer_address && (
+                <div>
+                  <dt className="text-xs text-muted-foreground">Address</dt>
+                  <dd className="font-semibold">{detail.customer_address}</dd>
+                </div>
+              )}
               <div>
                 <dt className="text-xs text-muted-foreground">RO Number</dt>
                 <dd className="font-semibold">{detail.ro_number ? `RO #${detail.ro_number}` : "—"}</dd>

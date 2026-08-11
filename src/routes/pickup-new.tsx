@@ -69,14 +69,15 @@ function NewPickupPage() {
         supabase.from("parked_cars").update(patch).eq("ro_number", ro.trim()).then();
       }
     }
-    // Staged submissions never alert the valets.
-    if (!isStage && !car?.is_staged) sendPickupAlert({
+    // Valets are notified for every submission type, stages included.
+    sendPickupAlert({
       data: {
         tag: null,
         ro: ro.trim(),
         advisor: advisorName || null,
         model: model.trim() || null,
         sourceRole,
+        staged: isStage,
       },
     }).catch((e) => console.warn("push fan-out failed", e));
     toast.success(isStage ? "Stage submitted" : "Pickup submitted");
@@ -97,7 +98,7 @@ function NewPickupPage() {
         <h1 className="text-lg font-semibold">{isStage ? "Stage Car" : "New Pickup"}</h1>
         {isStage && (
           <p className="text-sm text-muted-foreground">
-            Staged means the car is finished but the customer has not arrived yet. Valets are not notified.
+            Staged means the car is finished but the customer has not arrived yet. Valets are notified, but staged cars sit below every other request until claimed.
           </p>
         )}
         <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />

@@ -55,6 +55,15 @@ export const isValetRole = (role: string | null | undefined) =>
 export const isShuttleRole = (role: string | null | undefined) =>
   SHUTTLE_ROLES.includes(role ?? "");
 
+/**
+ * Who can stage a car (advisors, admins, and any manager/director title).
+ * Admin shares the manager app layout — only approvals differ.
+ */
+export const canStageRole = (role: string | null | undefined) => {
+  const r = role ?? "";
+  return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
+};
+
 /** Header actions, in the exact top-to-bottom order they should appear. */
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";

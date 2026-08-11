@@ -47,6 +47,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     model?: string | null;
     sourceRole?: string | null;
     kind?: string | null;
+    staged?: boolean | null;
   }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -75,17 +76,20 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
 
     const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";
     const isPark = data.kind === "park";
+    const isStaged = !!data.staged;
     const body =
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
         .filter(Boolean).join(" · ") || "Open Huri";
     const payload = {
-      title: isPark
-        ? "🅿️ Park request — come to the bay"
-        : isTech ? "🚨 Tech pickup request" : "New pickup request",
+      title: isStaged
+        ? "🏁 Car staged — bring to CP"
+        : isPark
+          ? "🅿️ Park request — come to the bay"
+          : isTech ? "🚨 Tech pickup request" : "New pickup request",
       body,
       url: "/pickup",
-      tag: isPark ? "park" : "pickup",
-      variant: isTech || isPark ? "tech" : "default",
+      tag: isStaged ? "stage" : isPark ? "park" : "pickup",
+      variant: !isStaged && (isTech || isPark) ? "tech" : "default",
     };
 
 
@@ -278,11 +282,13 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
 export const sendShuttleAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: {
-    customerName: string;
-    customerPhone: string;
+    customerName?: string | null;
+    customerPhone?: string | null;
     ro?: string | null;
     notes?: string | null;
     requesterName?: string | null;
+    shuttleKind?: string | null;
+    address?: string | null;
   }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -296,8 +302,10 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       kind: "shuttle",
       source_role: caller.role_name,
       advisor_name: data.requesterName ?? null,
-      customer_name: data.customerName,
-      customer_phone: data.customerPhone,
+      customer_name: data.customerName ?? null,
+      customer_phone: data.customerPhone ?? null,
+      shuttle_kind: data.shuttleKind === "pickup" ? "pickup" : data.shuttleKind === "dropoff" ? "dropoff" : null,
+      customer_address: data.address ?? null,
       ro_number: data.ro ?? null,
       car_notes: data.notes ?? null,
       requested_by: context.userId,
@@ -320,10 +328,10 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       .in("user_id", recipients.map((r) => r.id));
     if (!subs?.length) return { sent: 0 };
 
-    const body = [data.customerName, data.customerPhone, data.ro && `RO #${data.ro}`, data.requesterName]
+    const body = [data.customerName, data.customerPhone, data.address, data.ro && `RO #${data.ro}`, data.requesterName]
       .filter(Boolean).join(" · ");
     const payload = {
-      title: "🚐 Shuttle request",
+      title: data.shuttleKind === "dropoff" ? "🚐 Shuttle drop off" : "🚐 Shuttle pickup",
       body: body || "A shuttle was requested.",
       url: "/pickup",
       tag: "shuttle",

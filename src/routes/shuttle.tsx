@@ -21,6 +21,8 @@ export const Route = createFileRoute("/shuttle")({
 function ShuttlePage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const [kind, setKind] = useState<"pickup" | "dropoff">("pickup");
+  const [address, setAddress] = useState("");
   const [customer, setCustomer] = useState("");
   const [phone, setPhone] = useState("");
   const [ro, setRo] = useState("");
@@ -34,16 +36,16 @@ function ShuttlePage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (!customer.trim()) return toast.error("Customer name is required");
+    // Nothing is required on a shuttle request.
     const digits = phone.replace(/\D/g, "");
-    if (digits.length < 10) return toast.error("Enter a valid phone number");
-    if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     setBusy(true);
     try {
       await sendShuttleAlert({
         data: {
-          customerName: customer.trim(),
-          customerPhone: digits,
+          customerName: customer.trim() || null,
+          customerPhone: digits || null,
+          shuttleKind: kind,
+          address: kind === "pickup" ? address.trim() || null : null,
           ro: ro.trim() || null,
           notes: notes.trim() || null,
           requesterName: requesterName || null,
@@ -71,8 +73,37 @@ function ShuttlePage() {
         <h1 className="text-lg font-semibold">Shuttle Request</h1>
         <p className="text-sm text-muted-foreground">The shuttle drivers are notified right away.</p>
         <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Type</label>
+          <div className="flex gap-2">
+            {([["pickup", "Pickup"], ["dropoff", "Drop Off"]] as const).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setKind(id)}
+                className={`flex-1 rounded-xl border py-3 text-base font-semibold ${
+                  kind === id
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-input bg-background text-foreground"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {kind === "pickup" && (
+          <div>
+            <label className="mb-1 block text-xs font-medium text-muted-foreground">Pickup Address</label>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
+            />
+          </div>
+        )}
+        <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">
-            Customer Name<span className="ml-1 text-primary">(Required)</span>
+            Customer Name
           </label>
           <input
             value={customer}
@@ -83,7 +114,7 @@ function ShuttlePage() {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">
-            Phone Number<span className="ml-1 text-primary">(Required)</span>
+            Phone Number
           </label>
           <input
             value={phone}

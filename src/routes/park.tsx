@@ -1,12 +1,23 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { isValidSpot, normalizeSpot, isCustomSpot } from "@/lib/lot";
+import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
+import { LotMap } from "@/components/LotMap";
+import { canStageRole } from "@/lib/roles";
+
+type MapCar = {
+  id: string;
+  ro_number: string | null;
+  car_model: string | null;
+  lot_position: string;
+  notes: string | null;
+  is_staged?: boolean | null;
+};
 
 type ParkSearch = { ro?: string; id?: string; spot?: string };
 
@@ -32,11 +43,17 @@ function ParkPage() {
   const [editing, setEditing] = useState(false);
   const [existingId, setExistingId] = useState<string | null>(null);
   const [staged, setStaged] = useState(false);
+  // Saved location of the loaded car, used for the SV map snapshot.
+  const [savedPos, setSavedPos] = useState<string | null>(null);
+  const [showMap, setShowMap] = useState(false);
+  const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
+  const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   // Advisors, managers and directors can mark a finished car as staged.
   const role = profile?.role_name ?? "";
-  const canStage =
-    role === "Advisor" || /manager|director/i.test(role);
+  const canStage = canStageRole(role);
+  // Only the SV lot has numbered spots, so only SV cars get a map.
+  const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -59,9 +76,24 @@ function ParkPage() {
       setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
       setNotes(data.notes ?? "");
       setStaged(!!data.is_staged);
+      setSavedPos(data.lot_position ?? null);
     };
     void load();
   }, [roParam, idParam]);
+
+  useEffect(() => {
+    if (!showMap) return;
+    supabase
+      .from("parked_cars")
+      .select("id, ro_number, car_model, lot_position, notes, is_staged")
+      .then(({ data }) => {
+        const by: Record<string, MapCar> = {};
+        ((data as MapCar[]) ?? []).forEach((c) => {
+          if (c.lot_position && c.lot_position !== "UNKNOWN") by[c.lot_position.toUpperCase()] = c;
+        });
+        setCarsBySpot(by);
+      });
+  }, [showMap]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,9 +228,42 @@ function ParkPage() {
                 Stage
               </Link>
             )}
+            {mapSpot && (
+              <button
+                type="button"
+                onClick={() => setShowMap(true)}
+                className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-border bg-background py-3 text-base font-semibold text-foreground active:bg-accent"
+              >
+                <MapIcon className="h-4 w-4" /> Map
+              </button>
+            )}
           </div>
         )}
       </form>
+
+      {showMap && mapSpot && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
+          <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
+            <div className="min-w-0">
+              <p className="truncate text-base font-semibold">SV lot map</p>
+              <p className="text-xs text-muted-foreground">
+                <span className="font-semibold text-primary">{mapSpot}</span> (blue)
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowMap(false)}
+              aria-label="Close map"
+              className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted active:bg-accent"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden px-3 py-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+            <LotMap spots={svSpots} carsBySpot={carsBySpot} highlightSpot={mapSpot} staticView />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

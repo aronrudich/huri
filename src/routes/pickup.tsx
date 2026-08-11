@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
-import { adjacentSpots, spotsForLot, lotOf } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf, locationLabel } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";

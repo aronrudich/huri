@@ -81,8 +81,8 @@ function ParkPage() {
     void load();
   }, [roParam, idParam]);
 
+  // Loaded up front: powers both the map overlay and the blocking section.
   useEffect(() => {
-    if (!showMap) return;
     supabase
       .from("parked_cars")
       .select("id, ro_number, car_model, lot_position, notes, is_staged")
@@ -93,7 +93,7 @@ function ParkPage() {
         });
         setCarsBySpot(by);
       });
-  }, [showMap]);
+  }, [savedPos]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

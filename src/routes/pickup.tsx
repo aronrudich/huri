@@ -141,8 +141,8 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive claimed pickups/parts after 60 minutes without changing their saved spot snapshot.
-  // Staged cars that were claimed land in the CP lot at the same 60-minute mark.
+  // Auto-archive claimed pickups/parts after 20 minutes without changing their saved spot snapshot.
+  // Staged cars that were claimed land in the CP lot at the same 20-minute mark.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
@@ -167,7 +167,7 @@ function PickupPage() {
               !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" &&
               p.ro_number && isTechSource(p.source_role)
             ) {
-              // A technician's car ends up in their bay an hour after the claim.
+              // A technician's car ends up in their bay 20 minutes after the claim.
               const patch: { lot_position: string; notes?: string } = { lot_position: "BAY" };
               if (p.advisor_name) patch.notes = `Bay — ${p.advisor_name}`;
               supabase.from("parked_cars")

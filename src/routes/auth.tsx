@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
+import { loginWithPasswordFallback } from "@/lib/password-login.functions";
 import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
@@ -59,7 +60,19 @@ function AuthPage() {
   }, [user, loading, navigate]);
 
   const signInWithEmail = async (loginEmail: string) => {
-    let { error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+    let error: { message: string } | null = null;
+    try {
+      const direct = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+      error = direct.error;
+    } catch {
+      const session = await loginWithPasswordFallback({ data: { email: loginEmail, password } });
+      const restored = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+      if (restored.error) throw restored.error;
+      return;
+    }
     if (isEmailNotConfirmed(error?.message)) {
       try {
         await confirmEmailForValidCredentials({ data: { email: loginEmail, password } });

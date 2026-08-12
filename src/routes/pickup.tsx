@@ -484,8 +484,12 @@ function PickupPage() {
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (
-                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
-                      {isParts ? "On it" : isShuttle ? "On it" : "Claim"}
+                    <button
+                      onClick={() => claim(p)}
+                      disabled={cooldownLeftMs > 0}
+                      className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
+                    >
+                      {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
                     </button>
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
@@ -504,6 +508,7 @@ function PickupPage() {
                     </button>
                   )}
 
+                  {canCancel && (
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
@@ -531,6 +536,7 @@ function PickupPage() {
                   >
                     Cancel
                   </button>
+                  )}
                 </div>
               </div>
             </li>

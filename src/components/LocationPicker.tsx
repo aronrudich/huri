@@ -14,6 +14,7 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "SV", label: "SV", detail: "Spots 1–147" },
   { id: "BAY", label: "Bay", detail: "Technician Bay" },
   { id: "OTHER", label: "Other", detail: "Custom Location" },
+  { id: "UNKNOWN", label: "Unknown", detail: "Not In A Spot" },
 ];
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
@@ -57,7 +58,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
     setChoice(next);
     setOpen(false);
     setDetail("");
-    emit(next === "BL" || next === "CP" || next === "BAY" ? next : "");
+    emit(next === "BL" || next === "CP" || next === "BAY" || next === "UNKNOWN" ? next : "");
   };
 
 

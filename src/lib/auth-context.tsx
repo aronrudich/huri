@@ -85,11 +85,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     });
 
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      if (data.session?.user) loadProfile(data.session.user.id).finally(() => setLoading(false));
-      else setLoading(false);
-    });
+    // A stale/corrupt stored session makes getSession() retry a token refresh
+    // that can never succeed, which used to leave the whole app stuck on the
+    // loading screen (seen on desktop browsers with an old token). Give it a
+    // few seconds, then drop the local session so the sign-in screen shows.
+    let settled = false;
+    const finish = () => { if (!settled) { settled = true; setLoading(false); } };
+    const watchdog = setTimeout(() => {
+      if (settled) return;
+      void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      setSession(null);
+      setProfile(null);
+      finish();
+    }, 6000);
+
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        setSession(data.session);
+        if (data.session?.user) loadProfile(data.session.user.id).finally(finish);
+        else finish();
+      })
+      .catch(() => finish())
+      .finally(() => clearTimeout(watchdog));
 
     return () => sub.subscription.unsubscribe();
   }, []);

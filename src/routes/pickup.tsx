@@ -447,24 +447,18 @@ function PickupPage() {
                           : "Not parked in Huri — location unknown"}
                       </span>
                     </p>
-                    {isSvSpot ? (
-                      blockers.length > 0 ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                          {blockers.map((b, i) => (
-                            <span key={b.id}>
-                              {i > 0 && " and "}
-                              {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
-                              {b.car_model && ` · ${b.car_model}`})
-                            </span>
-                          ))}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-xs text-muted-foreground">Not blocked — clear to pull out</p>
-                      )
-                    ) : hasCarRecord && effectiveSpot !== "UNKNOWN" ? (
-                      <p className="mt-1 text-xs text-muted-foreground">Unnumbered lot — no blocking info</p>
-                    ) : null}
+                    {isSvSpot && blockers.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                        {blockers.map((b, i) => (
+                          <span key={b.id}>
+                            {i > 0 && " and "}
+                            {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
+                            {b.car_model && ` · ${b.car_model}`})
+                          </span>
+                        ))}
+                      </p>
+                    )}
                   </div>
                 )}
 

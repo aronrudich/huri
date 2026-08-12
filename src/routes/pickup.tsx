@@ -39,6 +39,7 @@ type Pickup = {
   id: string; tag_number: string | null; ro_number: string | null;
   advisor_name: string | null; car_model: string | null; status: string;
   claimed_by: string | null; claimed_at: string | null; created_at: string;
+  requested_by?: string | null;
   source_role: string | null; kind: string | null;
   lot_position: string | null; car_notes: string | null;
   is_staged?: boolean | null;

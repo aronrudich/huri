@@ -182,7 +182,7 @@ function ParkPage() {
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
-        {editing && <PickupHistory ro={ro.trim()} />
+        {editing && <PickupHistory ro={ro.trim()} />}
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>

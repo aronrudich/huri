@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";

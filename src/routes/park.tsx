@@ -289,25 +289,18 @@ function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: R
         <span className="text-muted-foreground">Location:</span>{" "}
         <span className="font-semibold">{locationLabel(normalized)}</span>
       </p>
-      {!isSv ? (
+      {isSv && blockedBy.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
-          {normalized && normalized !== "UNKNOWN"
-            ? "Unnumbered lot — no blocking info"
-            : "No location logged — no blocking info"}
+          <span className="font-medium text-foreground">Blocked by:</span>{" "}
+          {blockedBy.map(describe).join(" and ")}
         </p>
-      ) : (
-        <>
-          <p className="mt-1 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Blocked by:</span>{" "}
-            {blockedBy.length ? blockedBy.map(describe).join(" and ") : "Not blocked — clear to pull out"}
-          </p>
-          {blocking.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
-            </p>
-          )}
-        </>
       )}
+      {isSv && blocking.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
+        </p>
+      )}
+
     </div>
   );
 }

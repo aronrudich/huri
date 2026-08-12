@@ -102,12 +102,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     supabase.auth
       .getSession()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
+        if (!data.session) {
+          setSession(null);
+          finish();
+          return;
+        }
+
+        const { data: verified, error } = await supabase.auth.getUser();
+        if (error || !verified.user) {
+          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+          setSession(null);
+          setProfile(null);
+          finish();
+          return;
+        }
+
         setSession(data.session);
-        if (data.session?.user) loadProfile(data.session.user.id).finally(finish);
-        else finish();
+        await loadProfile(verified.user.id).finally(finish);
       })
-      .catch(() => finish());
+      .catch(async () => {
+        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        setSession(null);
+        setProfile(null);
+        finish();
+      });
 
     return () => { clearTimeout(watchdog); sub.subscription.unsubscribe(); };
   }, []);

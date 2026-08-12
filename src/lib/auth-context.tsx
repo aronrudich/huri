@@ -90,8 +90,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // loading screen (seen on desktop browsers with an old token). Give it a
     // few seconds, then drop the local session so the sign-in screen shows.
     let settled = false;
-    const finish = () => { if (!settled) { settled = true; setLoading(false); } };
-    const watchdog = setTimeout(() => {
+    let watchdog: ReturnType<typeof setTimeout>;
+    const finish = () => { if (!settled) { settled = true; clearTimeout(watchdog); setLoading(false); } };
+    watchdog = setTimeout(() => {
       if (settled) return;
       void supabase.auth.signOut({ scope: "local" }).catch(() => {});
       setSession(null);
@@ -106,10 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (data.session?.user) loadProfile(data.session.user.id).finally(finish);
         else finish();
       })
-      .catch(() => finish())
-      .finally(() => clearTimeout(watchdog));
+      .catch(() => finish());
 
-    return () => sub.subscription.unsubscribe();
+    return () => { clearTimeout(watchdog); sub.subscription.unsubscribe(); };
   }, []);
 
   return (

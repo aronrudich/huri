@@ -14,7 +14,10 @@ import { LotMap } from "@/components/LotMap";
 import { canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
 
 
-const CLAIM_HIDE_MS = 60 * 60 * 1000;
+/** Claimed submissions leave the list 20 minutes after the claim. */
+const CLAIM_HIDE_MS = 20 * 60 * 1000;
+/** One claim at a time: a valet waits this long before claiming another. */
+const CLAIM_COOLDOWN_MS = 2 * 60 * 1000;
 
 /** Black-and-white checker used for staged cars (matches the lot map). */
 const CHECKER = {

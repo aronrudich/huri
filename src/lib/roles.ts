@@ -45,6 +45,27 @@ export const MANAGEMENT_ROLES = [
   "Director",
 ];
 
+/**
+ * Roles allowed to cancel anyone's submission. Technicians can only cancel
+ * their own so nobody kills another employee's request by mistake.
+ */
+export const CANCEL_ANY_ROLES = [
+  "Admin",
+  "Manager",
+  "Service Manager",
+  "Assistant Service Manager",
+  "Parts Manager",
+  "Director",
+  "Service Director",
+  "General Manager",
+  "Shop Foreman",
+  "Advisor",
+  ...VALET_ROLES,
+];
+
+export const canCancelAnyRole = (role: string | null | undefined) =>
+  CANCEL_ANY_ROLES.includes(role ?? "");
+
 
 export const isTechRole = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";

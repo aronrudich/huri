@@ -159,6 +159,7 @@ export type Database = {
           is_staged: boolean
           kind: string
           lot_position: string | null
+          reminded_at: string | null
           requested_by: string | null
           ro_number: string | null
           shuttle_kind: string | null
@@ -182,6 +183,7 @@ export type Database = {
           is_staged?: boolean
           kind?: string
           lot_position?: string | null
+          reminded_at?: string | null
           requested_by?: string | null
           ro_number?: string | null
           shuttle_kind?: string | null
@@ -205,6 +207,7 @@ export type Database = {
           is_staged?: boolean
           kind?: string
           lot_position?: string | null
+          reminded_at?: string | null
           requested_by?: string | null
           ro_number?: string | null
           shuttle_kind?: string | null
@@ -387,6 +390,7 @@ export type Database = {
           is_staged: boolean
           kind: string
           lot_position: string | null
+          reminded_at: string | null
           requested_by: string | null
           ro_number: string | null
           shuttle_kind: string | null

@@ -11,10 +11,13 @@ import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
+import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
 
 
-const CLAIM_HIDE_MS = 60 * 60 * 1000;
+/** Claimed submissions leave the list 20 minutes after the claim. */
+const CLAIM_HIDE_MS = 20 * 60 * 1000;
+/** One claim at a time: a valet waits this long before claiming another. */
+const CLAIM_COOLDOWN_MS = 2 * 60 * 1000;
 
 /** Black-and-white checker used for staged cars (matches the lot map). */
 const CHECKER = {
@@ -36,6 +39,7 @@ type Pickup = {
   id: string; tag_number: string | null; ro_number: string | null;
   advisor_name: string | null; car_model: string | null; status: string;
   claimed_by: string | null; claimed_at: string | null; created_at: string;
+  requested_by?: string | null;
   source_role: string | null; kind: string | null;
   lot_position: string | null; car_notes: string | null;
   is_staged?: boolean | null;
@@ -137,8 +141,8 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile]);
 
-  // Auto-archive claimed pickups/parts after 60 minutes without changing their saved spot snapshot.
-  // Staged cars that were claimed land in the CP lot at the same 60-minute mark.
+  // Auto-archive claimed pickups/parts after 20 minutes without changing their saved spot snapshot.
+  // Staged cars that were claimed land in the CP lot at the same 20-minute mark.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
@@ -163,7 +167,7 @@ function PickupPage() {
               !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" &&
               p.ro_number && isTechSource(p.source_role)
             ) {
-              // A technician's car ends up in their bay an hour after the claim.
+              // A technician's car ends up in their bay 20 minutes after the claim.
               const patch: { lot_position: string; notes?: string } = { lot_position: "BAY" };
               if (p.advisor_name) patch.notes = `Bay — ${p.advisor_name}`;
               supabase.from("parked_cars")
@@ -183,8 +187,27 @@ function PickupPage() {
   }, [pickups, carsByRo]);
 
 
+  // One claim at a time: the database enforces the 2-minute cooldown, and this
+  // mirrors it in the UI so the button shows the countdown instead of erroring.
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  const lastClaimAt = useMemo(() => {
+    if (!user) return 0;
+    return pickups
+      .filter((p) => p.claimed_by === user.id && p.claimed_at)
+      .reduce((max, p) => Math.max(max, new Date(p.claimed_at!).getTime()), 0);
+  }, [pickups, user]);
+  const cooldownLeftMs = Math.max(0, lastClaimAt + CLAIM_COOLDOWN_MS - now);
+  const cooldownLabel = `${Math.floor(cooldownLeftMs / 60000)}:${String(Math.ceil((cooldownLeftMs % 60000) / 1000)).padStart(2, "0")}`;
+
   const claim = async (p: Pickup) => {
     if (!user) return;
+    if (cooldownLeftMs > 0) {
+      return toast.error(`One claim at a time — wait ${cooldownLabel} before claiming another.`);
+    }
     const { data: claimed, error } = await supabase.rpc("claim_pickup_request", { _pickup_id: p.id });
     if (error) return toast.error(error.message);
     if (claimed) setPickups((current) => current.map((item) => item.id === p.id ? claimed as Pickup : item));
@@ -321,6 +344,9 @@ function PickupPage() {
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);
           const isStaged = !!p.is_staged;
+          // Everyone can cancel their own submission; technicians can only cancel
+          // their own so nobody kills another employee's request.
+          const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
           const ringClass = isShuttle
             ? "ring-2 ring-success"
             : isStaged
@@ -444,32 +470,30 @@ function PickupPage() {
                           : "Not parked in Huri — location unknown"}
                       </span>
                     </p>
-                    {isSvSpot ? (
-                      blockers.length > 0 ? (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          <span className="font-medium text-foreground">Blocked by:</span>{" "}
-                          {blockers.map((b, i) => (
-                            <span key={b.id}>
-                              {i > 0 && " and "}
-                              {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
-                              {b.car_model && ` · ${b.car_model}`})
-                            </span>
-                          ))}
-                        </p>
-                      ) : (
-                        <p className="mt-1 text-xs text-muted-foreground">Not blocked — clear to pull out</p>
-                      )
-                    ) : hasCarRecord && effectiveSpot !== "UNKNOWN" ? (
-                      <p className="mt-1 text-xs text-muted-foreground">Unnumbered lot — no blocking info</p>
-                    ) : null}
+                    {isSvSpot && blockers.length > 0 && (
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        <span className="font-medium text-foreground">Blocked by:</span>{" "}
+                        {blockers.map((b, i) => (
+                          <span key={b.id}>
+                            {i > 0 && " and "}
+                            {b.lot_position} ({b.ro_number ? `RO #${b.ro_number}` : "no RO"}
+                            {b.car_model && ` · ${b.car_model}`})
+                          </span>
+                        ))}
+                      </p>
+                    )}
                   </div>
                 )}
 
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (
-                    <button onClick={() => claim(p)} className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}>
-                      {isParts ? "On it" : isShuttle ? "On it" : "Claim"}
+                    <button
+                      onClick={() => claim(p)}
+                      disabled={cooldownLeftMs > 0}
+                      className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
+                    >
+                      {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
                     </button>
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
@@ -488,6 +512,7 @@ function PickupPage() {
                     </button>
                   )}
 
+                  {canCancel && (
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
@@ -515,6 +540,7 @@ function PickupPage() {
                   >
                     Cancel
                   </button>
+                  )}
                 </div>
               </div>
             </li>

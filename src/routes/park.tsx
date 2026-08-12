@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { format } from "date-fns";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
@@ -182,6 +183,7 @@ function ParkPage() {
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
+        {editing && <PickupHistory ro={ro.trim()} />}
         <Field label="Car Model" value={model} onChange={setModel} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
@@ -289,25 +291,96 @@ function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: R
         <span className="text-muted-foreground">Location:</span>{" "}
         <span className="font-semibold">{locationLabel(normalized)}</span>
       </p>
-      {!isSv ? (
+      {isSv && blockedBy.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
-          {normalized && normalized !== "UNKNOWN"
-            ? "Unnumbered lot — no blocking info"
-            : "No location logged — no blocking info"}
+          <span className="font-medium text-foreground">Blocked by:</span>{" "}
+          {blockedBy.map(describe).join(" and ")}
         </p>
-      ) : (
-        <>
-          <p className="mt-1 text-xs text-muted-foreground">
-            <span className="font-medium text-foreground">Blocked by:</span>{" "}
-            {blockedBy.length ? blockedBy.map(describe).join(" and ") : "Not blocked — clear to pull out"}
-          </p>
-          {blocking.length > 0 && (
-            <p className="mt-1 text-xs text-muted-foreground">
-              <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
-            </p>
-          )}
-        </>
       )}
+      {isSv && blocking.length > 0 && (
+        <p className="mt-1 text-xs text-muted-foreground">
+          <span className="font-medium text-foreground">Blocking:</span> {blocking.map(describe).join(" and ")}
+        </p>
+      )}
+
+    </div>
+  );
+}
+
+type HistoryRow = {
+  id: string;
+  kind: string | null;
+  is_staged: boolean | null;
+  status: string;
+  created_at: string;
+  claimed_at: string | null;
+  completed_at: string | null;
+  advisor_name: string | null;
+  car_notes: string | null;
+  requested_by: string | null;
+  claimed_by: string | null;
+};
+
+/** Every pickup, stage, park, parts and shuttle submission ever logged for this
+ *  car, newest first. Cars are never deleted by the pickup flow, so this is the
+ *  car's full paper trail. */
+function PickupHistory({ ro }: { ro: string }) {
+  const [rows, setRows] = useState<HistoryRow[]>([]);
+  const [names, setNames] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!ro) { setRows([]); return; }
+    let alive = true;
+    void (async () => {
+      const { data } = await supabase
+        .from("pickup_requests")
+        .select("id, kind, is_staged, status, created_at, claimed_at, completed_at, advisor_name, car_notes, requested_by, claimed_by")
+        .eq("ro_number", ro)
+        .order("created_at", { ascending: false })
+        .limit(25);
+      if (!alive) return;
+      const list = (data as HistoryRow[]) ?? [];
+      setRows(list);
+      const ids = Array.from(new Set(list.flatMap((r) => [r.requested_by, r.claimed_by]).filter(Boolean) as string[]));
+      if (!ids.length) return;
+      const { data: people } = await supabase.from("profiles").select("id, full_name, nickname").in("id", ids);
+      if (!alive) return;
+      const map: Record<string, string> = {};
+      ((people as { id: string; full_name: string | null; nickname: string | null }[]) ?? []).forEach((p) => {
+        map[p.id] = p.nickname || p.full_name || "Employee";
+      });
+      setNames(map);
+    })();
+    return () => { alive = false; };
+  }, [ro]);
+
+  if (!rows.length) return null;
+
+  const label = (r: HistoryRow) =>
+    r.kind === "parts" ? "Parts" : r.kind === "shuttle" ? "Shuttle" : r.kind === "park" ? "Park" : r.is_staged ? "Stage" : "Pickup";
+  const when = (iso: string) => format(new Date(iso), "MMM d, yyyy · h:mm a");
+
+  return (
+    <div className="rounded-xl bg-surface px-3 py-2 text-sm">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Pickup History</p>
+      <ul className="space-y-2">
+        {rows.map((r) => (
+          <li key={r.id} className="border-t border-border pt-2 first:border-0 first:pt-0">
+            <p className="text-sm font-semibold">{label(r)}</p>
+            <p className="text-xs text-muted-foreground">
+              Submitted by {r.requested_by ? (names[r.requested_by] ?? r.advisor_name ?? "employee") : (r.advisor_name ?? "employee")} · {when(r.created_at)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {r.claimed_at
+                ? `Claimed by ${r.claimed_by ? (names[r.claimed_by] ?? "employee") : "employee"} · ${when(r.claimed_at)}`
+                : "Not claimed"}
+            </p>
+            {r.car_notes && (
+              <p className="text-xs text-muted-foreground"><span className="font-medium">Note:</span> {r.car_notes}</p>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

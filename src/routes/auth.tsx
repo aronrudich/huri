@@ -23,6 +23,7 @@ export const Route = createFileRoute("/auth")({
 
 const DEFAULT_ROLES = ROLE_OPTIONS;
 const isEmailNotConfirmed = (message?: string) => /email not confirmed/i.test(message ?? "");
+const isNetworkFailure = (message?: string) => /failed to fetch|network request failed|fetch failed/i.test(message ?? "");
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
 
@@ -61,16 +62,23 @@ function AuthPage() {
 
   const signInWithEmail = async (loginEmail: string) => {
     let error: { message: string } | null = null;
-    try {
-      const direct = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-      error = direct.error;
-    } catch {
+    const useServerFallback = async () => {
       const session = await loginWithPasswordFallback({ data: { email: loginEmail, password } });
       const restored = await supabase.auth.setSession({
         access_token: session.access_token,
         refresh_token: session.refresh_token,
       });
       if (restored.error) throw restored.error;
+    };
+    try {
+      const direct = await supabase.auth.signInWithPassword({ email: loginEmail, password });
+      error = direct.error;
+      if (isNetworkFailure(error?.message)) {
+        await useServerFallback();
+        return;
+      }
+    } catch {
+      await useServerFallback();
       return;
     }
     if (isEmailNotConfirmed(error?.message)) {

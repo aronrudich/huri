@@ -11,7 +11,7 @@ import { notify } from "@/lib/push";
 import { getDirectory } from "@/lib/directory.functions";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
+import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */

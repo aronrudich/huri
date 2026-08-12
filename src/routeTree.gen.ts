@@ -21,6 +21,7 @@ import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
 
 const ShuttleRoute = ShuttleRouteImport.update({
@@ -83,6 +84,12 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksUnclaimedReminderRoute =
+  ApiPublicHooksUnclaimedReminderRouteImport.update({
+    id: '/api/public/hooks/unclaimed-reminder',
+    path: '/api/public/hooks/unclaimed-reminder',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
   id: '/api/public/hooks/stale-cars',
   path: '/api/public/hooks/stale-cars',
@@ -103,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
+  '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +126,7 @@ export interface FileRoutesByTo {
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
+  '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +143,7 @@ export interface FileRoutesById {
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
+  '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
+    | '/api/public/hooks/unclaimed-reminder'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +177,7 @@ export interface FileRouteTypes {
     | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
+    | '/api/public/hooks/unclaimed-reminder'
   id:
     | '__root__'
     | '/'
@@ -181,6 +193,7 @@ export interface FileRouteTypes {
     | '/shuttle'
     | '/thread/$threadId'
     | '/api/public/hooks/stale-cars'
+    | '/api/public/hooks/unclaimed-reminder'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +210,7 @@ export interface RootRouteChildren {
   ShuttleRoute: typeof ShuttleRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
+  ApiPublicHooksUnclaimedReminderRoute: typeof ApiPublicHooksUnclaimedReminderRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -285,6 +299,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/unclaimed-reminder': {
+      id: '/api/public/hooks/unclaimed-reminder'
+      path: '/api/public/hooks/unclaimed-reminder'
+      fullPath: '/api/public/hooks/unclaimed-reminder'
+      preLoaderRoute: typeof ApiPublicHooksUnclaimedReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/stale-cars': {
       id: '/api/public/hooks/stale-cars'
       path: '/api/public/hooks/stale-cars'
@@ -309,6 +330,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShuttleRoute: ShuttleRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,
+  ApiPublicHooksUnclaimedReminderRoute: ApiPublicHooksUnclaimedReminderRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -54,6 +54,7 @@ export function isCustomSpot(raw: string | null | undefined): boolean {
 }
 
 export function locationChoice(raw: string | null | undefined): LocationChoice {
+  if ((raw ?? "").trim() === "") return null; // nothing picked yet
   const normalized = normalizeSpot(raw);
   if (!normalized) return null;
   if (normalized === "UNKNOWN") return "UNKNOWN";

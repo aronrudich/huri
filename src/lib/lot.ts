@@ -9,7 +9,7 @@
 // Canonical values are: "UNKNOWN", "BL", "CP", "SV 1".."SV 147", or custom text.
 
 export type LotId = "sv" | "cp" | "bl";
-export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "OTHER" | null;
+export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "OTHER" | "UNKNOWN" | null;
 
 export const MIN_SPOT = 1;
 export const MAX_SPOT = 147;
@@ -55,7 +55,8 @@ export function isCustomSpot(raw: string | null | undefined): boolean {
 
 export function locationChoice(raw: string | null | undefined): LocationChoice {
   const normalized = normalizeSpot(raw);
-  if (!normalized || normalized === "UNKNOWN") return null;
+  if (!normalized) return null;
+  if (normalized === "UNKNOWN") return "UNKNOWN";
   if (normalized === "CP" || normalized === "BL" || normalized === "BAY") return normalized;
   if (normalized.startsWith("SV ")) return "SV";
   return "OTHER";

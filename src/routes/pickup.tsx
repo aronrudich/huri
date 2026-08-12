@@ -343,6 +343,9 @@ function PickupPage() {
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
           const isTech = isTechSource(p.source_role);
           const isStaged = !!p.is_staged;
+          // Everyone can cancel their own submission; technicians can only cancel
+          // their own so nobody kills another employee's request.
+          const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
           const ringClass = isShuttle
             ? "ring-2 ring-success"
             : isStaged

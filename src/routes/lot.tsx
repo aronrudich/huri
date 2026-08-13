@@ -325,7 +325,7 @@ function LotPage() {
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
                       {normalizeSpot(car.lot_position) === "UNKNOWN"
-                        ? "Location unknown — not in any lot"
+                        ? "Unknown"
                         : normalizeSpot(car.lot_position) === "BAY"
                           ? "Technician Bay"
                           : car.lot_position}

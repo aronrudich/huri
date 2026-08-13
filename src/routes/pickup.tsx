@@ -17,7 +17,7 @@ import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/
 /** Claimed submissions leave the list 20 minutes after the claim. */
 const CLAIM_HIDE_MS = 20 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
-const CLAIM_COOLDOWN_MS = 2 * 60 * 1000;
+const CLAIM_COOLDOWN_MS = 1 * 60 * 1000;
 
 /** Black-and-white checker used for staged cars (matches the lot map). */
 const CHECKER = {
@@ -467,7 +467,7 @@ function PickupPage() {
                       <span className="font-semibold">
                         {hasCarRecord
                           ? locationLabel(effectiveSpot)
-                          : "Not parked in Huri — location unknown"}
+                          : "Unknown"}
                       </span>
                     </p>
                     {isSvSpot && blockers.length > 0 && (

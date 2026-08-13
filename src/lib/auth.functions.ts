@@ -93,11 +93,10 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
   .inputValidator((data) => confirmedSignupSchema.parse(data))
   .handler(async ({ data }) => {
     /**
-     * Temporarily off: new accounts are approved instantly instead of waiting in
-     * the owner's approval queue. Flip to `false` to require owner approval again.
-     * (Role-change requests still always require approval.)
+     * New accounts wait in the approval queue: an Admin, Service Manager, or the
+     * owner must approve them. (Role-change requests always require approval.)
      */
-    const AUTO_APPROVE_SIGNUPS = true;
+    const AUTO_APPROVE_SIGNUPS = false;
 
     const publishableKey =
       process.env.SUPABASE_PUBLISHABLE_KEY ||

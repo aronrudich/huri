@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { sendPickupAlert } from "@/lib/push.functions";
+import { isTechRole } from "@/lib/roles";
 
 type PickupNewSearch = { staged?: boolean; ro?: string };
 
@@ -31,6 +32,8 @@ function NewPickupPage() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   const advisorName = profile?.nickname || profile?.full_name || "";
+  // Techs never type the model — it is already tied to the RO.
+  const hideModel = isTechRole(profile?.role_name);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,7 +113,7 @@ function NewPickupPage() {
             className="w-full rounded-xl border border-input bg-muted px-3 py-3 text-base text-muted-foreground"
           />
         </div>
-        <Field label="Car Model" value={model} onChange={setModel} />
+        {!hideModel && <Field label="Car Model" value={model} onChange={setModel} />}
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
           <textarea

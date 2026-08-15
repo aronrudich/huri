@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
             .select("id")
             .eq("dealership_id", car.dealership_id)
             .eq("is_active", true)
-            .in("role_name", MANAGEMENT_ROLES);
+            .in("role_name", ALERT_ROLES);
           const ids = (recipients ?? []).map((profile) => profile.id);
           const body = [
             car.ro_number && `RO #${car.ro_number}`,

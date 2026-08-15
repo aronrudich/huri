@@ -16,6 +16,7 @@ const TITLES: Record<string, string> = {
   logged: "Added to Huri",
   moved: "Moved",
   note: "Note",
+  edited: "Edited",
   deleted: "Deleted",
   staged: "Staged",
   unstaged: "Stage cleared",
@@ -23,7 +24,10 @@ const TITLES: Record<string, string> = {
   claimed: "Claimed",
   canceled: "Canceled",
   completed: "Completed",
+  reminder: "Reminder sent",
+  archived: "Archived",
 };
+
 
 /**
  * Full paper trail for one car (by RO#): every log, move, note, request,

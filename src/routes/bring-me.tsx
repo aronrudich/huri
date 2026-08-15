@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowLeft, Car, Wrench } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { HuriLogo } from "@/components/BottomBar";
+import { HuriLogo, TopActions } from "@/components/BottomBar";
 
 export const Route = createFileRoute("/bring-me")({
   head: () => ({
@@ -25,26 +25,36 @@ function BringMePage() {
 
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
+      <header className="sticky top-0 z-10 flex items-center gap-3 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
         <HuriLogo />
         <div className="flex-1" />
-        <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <TopActions />
+        <Link to="/pickup" aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
-      <div className="grid gap-4 p-4 sm:grid-cols-2">
+      <div className="px-4 pt-4">
+        <h1 className="text-2xl font-bold tracking-tight">Bring Me</h1>
+        <div className="mt-2 flex items-center gap-1.5" aria-hidden="true">
+          <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+          <span className="h-1.5 w-1.5 rounded-full bg-primary/60" />
+          <span className="h-1.5 w-1.5 rounded-full bg-primary/30" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 p-4">
         <Link
           to="/pickup-new"
-          className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl bg-primary text-primary-foreground shadow-sm active:opacity-90"
+          className="flex min-h-48 flex-col items-center justify-center gap-5 rounded-3xl border border-border bg-background shadow-sm active:bg-accent"
         >
-          <Car className="h-14 w-14" />
-          <span className="text-2xl font-bold">Car</span>
+          <Car className="h-12 w-12 text-primary" />
+          <span className="text-xl font-bold text-foreground">Car</span>
         </Link>
         <Link
           to="/parts"
-          className="flex min-h-44 flex-col items-center justify-center gap-3 rounded-2xl border-2 border-primary bg-background text-primary shadow-sm active:bg-accent"
+          className="flex min-h-48 flex-col items-center justify-center gap-5 rounded-3xl border border-border bg-background shadow-sm active:bg-accent"
         >
-          <Wrench className="h-14 w-14" />
-          <span className="text-2xl font-bold">Parts</span>
+          <Wrench className="h-12 w-12 text-primary" />
+          <span className="text-xl font-bold text-foreground">Parts</span>
         </Link>
       </div>
     </div>

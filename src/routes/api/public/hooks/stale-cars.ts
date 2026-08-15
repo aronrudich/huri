@@ -1,15 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const MANAGEMENT_ROLES = [
-  "Manager",
-  "Service Manager",
-  "Assistant Service Manager",
-  "Parts Manager",
-  "Director",
-  "Service Director",
-  "General Manager",
-  "Shop Foreman",
-];
+// 14-day parked-car alerts go to the Service Manager only (may widen later).
+const ALERT_ROLES = ["Service Manager"];
+
 
 export const Route = createFileRoute("/api/public/hooks/stale-cars")({
   server: {
@@ -39,7 +32,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
             .select("id")
             .eq("dealership_id", car.dealership_id)
             .eq("is_active", true)
-            .in("role_name", MANAGEMENT_ROLES);
+            .in("role_name", ALERT_ROLES);
           const ids = (recipients ?? []).map((profile) => profile.id);
           const body = [
             car.ro_number && `RO #${car.ro_number}`,

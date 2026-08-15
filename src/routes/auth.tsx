@@ -56,9 +56,11 @@ function AuthPage() {
     });
   }, []);
 
+  // Returning users with a valid session never see the sign-in form.
   useEffect(() => {
     if (!loading && user) navigate({ to: "/", replace: true });
   }, [user, loading, navigate]);
+
 
   const signInWithEmail = async (loginEmail: string) => {
     let error: { message: string } | null = null;

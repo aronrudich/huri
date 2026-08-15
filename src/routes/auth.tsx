@@ -165,8 +165,19 @@ function AuthPage() {
 
   };
 
+  // While the saved session is being restored (or after it resolves to a
+  // signed-in user) show the logo instead of flashing the sign-in form.
+  if (loading || user) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-surface safe-top safe-bottom">
+        <img src={huriLogo.url} alt="Huri" className="h-14 w-auto opacity-80" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
+
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
           <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-14 w-auto" />

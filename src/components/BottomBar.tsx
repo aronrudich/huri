@@ -134,9 +134,12 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
                 className="block border-b border-border px-4 py-2.5 last:border-b-0 active:bg-accent"
               >
                 <span className="block text-sm font-semibold leading-tight md:text-base">{LABELS[id]}</span>
-                <span className="block whitespace-nowrap text-[11px] leading-tight text-muted-foreground md:text-xs">
-                  {HINTS[id]}
-                </span>
+                {HINTS[id] && (
+                  <span className="block whitespace-nowrap text-[11px] leading-tight text-muted-foreground md:text-xs">
+                    {HINTS[id]}
+                  </span>
+                )}
+
               </Link>
             );
           })}

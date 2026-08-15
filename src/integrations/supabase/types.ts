@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      car_events: {
+        Row: {
+          actor_id: string | null
+          created_at: string
+          dealership_id: string
+          detail: string | null
+          event_type: string
+          id: string
+          notes: string | null
+          ro_number: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          created_at?: string
+          dealership_id?: string
+          detail?: string | null
+          event_type: string
+          id?: string
+          notes?: string | null
+          ro_number?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          created_at?: string
+          dealership_id?: string
+          detail?: string | null
+          event_type?: string
+          id?: string
+          notes?: string | null
+          ro_number?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_events_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealerships: {
         Row: {
           created_at: string
@@ -404,6 +445,17 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      log_car_event: {
+        Args: {
+          _actor: string
+          _dealership_id: string
+          _detail: string
+          _notes: string
+          _ro: string
+          _type: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

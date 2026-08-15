@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** One follow-up push per submission, 10 minutes after it was created. */
-const REMIND_AFTER_MS = 10 * 60 * 1000;
+/** One follow-up push per submission, 5 minutes after it was created. */
+const REMIND_AFTER_MS = 5 * 60 * 1000;
 
 const audienceFor = (kind: string | null) => {
   if (kind === "shuttle") return ["Shuttle", "Valet & Shuttle"];
@@ -51,7 +51,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
               p.car_notes,
             ].filter(Boolean).join(" · ") || "Open Huri";
             const payload = {
-              title: "⏰ Still unclaimed — 10 minutes",
+              title: "⏰ Still unclaimed — 5 minutes",
               body,
               url: "/pickup",
               tag: `reminder-${p.id}`,

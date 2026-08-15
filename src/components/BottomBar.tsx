@@ -63,11 +63,12 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
 
   const LABELS: Record<ActionId, string> = {
     pickup: "Pickup",
-    new: "New",
+    new: "Add Car to Huri",
     stage: "Stage",
     parts: "Parts",
     shuttle: "Shuttle",
-    park: "Park",
+    park: "Park My Car",
+    bringme: "Bring Me",
   };
 
   // Short plain-English description shown under each action label.
@@ -78,6 +79,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     parts: "Bring Me Parts",
     shuttle: "Pickup/Dropoff Customer",
     park: "Park Car For Me",
+    bringme: "Bring Me A Car Or Parts",
   };
 
   const linkProps = (id: ActionId): { to: string; search?: Record<string, unknown> } => {
@@ -88,6 +90,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "parts": return { to: "/parts" };
       case "shuttle": return { to: "/shuttle" };
       case "park": return { to: "/park-request" };
+      case "bringme": return { to: "/bring-me" };
       default: return { to: "/pickup" };
     }
   };

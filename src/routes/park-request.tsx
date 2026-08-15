@@ -25,7 +25,6 @@ function ParkRequestPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [ro, setRo] = useState("");
-  const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -44,7 +43,6 @@ function ParkRequestPage() {
       kind: "park",
       ro_number: ro.trim(),
       advisor_name: requesterName || null,
-      car_model: model.trim() || null,
       car_notes: notes.trim() || null,
       lot_position: "BAY",
       requested_by: user.id,
@@ -57,7 +55,6 @@ function ParkRequestPage() {
         tag: null,
         ro: ro.trim(),
         advisor: requesterName || null,
-        model: model.trim() || null,
         sourceRole,
         kind: "park",
       },
@@ -90,14 +87,6 @@ function ParkRequestPage() {
             inputMode="numeric"
             maxLength={6}
             autoFocus
-            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
-          />
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Car Model</label>
-          <input
-            value={model}
-            onChange={(e) => setModel(e.target.value)}
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>

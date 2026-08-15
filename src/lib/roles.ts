@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme";
 
 export const VALET_ROLES = ["Valet", "Valet & Parts", "Valet & Shuttle"];
 export const SHUTTLE_ROLES = ["Shuttle", "Valet & Shuttle"];
@@ -91,7 +91,7 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
   if (r === "Shuttle") return [];
   if (isValetRole(r)) return ["new"];
   if (r === "Advisor") return ["pickup", "new", "stage", "shuttle"];
-  if (isTechRole(r)) return ["pickup", "parts", "park", "new"];
+  if (isTechRole(r)) return ["bringme", "park", "new"];
   return ["pickup", "new", "stage", "parts", "shuttle", "park"];
 }
 

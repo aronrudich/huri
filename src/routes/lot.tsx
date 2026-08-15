@@ -205,7 +205,7 @@ function LotPage() {
             value={q}
             onChange={(e) => { setQ(e.target.value); setSuggestOpen(true); }}
             onFocus={() => setSuggestOpen(true)}
-            placeholder="Search"
+            placeholder="Search RO#"
             className="w-full rounded-xl bg-muted py-2.5 pl-9 pr-3 text-base outline-none placeholder:text-muted-foreground"
           />
           {suggestOpen && q.trim() && suggestions.length > 0 && (

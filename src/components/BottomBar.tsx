@@ -71,16 +71,15 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     bringme: "Bring Me",
   };
 
-  // Short plain-English description shown under each action label.
-  const HINTS: Record<ActionId, string> = {
+  // Short plain-English description shown under each action label (optional).
+  const HINTS: Partial<Record<ActionId, string>> = {
     pickup: "Bring Me A Car",
-    new: "Log Car Into Huri",
     stage: "Bring Car To CP",
     parts: "Bring Me Parts",
     shuttle: "Pickup/Dropoff Customer",
-    park: "Park Car For Me",
-    bringme: "Bring Me A Car Or Parts",
+    bringme: "Car or Parts",
   };
+
 
   const linkProps = (id: ActionId): { to: string; search?: Record<string, unknown> } => {
     switch (id) {

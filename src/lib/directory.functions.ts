@@ -17,7 +17,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, phone_number, avatar_url")
+      .select("id, full_name, nickname, role_name, avatar_url")
       .eq("is_active", true)
       .eq("status", "approved")
       .eq("dealership_id", dealershipId)
@@ -31,7 +31,6 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
       fullName: person.full_name,
       nickname: person.nickname,
       roleName: person.role_name,
-      phoneNumber: person.phone_number,
       avatarUrl: person.avatar_url ?? null,
     }));
   });
@@ -45,7 +44,7 @@ export const getDirectory = createServerFn({ method: "GET" })
 
     const { data, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, role_id, is_active, phone_number, avatar_url")
+      .select("id, full_name, nickname, role_name, role_id, is_active, avatar_url")
       .eq("dealership_id", dealershipId);
 
     if (error) throw error;
@@ -88,7 +87,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, phone_number, email, dealership_id, avatar_url")
+      .select("id, full_name, nickname, role_name, email, dealership_id, avatar_url")
       .eq("id", data.userId)
       .eq("dealership_id", dealershipId)
       .maybeSingle();
@@ -107,7 +106,6 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       fullName: profile.full_name,
       nickname: profile.nickname,
       roleName: profile.role_name,
-      phoneNumber: profile.phone_number,
       email: profile.email,
       avatarUrl: profile.avatar_url ?? null,
       dealershipName: dealer?.name ?? null,

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { X, Phone, MessageSquare } from "lucide-react";
+import { X, MessageSquare } from "lucide-react";
 import { getPublicProfile } from "@/lib/directory.functions";
-import { formatPhone, isSyntheticEmail } from "@/lib/phone";
+import { isSyntheticEmail } from "@/lib/legacy-email";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { AvatarViewer } from "@/components/Avatar";
@@ -12,7 +12,6 @@ type Profile = {
   fullName: string;
   nickname: string | null;
   roleName: string;
-  phoneNumber: string | null;
   email: string;
   avatarUrl?: string | null;
   dealershipName: string | null;
@@ -103,10 +102,6 @@ export function ProfileViewSheet({
                 <dd className="mt-0.5">{profile.roleName || "—"}</dd>
               </div>
               <div>
-                <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Phone</dt>
-                <dd className="mt-0.5">{profile.phoneNumber ? formatPhone(profile.phoneNumber) : "—"}</dd>
-              </div>
-              <div>
                 <dt className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Email</dt>
                 <dd className="mt-0.5 truncate">{showEmail ? profile.email : "—"}</dd>
               </div>
@@ -122,14 +117,6 @@ export function ProfileViewSheet({
                 >
                   <MessageSquare className="h-4 w-4" /> Message
                 </Link>
-              )}
-              {profile.phoneNumber && (
-                <a
-                  href={`tel:${profile.phoneNumber}`}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent py-2.5 text-sm font-semibold text-accent-foreground"
-                >
-                  <Phone className="h-4 w-4" /> Call
-                </a>
               )}
             </div>
           </>

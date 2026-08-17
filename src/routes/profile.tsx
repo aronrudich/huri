@@ -1,7 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, Briefcase, Shuffle } from "lucide-react";
-import { formatPhone } from "@/lib/phone";
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +32,7 @@ export const Route = createFileRoute("/profile")({
 
 
 
-type Employee = { id: string; full_name: string; nickname: string | null; role_name: string; email: string; phone_number: string | null; is_owner?: boolean; avatar_url?: string | null };
+type Employee = { id: string; full_name: string; nickname: string | null; role_name: string; email: string; is_owner?: boolean; avatar_url?: string | null };
 type PendingAccount = { id: string; full_name: string; nickname: string | null; email: string; role_name: string; created_at: string };
 type PendingRole = { id: string; full_name: string; nickname: string | null; email: string; role_name: string; pending_role_name: string };
 
@@ -83,7 +82,7 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from("profiles").select("id, full_name, nickname, role_name, email, phone_number, is_owner, avatar_url")
+    supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner, avatar_url")
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) => setStaff((data as Employee[]) ?? []));
   }, [isAdmin]);
@@ -169,7 +168,7 @@ function ProfilePage() {
     if (e.id === user?.id) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
-    return e.full_name.toLowerCase().includes(q) || (e.nickname ?? "").toLowerCase().includes(q) || e.role_name.toLowerCase().includes(q) || (e.phone_number ?? "").toLowerCase().includes(q);
+    return e.full_name.toLowerCase().includes(q) || (e.nickname ?? "").toLowerCase().includes(q) || e.role_name.toLowerCase().includes(q);
   });
 
   const totalPending = pending.accounts.length + pending.roleChanges.length;
@@ -215,7 +214,6 @@ function ProfilePage() {
               <Pencil className="h-3.5 w-3.5" /> Edit
             </button>
           </div>
-          <Row label="Phone" value={profile.phone_number ? formatPhone(profile.phone_number) : "—"} />
           {dealershipName && <Row label="Dealership" value={dealershipName} />}
           <button
             onClick={() => setRoleReqOpen(true)}
@@ -305,7 +303,7 @@ function ProfilePage() {
                     {emp.full_name}
                     {emp.is_owner && <Crown className="h-3.5 w-3.5 text-amber-500" />}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">{emp.role_name}{emp.phone_number ? ` · ${formatPhone(emp.phone_number)}` : ""}</p>
+                  <p className="truncate text-xs text-muted-foreground">{emp.role_name}</p>
                 </div>
                 {!emp.is_owner && (
                   <>

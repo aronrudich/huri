@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { Search, PenSquare, Phone, MessageSquare, X, User, Car } from "lucide-react";
+import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectory, getMessageRecipients, searchCars } from "@/lib/directory.functions";
 import { useAuth } from "@/lib/auth-context";
@@ -10,7 +10,6 @@ import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 import { formatDistanceToNow } from "date-fns";
-import { formatPhone } from "@/lib/phone";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 export const Route = createFileRoute("/")({
@@ -45,7 +44,7 @@ type ThreadSummary = {
 };
 
 
-type PersonHit = { id: string; name: string; phone: string | null; avatarUrl: string | null };
+type PersonHit = { id: string; name: string; avatarUrl: string | null };
 type CarHit = { id: string; ro_number: string | null; car_model: string | null; lot_position: string };
 
 function InboxPage() {
@@ -116,7 +115,6 @@ function InboxPage() {
         setPeople(data.map((p) => ({
           id: p.id,
           name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
-          phone: p.phoneNumber ?? null,
           avatarUrl: p.avatarUrl ?? null,
         })));
       }
@@ -294,7 +292,6 @@ function InboxPage() {
 
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-medium">{p.name}</p>
-                    {p.phone && <p className="text-xs text-muted-foreground">{formatPhone(p.phone)}</p>}
                   </div>
                 </button>
               </li>
@@ -395,9 +392,6 @@ function InboxPage() {
 
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-semibold">{selectedPerson.name}</p>
-                {selectedPerson.phone && (
-                  <p className="text-xs text-muted-foreground">{formatPhone(selectedPerson.phone)}</p>
-                )}
               </div>
               <button
                 onClick={() => setSelectedPerson(null)}
@@ -414,21 +408,6 @@ function InboxPage() {
               >
                 <MessageSquare className="h-4 w-4" /> Message
               </button>
-              {selectedPerson.phone ? (
-                <a
-                  href={`tel:${selectedPerson.phone}`}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-accent py-3 text-sm font-semibold text-accent-foreground"
-                >
-                  <Phone className="h-4 w-4" /> Call
-                </a>
-              ) : (
-                <button
-                  disabled
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-muted py-3 text-sm font-semibold text-muted-foreground"
-                >
-                  <Phone className="h-4 w-4" /> No phone
-                </button>
-              )}
               <button
                 onClick={() => { const id = selectedPerson.id; setSelectedPerson(null); setViewProfileId(id); }}
                 className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-secondary py-3 text-sm font-semibold text-secondary-foreground"

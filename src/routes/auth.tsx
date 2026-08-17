@@ -7,7 +7,6 @@ import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
-import { normalizePhone, formatPhone } from "@/lib/phone";
 import { ROLE_OPTIONS } from "@/lib/roles";
 import huriLogo from "@/assets/huri-logo.png.asset.json";
 
@@ -40,7 +39,6 @@ function AuthPage() {
 
   // form fields
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
@@ -119,8 +117,6 @@ function AuthPage() {
     if (!fullName.trim()) return toast.error("Name is required");
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid email");
-    const normalizedPhone = normalizePhone(phone);
-    if (!normalizedPhone) return toast.error("Enter a valid phone number");
     if (!password) return toast.error("Password is required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
@@ -136,7 +132,6 @@ function AuthPage() {
           nickname: nickname.trim(),
           roleName: finalRole,
           dealershipId,
-          phoneNumber: normalizedPhone,
         },
       });
 
@@ -239,21 +234,6 @@ function AuthPage() {
                 required
                 autoComplete="email"
               />
-              <Field
-                label="Phone number"
-                value={phone}
-                onChange={setPhone}
-                type="tel"
-                required
-                autoComplete="tel"
-                inputMode="tel"
-                placeholder="(555) 555-1234"
-              />
-              {phone && normalizePhone(phone) && (
-                <p className="-mt-2 text-xs text-muted-foreground">
-                  Saved as {formatPhone(normalizePhone(phone))}
-                </p>
-              )}
               <Field
                 label="Password"
                 value={password}

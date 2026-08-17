@@ -3,7 +3,6 @@ import { X, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { normalizePhone, formatPhone } from "@/lib/phone";
 
 type Props = {
   profile: Profile;
@@ -41,7 +40,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   // info
   const [fullName, setFullName] = useState(profile.full_name);
   const [nickname, setNickname] = useState(profile.nickname ?? "");
-  const [phone, setPhone] = useState(profile.phone_number ?? "");
   const [avatar, setAvatar] = useState<string | null>(profile.avatar_url ?? null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -65,19 +63,12 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
 
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");
-    let phoneToSave: string | null = null;
-    if (phone.trim()) {
-      const normalized = normalizePhone(phone);
-      if (!normalized) return toast.error("Enter a valid phone number");
-      phoneToSave = normalized;
-    }
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
       .update({
         full_name: fullName.trim(),
         nickname: nickname.trim() || null,
-        phone_number: phoneToSave,
         avatar_url: avatar,
       })
       .eq("id", profile.id);
@@ -177,22 +168,6 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
               <Field label="Nickname">
                 <input value={nickname} onChange={(e) => setNickname(e.target.value)} className="input" />
               </Field>
-              <Field label="Phone number">
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  type="tel"
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="(555) 555-1234"
-                  className="input"
-                />
-              </Field>
-              {phone.trim() && normalizePhone(phone) && (
-                <p className="-mt-1 text-xs text-muted-foreground">
-                  Saved as {formatPhone(normalizePhone(phone))}
-                </p>
-              )}
               <p className="text-xs text-muted-foreground">
                 To change your role, close this and tap "Request role change" — the owner has to approve it.
               </p>

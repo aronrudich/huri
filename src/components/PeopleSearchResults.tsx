@@ -1,9 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Phone } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
-import { formatPhone } from "@/lib/phone";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 type Person = {
@@ -11,7 +9,6 @@ type Person = {
   fullName: string | null;
   nickname: string | null;
   roleName: string | null;
-  phoneNumber: string | null;
   avatarUrl?: string | null;
 };
 
@@ -70,19 +67,10 @@ export function PeopleSearchResults({ q }: { q: string }) {
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-base font-medium">{name}</p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {[p.roleName, p.phoneNumber ? formatPhone(p.phoneNumber) : null].filter(Boolean).join(" · ")}
+                    {p.roleName ?? ""}
                   </p>
                 </div>
               </button>
-              {p.phoneNumber && (
-                <a
-                  href={`tel:${p.phoneNumber}`}
-                  aria-label={`Call ${name}`}
-                  className="grid h-10 w-12 place-items-center text-primary"
-                >
-                  <Phone className="h-5 w-5" />
-                </a>
-              )}
             </li>
           );
         })}

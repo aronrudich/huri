@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, Phone, User } from "lucide-react";
+import { ArrowLeft, Send, Trash2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -8,7 +8,6 @@ import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
-import { formatPhone } from "@/lib/phone";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
@@ -88,21 +87,13 @@ function ThreadPage() {
     [msgs, threadCutoffs, threadId],
   );
 
-  // For 1-on-1 threads (dm:uuid1:uuid2) figure out the other user's id
-  // so we can pull their phone number for the tel: call button.
+  // For 1-on-1 threads (dm:uuid1:uuid2) figure out the other user's id.
   const otherUserId = useMemo(() => {
     if (isGroup || !user) return null;
     const parts = threadId.split(":");
     if (parts[0] !== "dm" || parts.length < 3) return null;
     return parts[1] === user.id ? parts[2] : parts[1];
   }, [threadId, user, isGroup]);
-
-  const [otherPhone, setOtherPhone] = useState<string | null>(null);
-  useEffect(() => {
-    if (!otherUserId) { setOtherPhone(null); return; }
-    supabase.from("profiles").select("phone_number").eq("id", otherUserId).maybeSingle()
-      .then(({ data }) => setOtherPhone((data as { phone_number?: string | null } | null)?.phone_number ?? null));
-  }, [otherUserId]);
 
   const title = threadId.startsWith("huri:")
     ? "Huri"
@@ -177,16 +168,6 @@ function ThreadPage() {
           >
             <User className="h-5 w-5" />
           </button>
-        )}
-        {!isGroup && otherPhone && (
-          <a
-            href={`tel:${otherPhone}`}
-            aria-label={`Call ${formatPhone(otherPhone)}`}
-            title={`Call ${formatPhone(otherPhone)}`}
-            className="grid h-8 w-8 place-items-center rounded-full text-primary hover:bg-primary/10"
-          >
-            <Phone className="h-5 w-5" />
-          </a>
         )}
         <button
           type="button"

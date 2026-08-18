@@ -61,7 +61,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle"])
+      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
@@ -241,7 +241,7 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .eq("role_name", "Valet & Parts")
+      .in("role_name", ["Valet & Parts", "Admin"])
       .eq("is_active", true);
     if (rErr) throw rErr;
     if (!recipients?.length) return { sent: 0 };
@@ -318,7 +318,7 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Shuttle", "Valet & Shuttle"])
+      .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin"])
       .eq("is_active", true);
     if (!recipients?.length) return { sent: 0 };
 

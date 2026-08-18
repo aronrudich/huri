@@ -61,7 +61,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle"])
+      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };

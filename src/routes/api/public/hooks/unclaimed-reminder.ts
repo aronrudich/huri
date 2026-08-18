@@ -4,9 +4,9 @@ import { createFileRoute } from "@tanstack/react-router";
 const REMIND_AFTER_MS = 5 * 60 * 1000;
 
 const audienceFor = (kind: string | null) => {
-  if (kind === "shuttle") return ["Shuttle", "Valet & Shuttle"];
-  if (kind === "parts") return ["Valet & Parts"];
-  return ["Valet", "Valet & Parts", "Valet & Shuttle"];
+  if (kind === "shuttle") return ["Shuttle", "Valet & Shuttle", "Admin"];
+  if (kind === "parts") return ["Valet & Parts", "Admin"];
+  return ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"];
 };
 
 export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({

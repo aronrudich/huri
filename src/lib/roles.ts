@@ -95,12 +95,11 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
   return ["pickup", "new", "stage", "parts", "shuttle", "park"];
 }
 
-/** Which pickup-list submissions a role is allowed to see. */
-export function canSeeKind(role: string | null | undefined, kind: string | null | undefined) {
-  const r = role ?? "";
-  const k = kind ?? "pickup";
-  if (r === "Shuttle") return k === "shuttle";
-  if (r === "Valet & Shuttle") return k !== "parts";
-  if (isValetRole(r)) return k !== "shuttle";
+/**
+ * Which pickup-list submissions a role is allowed to see.
+ * Everyone sees every submission type and can claim any of them.
+ */
+export function canSeeKind(_role?: string | null, _kind?: string | null) {
   return true;
 }
+

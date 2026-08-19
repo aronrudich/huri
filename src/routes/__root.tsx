@@ -115,7 +115,10 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SWRegistrar />
-        <Outlet />
+        <div className="app-scroll">
+          <Outlet />
+        </div>
+
         <NotificationGate />
         <IOSInstallHint />
         <PendingGate />

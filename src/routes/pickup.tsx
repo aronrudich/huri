@@ -110,7 +110,7 @@ function PickupPage() {
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
-  //   - Parts requests → notify ONLY Valet & Parts (server push is already scoped that way).
+  //   - Parts/shuttle requests → same valet/shuttle audience; anyone can claim them.
   useEffect(() => {
     if (!profile) return;
     const role = profile.role_name;
@@ -120,7 +120,6 @@ function PickupPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
         if (!canSeeKind(role, p.kind)) return;
-        if (p.kind === "parts" && role !== "Valet & Parts") return;
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"
           : p.kind === "parts"

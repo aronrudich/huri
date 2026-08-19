@@ -96,6 +96,10 @@
 @layer base {
   * { border-color: var(--color-border); }
   html, body { height: 100%; }
+  /* The app scrolls inside .app-scroll, not the document. This keeps the
+     mobile browser chrome from resizing the viewport, so the fixed bottom
+     tab bar never drifts up or down while scrolling. */
+  html, body { overflow: hidden; }
   body {
     background-color: var(--color-surface);
     color: var(--color-foreground);
@@ -104,7 +108,14 @@
     -webkit-tap-highlight-color: transparent;
     overscroll-behavior-y: contain;
   }
+  .app-scroll {
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
+  }
   /* Safe-area helpers for iOS PWA */
   .safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
   .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 }
+

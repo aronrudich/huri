@@ -35,21 +35,50 @@ const AuthCtx = createContext<Ctx>({
   refreshProfile: async () => {},
 });
 
+const PROFILE_CACHE_KEY = "huri.profile.cache.v1";
+
+const readCachedProfile = (uid: string): Profile | null => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PROFILE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Profile;
+    return parsed?.id === uid ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedProfile = (profile: Profile | null) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (profile) window.localStorage.setItem(PROFILE_CACHE_KEY, JSON.stringify(profile));
+    else window.localStorage.removeItem(PROFILE_CACHE_KEY);
+  } catch {
+    // Private-mode browsers can refuse storage; the app still works without the cache.
+  }
+};
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const applyProfile = (next: Profile | null) => {
+    setProfile(next);
+    writeCachedProfile(next);
+  };
+
   const loadProfile = async (uid: string) => {
     const { data: existing } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
     if (existing) {
-      setProfile(existing as Profile);
+      applyProfile(existing as Profile);
       return;
     }
 
     const { data: authData } = await supabase.auth.getUser();
     const authUser = authData.user;
-    if (!authUser) { setProfile(null); return; }
+    if (!authUser) { applyProfile(null); return; }
 
     const fallbackName =
       (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
@@ -71,7 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       )
       .select("*")
       .maybeSingle();
-    setProfile((created as Profile) ?? null);
+    applyProfile((created as Profile) ?? null);
   };
 
   useEffect(() => {
@@ -80,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (s?.user) {
         setTimeout(() => loadProfile(s.user.id), 0);
       } else {
-        setProfile(null);
+        applyProfile(null);
       }
     });
 
@@ -95,40 +124,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (settled) return;
       void supabase.auth.signOut({ scope: "local" }).catch(() => {});
       setSession(null);
-      setProfile(null);
+      applyProfile(null);
       finish();
     }, 6000);
 
+    const signOutLocally = async () => {
+      await supabase.auth.signOut({ scope: "local" }).catch(() => {});
+      setSession(null);
+      applyProfile(null);
+      finish();
+    };
+
     supabase.auth
       .getSession()
-      .then(async ({ data }) => {
+      .then(({ data }) => {
         if (!data.session) {
           setSession(null);
+          applyProfile(null);
           finish();
           return;
         }
 
-        const { data: verified, error } = await supabase.auth.getUser();
-        if (error || !verified.user) {
-          await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-          setSession(null);
-          setProfile(null);
-          finish();
-          return;
-        }
-
+        // Paint immediately from the stored session plus the cached profile,
+        // then verify the user and refresh the profile in the background.
         setSession(data.session);
-        await loadProfile(verified.user.id).finally(finish);
-      })
-      .catch(async () => {
-        await supabase.auth.signOut({ scope: "local" }).catch(() => {});
-        setSession(null);
-        setProfile(null);
+        const cached = readCachedProfile(data.session.user.id);
+        if (cached) setProfile(cached);
         finish();
-      });
+
+        void loadProfile(data.session.user.id).catch(() => {});
+        void supabase.auth.getUser().then(({ data: verified, error }) => {
+          if (error || !verified.user) void signOutLocally();
+        }).catch(() => {});
+      })
+      .catch(() => { void signOutLocally(); });
 
     return () => { clearTimeout(watchdog); sub.subscription.unsubscribe(); };
   }, []);
+
 
   return (
     <AuthCtx.Provider

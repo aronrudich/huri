@@ -7,12 +7,12 @@ Goal: the Service Manager role keeps its account and can still sign in and look 
 - Service Manager loses all admin powers: no approving/denying new accounts, no approving/denying role change requests, no removing employees, no changing anyone's role.
 - Service Manager no longer appears in the roster/management group, loses the ability to cancel other people's submissions, and loses staging rights.
 - Service Manager receives no push notifications and no Huri inbox alerts: no pickup/parts/shuttle alerts, no unclaimed reminders, no 14-day parked-car alerts, no "waiting for approval" alerts.
-- In the app, a Service Manager sees a clear "Account suspended — read-only" banner, and every action button (submit pickup/park/parts/shuttle, claim, cancel, delete, edit profile, send message) is disabled. They can still view screens.
+- In the app, a Service Manager sees a clear "Account suspended — read-only" banner, and every action button (submit pickup/park/parts/shuttle, claim, cancel, delete, edit profile, send message) is disabled. They can still view screens. NO this is not true. The service manager shouldn't know that their suspended. So there should not be any type of banned or anything like that. They can't know.
 - Their account, profile, history, and messages stay intact. Restoring them later is a one-line change plus switching their role back.
 
 ## Approvals after this change
 
-Only the owner account (aron@oremor.net) and the Admin role handle new-account approvals and role change requests. Since the 14-day parked-car alert currently goes only to the Service Manager, it will be redirected to the Admin role so it does not silently stop.
+Only the owner account ([aron@oremor.net](mailto:aron@oremor.net)) and the Admin role handle new-account approvals and role change requests. Since the 14-day parked-car alert currently goes only to the Service Manager, it will be redirected to the Admin role so it does not silently stop.
 
 ## Technical notes
 

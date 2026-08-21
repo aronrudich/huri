@@ -61,7 +61,6 @@ export const MANAGEMENT_ROLES = [
 export const CANCEL_ANY_ROLES = [
   "Admin",
   "Manager",
-  "Service Manager",
   "Assistant Service Manager",
   "Parts Manager",
   "Director",
@@ -73,7 +72,7 @@ export const CANCEL_ANY_ROLES = [
 ];
 
 export const canCancelAnyRole = (role: string | null | undefined) =>
-  CANCEL_ANY_ROLES.includes(role ?? "");
+  CANCEL_ANY_ROLES.includes(role ?? "") && !isSuspendedRole(role);
 
 
 export const isTechRole = (role: string | null | undefined) =>
@@ -91,6 +90,7 @@ export const isShuttleRole = (role: string | null | undefined) =>
  */
 export const canStageRole = (role: string | null | undefined) => {
   const r = role ?? "";
+  if (isSuspendedRole(r)) return false;
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 

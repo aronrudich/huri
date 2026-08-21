@@ -51,10 +51,7 @@ function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
-  const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [people, setPeople] = useState<PersonHit[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);

@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-// Only approver roles (Admin, Service Manager) plus the owner handle approvals.
-import { isApproverRole } from "@/lib/roles";
+// Only approver roles (Admin) plus the owner handle approvals.
+// Suspended roles have no admin powers and receive no approval notifications.
+import { isApproverRole, isSuspendedRole } from "@/lib/roles";
 
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });

@@ -23,8 +23,6 @@ function ComposePage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const suspended = useSuspended();
-  const [people, setPeople] = useState<Recipient[]>([]);
-  const [groups, setGroups] = useState<Recipient[]>([]);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Recipient | null>(null);
   const [body, setBody] = useState("");

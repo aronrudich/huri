@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getDirectory, getMessageRecipients, searchCars } from "@/lib/directory.functions";
+import { useQuery } from "@tanstack/react-query";
+import { searchCars } from "@/lib/directory.functions";
+import { directoryQuery, formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
@@ -51,10 +53,7 @@ function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [messages, setMessages] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
-  const [roles, setRoles] = useState<Record<string, string>>({});
   const [q, setQ] = useState("");
-  const [people, setPeople] = useState<PersonHit[]>([]);
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
@@ -98,36 +97,19 @@ function InboxPage() {
     return () => { supabase.removeChannel(chan); };
   }, [user]);
 
-  // load profiles + roles maps
-  useEffect(() => {
-    if (!user) return;
-    getDirectory().then((data) => {
-      if (data) {
-        const m: Record<string, { name: string; avatarUrl: string | null }> = {};
-        data.forEach((p) => {
-          if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
-        });
-        setProfiles(m);
-      }
-    });
-    getMessageRecipients().then((data) => {
-      if (data) {
-        setPeople(data.map((p) => ({
-          id: p.id,
-          name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
-          avatarUrl: p.avatarUrl ?? null,
-        })));
-      }
-    }).catch(() => {});
+  // Directory / recipients / roles are cached by React Query, so revisits paint
+  // instantly instead of refetching from scratch on every mount.
+  const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
+  const { data: people = [], error: peopleError } = useQuery({
+    ...messageRecipientsQuery(),
+    enabled: !!user,
+    select: (rows) => rows.map(formatRecipient),
+  });
+  const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
 
-    supabase.from("roles").select("id, name").then(({ data }) => {
-      if (data) {
-        const m: Record<string, string> = {};
-        data.forEach((r) => { m[r.id] = r.name; });
-        setRoles(m);
-      }
-    });
-  }, [user]);
+  useEffect(() => {
+    if (peopleError) console.warn("[inbox] failed to load message recipients", peopleError);
+  }, [peopleError]);
 
   // load messages relevant to me
   useEffect(() => {
@@ -246,7 +228,10 @@ function InboxPage() {
     const t = setTimeout(() => {
       searchCars({ data: { q: needle } })
         .then((rows) => { if (!cancelled) setCarHits((rows ?? []) as CarHit[]); })
-        .catch(() => { if (!cancelled) setCarHits([]); });
+        .catch((error) => {
+          console.warn("[inbox] car search failed", error);
+          if (!cancelled) setCarHits([]);
+        });
     }, 200);
     return () => { cancelled = true; clearTimeout(t); };
   }, [q]);

@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Search, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { getMessageRecipients } from "@/lib/directory.functions";
+import { useQuery } from "@tanstack/react-query";
+import { formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
 import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
 import { useSuspended } from "@/lib/suspension";
@@ -15,6 +16,8 @@ export const Route = createFileRoute("/compose")({
   component: ComposePage,
 });
 
+const GROUP_ROLES = ["Valet", "Advisor", "Technician"];
+
 type Recipient =
   | { kind: "user"; id: string; name: string; subtitle: string; avatarUrl?: string | null }
   | { kind: "group"; id: string; name: string };
@@ -23,8 +26,6 @@ function ComposePage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const suspended = useSuspended();
-  const [people, setPeople] = useState<Recipient[]>([]);
-  const [groups, setGroups] = useState<Recipient[]>([]);
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Recipient | null>(null);
   const [body, setBody] = useState("");
@@ -33,25 +34,33 @@ function ComposePage() {
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
+  // Cached by React Query so reopening Compose paints instantly.
+  const { data: people = [], error: peopleError } = useQuery({
+    ...messageRecipientsQuery(),
+    enabled: !!user,
+    select: (rows): Recipient[] =>
+      rows.map((x) => {
+        const hit = formatRecipient(x);
+        return { kind: "user", id: hit.id, name: hit.name, subtitle: "", avatarUrl: hit.avatarUrl };
+      }),
+  });
+  const { data: groups = [], error: rolesError } = useQuery({
+    ...rolesQuery(),
+    enabled: !!user,
+    select: (map): Recipient[] =>
+      Object.entries(map)
+        .filter(([, name]) => GROUP_ROLES.includes(name))
+        .sort((a, b) => a[1].localeCompare(b[1]))
+        .map(([id, name]) => ({ kind: "group", id, name: `${name}s` })),
+  });
+
   useEffect(() => {
-    if (!user) return;
-    Promise.all([
-      getMessageRecipients(),
-      supabase.from("roles").select("id, name").in("name", ["Valet", "Advisor", "Technician"]).order("name"),
-    ]).then(([p, r]) => {
-      setPeople(p.map((x) => ({
-        kind: "user",
-        id: x.id,
-        name: `${x.nickname || x.fullName}${x.roleName ? ` (${x.roleName})` : ""}`,
-        subtitle: "",
-        avatarUrl: x.avatarUrl ?? null,
-      })));
-      if (r.data) setGroups(r.data.map((x: any) => ({ kind: "group", id: x.id, name: `${x.name}s` })));
-    }).catch((error) => {
-      console.error("[compose] people query failed", error);
+    const error = peopleError ?? rolesError;
+    if (error) {
+      console.warn("[compose] people query failed", error);
       toast.error("Could not load people. Try signing out and back in.");
-    });
-  }, [user]);
+    }
+  }, [peopleError, rolesError]);
 
   const filteredPeople = useMemo(() => {
     if (!q.trim()) return people;

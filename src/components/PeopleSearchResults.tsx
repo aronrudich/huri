@@ -1,32 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
-import { getMessageRecipients } from "@/lib/directory.functions";
+import { messageRecipientsQuery } from "@/lib/queries";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-
-type Person = {
-  id: string;
-  fullName: string | null;
-  nickname: string | null;
-  roleName: string | null;
-  avatarUrl?: string | null;
-};
-
 
 /** People results for the shared search bar — available on every tab. */
 export function PeopleSearchResults({ q }: { q: string }) {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [people, setPeople] = useState<Person[]>([]);
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
+  const { data: people = [], error } = useQuery({ ...messageRecipientsQuery(), enabled: !!user });
 
   useEffect(() => {
-    if (!user) return;
-    getMessageRecipients()
-      .then((rows) => setPeople((rows ?? []) as Person[]))
-      .catch(() => setPeople([]));
-  }, [user]);
+    if (error) console.warn("[search] failed to load message recipients", error);
+  }, [error]);
 
   const hits = useMemo(() => {
     const n = q.trim().toLowerCase();

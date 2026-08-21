@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
-import huriLogo from "@/assets/huri-logo.png.asset.json";
+import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({

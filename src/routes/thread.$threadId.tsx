@@ -7,7 +7,8 @@ import { toast } from "sonner";
 import { useSuspended } from "@/lib/suspension";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
-import { getDirectory } from "@/lib/directory.functions";
+import { useQuery } from "@tanstack/react-query";
+import { directoryQuery, rolesQuery } from "@/lib/queries";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
@@ -31,8 +32,8 @@ function ThreadPage() {
   const { user, loading } = useAuth();
   const suspended = useSuspended();
   const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
-  const [roles, setRoles] = useState<Record<string, string>>({});
+  const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
+  const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
   const [threadCutoffs, setThreadCutoffs] = useState(() => loadThreadCutoffs());
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);
@@ -58,19 +59,6 @@ function ThreadPage() {
     loadThreadCutoffsForUser(user.id).then(setThreadCutoffs);
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => { setMsgs((data as Msg[]) ?? []); void markRead(); });
-    getDirectory().then((data) => {
-      const m: Record<string, { name: string; avatarUrl: string | null }> = {};
-      data?.forEach((p) => {
-        if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
-      });
-      setProfiles(m);
-    });
-
-    supabase.from("roles").select("id, name").then(({ data }) => {
-      const m: Record<string, string> = {};
-      data?.forEach((r) => { m[r.id] = r.name; });
-      setRoles(m);
-    });
     const chan = supabase.channel(`thread-${threadId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
         (p) => { setMsgs((prev) => [...prev, p.new as Msg]); void markRead(); })

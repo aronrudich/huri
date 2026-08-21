@@ -31,8 +31,8 @@ function ThreadPage() {
   const { user, loading } = useAuth();
   const suspended = useSuspended();
   const [msgs, setMsgs] = useState<Msg[]>([]);
-  const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
-  const [roles, setRoles] = useState<Record<string, string>>({});
+  const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
+  const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
   const [threadCutoffs, setThreadCutoffs] = useState(() => loadThreadCutoffs());
   const [body, setBody] = useState("");
   const [busy, setBusy] = useState(false);

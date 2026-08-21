@@ -260,6 +260,7 @@ export const notifyOwnerOfPendingSignup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ fullName: z.string(), role: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
       .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();

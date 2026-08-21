@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { sendPartsAlert } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/parts")({
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/parts")({
 function PartsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const [busy, setBusy] = useState(false);
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { formatDistanceToNow, format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel } from "@/lib/lot";
 import { notify } from "@/lib/push";
@@ -56,6 +57,7 @@ type ParkedCar = {
 function PickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [allCars, setAllCars] = useState<ParkedCar[]>([]);
   const [carsByRo, setCarsByRo] = useState<Record<string, ParkedCar>>({});

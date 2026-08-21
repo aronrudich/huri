@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { sendPickupAlert } from "@/lib/push.functions";
 import { isTechRole } from "@/lib/roles";
 
@@ -22,6 +23,7 @@ export const Route = createFileRoute("/pickup-new")({
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const { staged, ro: roParam } = Route.useSearch();
   const isStage = !!staged;
   const [ro, setRo] = useState(roParam ?? "");

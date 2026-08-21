@@ -95,36 +95,15 @@ function InboxPage() {
     return () => { supabase.removeChannel(chan); };
   }, [user]);
 
-  // load profiles + roles maps
-  useEffect(() => {
-    if (!user) return;
-    getDirectory().then((data) => {
-      if (data) {
-        const m: Record<string, { name: string; avatarUrl: string | null }> = {};
-        data.forEach((p) => {
-          if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
-        });
-        setProfiles(m);
-      }
-    });
-    getMessageRecipients().then((data) => {
-      if (data) {
-        setPeople(data.map((p) => ({
-          id: p.id,
-          name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
-          avatarUrl: p.avatarUrl ?? null,
-        })));
-      }
-    }).catch(() => {});
+  // Directory / recipients / roles are cached by React Query, so revisits paint
+  // instantly instead of refetching from scratch on every mount.
+  const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
+  const { data: people = [], error: peopleError } = useQuery({ ...messageRecipientsQuery(), enabled: !!user });
+  const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
 
-    supabase.from("roles").select("id, name").then(({ data }) => {
-      if (data) {
-        const m: Record<string, string> = {};
-        data.forEach((r) => { m[r.id] = r.name; });
-        setRoles(m);
-      }
-    });
-  }, [user]);
+  useEffect(() => {
+    if (peopleError) console.warn("[inbox] failed to load message recipients", peopleError);
+  }, [peopleError]);
 
   // load messages relevant to me
   useEffect(() => {

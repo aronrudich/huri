@@ -9,7 +9,7 @@ const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
 
-type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
+type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean; isSuspended: boolean };
 
 async function callerContext(userId: string): Promise<CallerCtx> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -17,14 +17,16 @@ async function callerContext(userId: string): Promise<CallerCtx> {
     .from("profiles")
     .select("is_owner, role_name, status, is_active, dealership_id")
     .eq("id", userId).maybeSingle();
-  const isOwner = !!data?.is_owner;
+  const suspended = isSuspendedRole(data?.role_name);
+  const isOwner = !!data?.is_owner && !suspended;
   const isAdmin =
-    isOwner ||
-    (!!data &&
-      data.is_active === true &&
-      data.status === "approved" &&
-      isApproverRole(data.role_name));
-  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
+    !suspended &&
+    (isOwner ||
+      (!!data &&
+        data.is_active === true &&
+        data.status === "approved" &&
+        isApproverRole(data.role_name)));
+  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin, isSuspended: suspended };
 }
 
 async function assertAdmin(userId: string): Promise<CallerCtx> {
@@ -37,6 +39,11 @@ async function assertOwner(userId: string): Promise<CallerCtx> {
   const ctx = await callerContext(userId);
   if (!ctx.isOwner) throw new Error("Owner only.");
   return ctx;
+}
+
+/** Suspended accounts get a fake success so they never learn they are locked. */
+async function isSuspendedCaller(userId: string) {
+  return (await callerContext(userId)).isSuspended;
 }
 
 async function targetInDealership(targetId: string, dealershipId: string) {

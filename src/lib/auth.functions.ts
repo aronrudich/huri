@@ -91,7 +91,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
   .inputValidator((data) => confirmedSignupSchema.parse(data))
   .handler(async ({ data }) => {
     /**
-     * New accounts wait in the approval queue: an Admin, Service Manager, or the
+     * New accounts wait in the approval queue: an Admin or the
      * owner must approve them. (Role-change requests always require approval.)
      */
     const AUTO_APPROVE_SIGNUPS = false;

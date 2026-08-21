@@ -224,7 +224,10 @@ function InboxPage() {
     const t = setTimeout(() => {
       searchCars({ data: { q: needle } })
         .then((rows) => { if (!cancelled) setCarHits((rows ?? []) as CarHit[]); })
-        .catch(() => { if (!cancelled) setCarHits([]); });
+        .catch((error) => {
+          console.warn("[inbox] car search failed", error);
+          if (!cancelled) setCarHits([]);
+        });
     }, 200);
     return () => { cancelled = true; clearTimeout(t); };
   }, [q]);

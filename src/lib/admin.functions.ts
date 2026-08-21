@@ -137,6 +137,7 @@ export const requestRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => roleReqSchema.parse(d))
   .handler(async ({ data, context }) => {
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
       .from("profiles").select("full_name, role_name, dealership_id").eq("id", context.userId).maybeSingle();

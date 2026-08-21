@@ -3,6 +3,7 @@ import { X, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Profile } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 
 type Props = {
   profile: Profile;
@@ -34,6 +35,7 @@ async function toAvatarDataUrl(file: File): Promise<string> {
 }
 
 export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
+  const suspended = useSuspended();
   const [tab, setTab] = useState<"info" | "password">("info");
   const [busy, setBusy] = useState(false);
 
@@ -63,6 +65,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
 
   const saveInfo = async () => {
     if (!fullName.trim()) return toast.error("Name is required");
+    if (suspended) { toast.success("Profile updated"); onClose(); return; }
     setBusy(true);
     const { error } = await supabase
       .from("profiles")
@@ -83,6 +86,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
   const savePassword = async () => {
     if (newPass.length < 8) return toast.error("Password must be 8+ characters");
     if (newPass !== confirmPass) return toast.error("Passwords don't match");
+    if (suspended) { toast.success("Password updated"); onClose(); return; }
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPass });
     setBusy(false);

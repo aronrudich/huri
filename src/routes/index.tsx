@@ -4,7 +4,7 @@ import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { searchCars } from "@/lib/directory.functions";
-import { directoryQuery, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
+import { directoryQuery, formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";

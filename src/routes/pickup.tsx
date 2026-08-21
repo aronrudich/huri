@@ -58,11 +58,32 @@ function PickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const suspended = useSuspended();
-  const [pickups, setPickups] = useState<Pickup[]>([]);
-  const [allCars, setAllCars] = useState<ParkedCar[]>([]);
-  const [carsByRo, setCarsByRo] = useState<Record<string, ParkedCar>>({});
-  const [carsByPos, setCarsByPos] = useState<Record<string, ParkedCar>>({});
-  const [profiles, setProfiles] = useState<Record<string, string>>({});
+  const queryClient = useQueryClient();
+  // Both lists are React Query caches now: revisiting the tab paints from cache
+  // and realtime events patch the cache directly (no full-table refetches).
+  const { data: pickups = [] } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
+  const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: profiles = {} } = useQuery({
+    ...directoryQuery(),
+    enabled: !!user,
+    select: (map) => {
+      const m: Record<string, string> = {};
+      Object.entries(map).forEach(([id, p]) => { m[id] = p.name; });
+      return m;
+    },
+  });
+  const carsByRo = useMemo(() => {
+    const byRo: Record<string, ParkedCar> = {};
+    allCars.forEach((c) => { if (c.ro_number) byRo[c.ro_number] = c; });
+    return byRo;
+  }, [allCars]);
+  const carsByPos = useMemo(() => {
+    const byPos: Record<string, ParkedCar> = {};
+    allCars.forEach((c) => {
+      if (c.lot_position && c.lot_position !== "UNKNOWN") byPos[c.lot_position.toUpperCase()] = c;
+    });
+    return byPos;
+  }, [allCars]);
   const [q, setQ] = useState("");
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSpot, setMapSpot] = useState<string | null>(null);

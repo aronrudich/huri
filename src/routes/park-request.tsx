@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { sendPickupAlert } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/park-request")({
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/park-request")({
 function ParkRequestPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,6 +39,11 @@ function ParkRequestPage() {
     if (!user) return;
     if (!ro.trim()) return toast.error("RO # is required");
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (suspended) {
+      toast.success("Park request sent");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
     const { error } = await supabase.from("pickup_requests").insert({

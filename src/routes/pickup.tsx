@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { formatDistanceToNow, format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel } from "@/lib/lot";
 import { notify } from "@/lib/push";
@@ -56,6 +57,7 @@ type ParkedCar = {
 function PickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const [pickups, setPickups] = useState<Pickup[]>([]);
   const [allCars, setAllCars] = useState<ParkedCar[]>([]);
   const [carsByRo, setCarsByRo] = useState<Record<string, ParkedCar>>({});
@@ -204,6 +206,7 @@ function PickupPage() {
 
   const claim = async (p: Pickup) => {
     if (!user) return;
+    if (suspended) { toast.success("Claimed"); return; }
     if (cooldownLeftMs > 0) {
       return toast.error(`One claim at a time — wait ${cooldownLabel} before claiming another.`);
     }
@@ -515,6 +518,11 @@ function PickupPage() {
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
+                      if (suspended) {
+                        setPickups((cur) => cur.filter((x) => x.id !== p.id));
+                        toast.message("Canceled");
+                        return;
+                      }
                       const { error } = await supabase.from("pickup_requests")
                         .update({ status: "completed", completed_at: new Date().toISOString() })
                         .eq("id", p.id);

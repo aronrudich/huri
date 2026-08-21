@@ -4,6 +4,7 @@ import { ArrowLeft, Send, Trash2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { getDirectory } from "@/lib/directory.functions";
@@ -28,6 +29,7 @@ function ThreadPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const suspended = useSuspended();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [profiles, setProfiles] = useState<Record<string, { name: string; avatarUrl: string | null }>>({});
   const [roles, setRoles] = useState<Record<string, string>>({});
@@ -111,6 +113,7 @@ function ThreadPage() {
 
   const send = async () => {
     if (!body.trim() || !user) return;
+    if (suspended) { setBody(""); return; }
     setBusy(true);
     const payload: any = {
       thread_id: threadId,

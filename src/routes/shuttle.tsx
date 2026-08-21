@@ -4,6 +4,7 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { sendShuttleAlert } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/shuttle")({
@@ -21,6 +22,7 @@ export const Route = createFileRoute("/shuttle")({
 function ShuttlePage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const suspended = useSuspended();
   const [kind, setKind] = useState<"pickup" | "dropoff">("pickup");
   const [address, setAddress] = useState("");
   const [customer, setCustomer] = useState("");
@@ -38,6 +40,11 @@ function ShuttlePage() {
     if (!user) return;
     // Nothing is required on a shuttle request.
     const digits = phone.replace(/\D/g, "");
+    if (suspended) {
+      toast.success("Shuttle request sent");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
     setBusy(true);
     try {
       await sendShuttleAlert({

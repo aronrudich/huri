@@ -1,14 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-// Only approver roles (Admin, Service Manager) plus the owner handle approvals.
-import { isApproverRole } from "@/lib/roles";
+// Only approver roles (Admin) plus the owner handle approvals.
+// Suspended roles have no admin powers and receive no approval notifications.
+import { isApproverRole, isSuspendedRole } from "@/lib/roles";
 
 const idSchema = z.object({ userId: z.string().uuid() });
 const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
 
 
-type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
+type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean; isSuspended: boolean };
 
 async function callerContext(userId: string): Promise<CallerCtx> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -16,14 +17,16 @@ async function callerContext(userId: string): Promise<CallerCtx> {
     .from("profiles")
     .select("is_owner, role_name, status, is_active, dealership_id")
     .eq("id", userId).maybeSingle();
-  const isOwner = !!data?.is_owner;
+  const suspended = isSuspendedRole(data?.role_name);
+  const isOwner = !!data?.is_owner && !suspended;
   const isAdmin =
-    isOwner ||
-    (!!data &&
-      data.is_active === true &&
-      data.status === "approved" &&
-      isApproverRole(data.role_name));
-  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
+    !suspended &&
+    (isOwner ||
+      (!!data &&
+        data.is_active === true &&
+        data.status === "approved" &&
+        isApproverRole(data.role_name)));
+  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin, isSuspended: suspended };
 }
 
 async function assertAdmin(userId: string): Promise<CallerCtx> {
@@ -36,6 +39,11 @@ async function assertOwner(userId: string): Promise<CallerCtx> {
   const ctx = await callerContext(userId);
   if (!ctx.isOwner) throw new Error("Owner only.");
   return ctx;
+}
+
+/** Suspended accounts get a fake success so they never learn they are locked. */
+async function isSuspendedCaller(userId: string) {
+  return (await callerContext(userId)).isSuspended;
 }
 
 async function targetInDealership(targetId: string, dealershipId: string) {
@@ -129,6 +137,7 @@ export const requestRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => roleReqSchema.parse(d))
   .handler(async ({ data, context }) => {
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
       .from("profiles").select("full_name, role_name, dealership_id").eq("id", context.userId).maybeSingle();
@@ -204,6 +213,8 @@ export const setEmployeeRole = createServerFn({ method: "POST" })
 export const deleteOwnAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // Suspended accounts must survive; report success without deleting anything.
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
     if (error) throw new Error(error.message);
@@ -249,6 +260,7 @@ export const notifyOwnerOfPendingSignup = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ fullName: z.string(), role: z.string() }).parse(d))
   .handler(async ({ data, context }) => {
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
       .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();

@@ -27,17 +27,26 @@ export const ROLE_OPTIONS = [
   "Other",
 ];
 
+/**
+ * Roles that are fully suspended: the account still exists and can sign in and
+ * browse, but every action is a silent no-op and no notifications are sent.
+ * The suspended user is never told — the UI looks exactly the same to them.
+ */
+export const SUSPENDED_ROLES = ["Service Manager"];
+
+export const isSuspendedRole = (role: string | null | undefined) =>
+  SUSPENDED_ROLES.includes(role ?? "");
+
 /** Roles that handle join requests and role change approvals. */
-export const APPROVER_ROLES = ["Admin", "Service Manager"];
+export const APPROVER_ROLES = ["Admin"];
 
 export const isApproverRole = (role: string | null | undefined) =>
-  APPROVER_ROLES.includes(role ?? "");
+  APPROVER_ROLES.includes(role ?? "") && !isSuspendedRole(role);
 
 /** Roles that can see the employee roster. */
 export const MANAGEMENT_ROLES = [
   "Admin",
   "Manager",
-  "Service Manager",
   "Assistant Service Manager",
   "Parts Manager",
   "Service Director",
@@ -52,7 +61,6 @@ export const MANAGEMENT_ROLES = [
 export const CANCEL_ANY_ROLES = [
   "Admin",
   "Manager",
-  "Service Manager",
   "Assistant Service Manager",
   "Parts Manager",
   "Director",
@@ -64,7 +72,7 @@ export const CANCEL_ANY_ROLES = [
 ];
 
 export const canCancelAnyRole = (role: string | null | undefined) =>
-  CANCEL_ANY_ROLES.includes(role ?? "");
+  CANCEL_ANY_ROLES.includes(role ?? "") && !isSuspendedRole(role);
 
 
 export const isTechRole = (role: string | null | undefined) =>
@@ -82,6 +90,7 @@ export const isShuttleRole = (role: string | null | undefined) =>
  */
 export const canStageRole = (role: string | null | undefined) => {
   const r = role ?? "";
+  if (isSuspendedRole(r)) return false;
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 

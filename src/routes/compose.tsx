@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { getMessageRecipients } from "@/lib/directory.functions";
 import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
+import { useSuspended } from "@/lib/suspension";
 import { HuriLogo } from "@/components/BottomBar";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
@@ -21,6 +22,7 @@ type Recipient =
 function ComposePage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const suspended = useSuspended();
   const [people, setPeople] = useState<Recipient[]>([]);
   const [groups, setGroups] = useState<Recipient[]>([]);
   const [q, setQ] = useState("");
@@ -65,6 +67,12 @@ function ComposePage() {
   const send = async () => {
     if (!selected || !body.trim() || !user) return;
     setBusy(true);
+    if (suspended) {
+      setBusy(false);
+      toast.success("Sent");
+      navigate({ to: "/", replace: true });
+      return;
+    }
     let thread_id: string;
     const payload: any = {
       body: body.trim(),

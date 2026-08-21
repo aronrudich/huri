@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// 14-day parked-car alerts go to the Service Manager only (may widen later).
-const ALERT_ROLES = ["Service Manager"];
+// 14-day parked-car alerts go to the Admin role only (may widen later).
+const ALERT_ROLES = ["Admin"];
 
 
 export const Route = createFileRoute("/api/public/hooks/stale-cars")({

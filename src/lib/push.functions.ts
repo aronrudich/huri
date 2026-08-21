@@ -52,9 +52,8 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     staged?: boolean | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
+    const { isSuspendedUser } = await import("./suspension.server");
     if (await isSuspendedUser(context.userId)) return { sent: 0 };
-    void withoutSuspended;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -129,7 +128,6 @@ export const sendMessagePush = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
     if (await isSuspendedUser(context.userId)) return { sent: 0 };
-    void withoutSuspended;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -222,9 +220,8 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { techName?: string | null; ro?: string | null; notes?: string | null }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
+    const { isSuspendedUser } = await import("./suspension.server");
     if (await isSuspendedUser(context.userId)) return { sent: 0 };
-    void withoutSuspended;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -303,9 +300,8 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
     address?: string | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
+    const { isSuspendedUser } = await import("./suspension.server");
     if (await isSuspendedUser(context.userId)) return { sent: 0 };
-    void withoutSuspended;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 

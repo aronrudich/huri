@@ -26,20 +26,31 @@ export const directoryQuery = () =>
     },
   });
 
-/** Everyone that can be messaged, pre-formatted as "Name (Role)". */
+export type Recipient = {
+  id: string;
+  fullName: string | null;
+  nickname: string | null;
+  roleName: string | null;
+  avatarUrl?: string | null;
+};
+
+/** Everyone that can be messaged. */
 export const messageRecipientsQuery = () =>
   queryOptions({
     queryKey: ["message-recipients"],
     staleTime: 5 * 60_000,
-    queryFn: async (): Promise<RecipientHit[]> => {
+    queryFn: async (): Promise<Recipient[]> => {
       const data = await getMessageRecipients();
-      return (data ?? []).map((p) => ({
-        id: p.id,
-        name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
-        avatarUrl: p.avatarUrl ?? null,
-      }));
+      return (data ?? []) as Recipient[];
     },
   });
+
+/** "Name (Role)" formatting used by search lists. */
+export const formatRecipient = (p: Recipient): RecipientHit => ({
+  id: p.id,
+  name: `${p.nickname || p.fullName}${p.roleName ? ` (${p.roleName})` : ""}`,
+  avatarUrl: p.avatarUrl ?? null,
+});
 
 /** role id -> role name. */
 export const rolesQuery = () =>

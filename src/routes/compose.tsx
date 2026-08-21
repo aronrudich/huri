@@ -16,6 +16,8 @@ export const Route = createFileRoute("/compose")({
   component: ComposePage,
 });
 
+const GROUP_ROLES = ["Valet", "Advisor", "Technician"];
+
 type Recipient =
   | { kind: "user"; id: string; name: string; subtitle: string; avatarUrl?: string | null }
   | { kind: "group"; id: string; name: string };

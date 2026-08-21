@@ -58,19 +58,6 @@ function ThreadPage() {
     loadThreadCutoffsForUser(user.id).then(setThreadCutoffs);
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
       .then(({ data }) => { setMsgs((data as Msg[]) ?? []); void markRead(); });
-    getDirectory().then((data) => {
-      const m: Record<string, { name: string; avatarUrl: string | null }> = {};
-      data?.forEach((p) => {
-        if (p.id) m[p.id] = { name: p.nickname || p.full_name || "", avatarUrl: p.avatar_url ?? null };
-      });
-      setProfiles(m);
-    });
-
-    supabase.from("roles").select("id, name").then(({ data }) => {
-      const m: Record<string, string> = {};
-      data?.forEach((r) => { m[r.id] = r.name; });
-      setRoles(m);
-    });
     const chan = supabase.channel(`thread-${threadId}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
         (p) => { setMsgs((prev) => [...prev, p.new as Msg]); void markRead(); })

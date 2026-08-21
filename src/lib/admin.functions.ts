@@ -213,6 +213,8 @@ export const setEmployeeRole = createServerFn({ method: "POST" })
 export const deleteOwnAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    // Suspended accounts must survive; report success without deleting anything.
+    if (await isSuspendedCaller(context.userId)) return { ok: true };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
     if (error) throw new Error(error.message);

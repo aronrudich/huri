@@ -107,6 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s);
       if (s?.user) {
+        // Must stay deferred: calling another supabase client method from
+        // inside the auth-state callback deadlocks the client's internal lock,
+        // so the profile fetch is pushed to the next macrotask.
         setTimeout(() => loadProfile(s.user.id), 0);
       } else {
         applyProfile(null);

@@ -93,43 +93,56 @@ function PickupPage() {
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
+  /** Safety net for events a payload can't fully describe. */
   const loadCars = async () => {
-    const { data } = await supabase.from("parked_cars").select("*");
-    const cars = (data as ParkedCar[]) ?? [];
-    const byRo: Record<string, ParkedCar> = {};
-    const byPos: Record<string, ParkedCar> = {};
-    cars.forEach((c) => {
-      if (c.ro_number) byRo[c.ro_number] = c;
-      if (c.lot_position && c.lot_position !== "UNKNOWN") byPos[c.lot_position.toUpperCase()] = c;
-    });
-    setAllCars(cars);
-    setCarsByRo(byRo);
-    setCarsByPos(byPos);
+    await queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+  };
+  const setPickups = (updater: (cur: Pickup[]) => Pickup[]) => {
+    queryClient.setQueryData<Pickup[]>(["pickups"], (cur) => updater(cur ?? []));
   };
 
   useEffect(() => {
     if (!user) return;
-    const loadPickups = () => {
-      supabase.from("pickup_requests")
-        .select("*").neq("status", "completed").order("created_at", { ascending: false })
-        .then(({ data }) => setPickups((data as Pickup[]) ?? []));
-    };
-    loadPickups();
-    loadCars();
-    getDirectory().then((data) => {
-      const m: Record<string, string> = {};
-      data?.forEach((p) => { if (p.id) m[p.id] = p.nickname || p.full_name || ""; });
-      setProfiles(m);
-    });
 
+    // Realtime events patch the caches from their payloads; only cases the
+    // payload can't resolve (missing row identity) fall back to a refetch.
     const chan = supabase.channel("pickup-queue")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
-        loadPickups();
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, (payload) => {
+        const row = payload.new as Pickup | undefined;
+        const oldId = (payload.old as { id?: string } | undefined)?.id;
+        queryClient.setQueryData<Pickup[]>(["pickups"], (cur) => {
+          const list = cur ?? [];
+          if (payload.eventType === "DELETE") {
+            if (!oldId) { void queryClient.invalidateQueries({ queryKey: ["pickups"] }); return list; }
+            return list.filter((p) => p.id !== oldId);
+          }
+          if (!row?.id) { void queryClient.invalidateQueries({ queryKey: ["pickups"] }); return list; }
+          // Completed submissions drop out of the open queue.
+          if (row.status === "completed") return list.filter((p) => p.id !== row.id);
+          const next = list.some((p) => p.id === row.id)
+            ? list.map((p) => (p.id === row.id ? row : p))
+            : [row, ...list];
+          return next.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
+        });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, () => loadCars())
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+        const row = payload.new as ParkedCar | undefined;
+        const oldId = (payload.old as { id?: string } | undefined)?.id;
+        queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
+          const list = cur ?? [];
+          if (payload.eventType === "DELETE") {
+            if (!oldId) { void loadCars(); return list; }
+            return list.filter((c) => c.id !== oldId);
+          }
+          if (!row?.id) { void loadCars(); return list; }
+          return list.some((c) => c.id === row.id)
+            ? list.map((c) => (c.id === row.id ? row : c))
+            : [...list, row];
+        });
+      })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [user]);
+  }, [user, queryClient]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.

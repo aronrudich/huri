@@ -65,3 +65,37 @@ export const rolesQuery = () =>
       return map;
     },
   });
+
+export type ParkedCarRow = {
+  id: string; tag_number: string | null; ro_number: string | null;
+  car_model: string | null; lot_position: string; notes: string | null;
+  is_staged?: boolean | null; located_at?: string | null;
+};
+
+/** Every car currently tracked in Huri. */
+export const parkedCarsQuery = () =>
+  queryOptions({
+    queryKey: ["parked-cars"],
+    staleTime: 60_000,
+    queryFn: async (): Promise<ParkedCarRow[]> => {
+      const { data, error } = await supabase.from("parked_cars").select("*");
+      if (error) throw error;
+      return (data ?? []) as ParkedCarRow[];
+    },
+  });
+
+/** Open (non-completed) pickup/parts/shuttle submissions, newest first. */
+export const pickupsQuery = <T,>() =>
+  queryOptions({
+    queryKey: ["pickups"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<T[]> => {
+      const { data, error } = await supabase
+        .from("pickup_requests")
+        .select("*")
+        .neq("status", "completed")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return (data ?? []) as T[];
+    },
+  });

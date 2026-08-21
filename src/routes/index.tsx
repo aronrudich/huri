@@ -100,7 +100,11 @@ function InboxPage() {
   // Directory / recipients / roles are cached by React Query, so revisits paint
   // instantly instead of refetching from scratch on every mount.
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
-  const { data: people = [], error: peopleError } = useQuery({ ...messageRecipientsQuery(), enabled: !!user });
+  const { data: people = [], error: peopleError } = useQuery({
+    ...messageRecipientsQuery(),
+    enabled: !!user,
+    select: (rows) => rows.map(formatRecipient),
+  });
   const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
 
   useEffect(() => {

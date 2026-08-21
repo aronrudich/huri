@@ -111,6 +111,7 @@ function ThreadPage() {
 
   const send = async () => {
     if (!body.trim() || !user) return;
+    if (suspended) { setBody(""); return; }
     setBusy(true);
     const payload: any = {
       thread_id: threadId,

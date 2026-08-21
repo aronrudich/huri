@@ -65,6 +65,12 @@ function ComposePage() {
   const send = async () => {
     if (!selected || !body.trim() || !user) return;
     setBusy(true);
+    if (suspended) {
+      setBusy(false);
+      toast.success("Sent");
+      navigate({ to: "/", replace: true });
+      return;
+    }
     let thread_id: string;
     const payload: any = {
       body: body.trim(),

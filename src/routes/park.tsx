@@ -104,6 +104,11 @@ function ParkPage() {
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Invalid spot");
     if (!user) return;
+    if (suspended) {
+      toast.success(editing ? "Car updated" : "Car logged");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
 
     const normalizedRo = ro.trim();
     const normalizedPos = normalizeSpot(pos.trim());
@@ -201,6 +206,11 @@ function ParkPage() {
             disabled={busy}
             onClick={async () => {
               if (!window.confirm("Delete this car from the lot? The spot will be freed.")) return;
+              if (suspended) {
+                toast.success("Car deleted");
+                navigate({ to: "/lot", replace: true });
+                return;
+              }
               setBusy(true);
               const { error } = await supabase.from("parked_cars").delete().eq("id", existingId);
               setBusy(false);

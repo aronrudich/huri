@@ -204,6 +204,7 @@ function PickupPage() {
 
   const claim = async (p: Pickup) => {
     if (!user) return;
+    if (suspended) { toast.success("Claimed"); return; }
     if (cooldownLeftMs > 0) {
       return toast.error(`One claim at a time — wait ${cooldownLabel} before claiming another.`);
     }
@@ -515,6 +516,11 @@ function PickupPage() {
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
+                      if (suspended) {
+                        setPickups((cur) => cur.filter((x) => x.id !== p.id));
+                        toast.message("Canceled");
+                        return;
+                      }
                       const { error } = await supabase.from("pickup_requests")
                         .update({ status: "completed", completed_at: new Date().toISOString() })
                         .eq("id", p.id);

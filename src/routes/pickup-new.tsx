@@ -40,6 +40,11 @@ function NewPickupPage() {
     if (!ro.trim()) return toast.error("RO # is required");
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     if (!user) return;
+    if (suspended) {
+      toast.success(isStage ? "Stage submitted" : "Pickup submitted");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
     // Snapshot the car's current spot + notes so valets can still find it after the spot is freed on claim.

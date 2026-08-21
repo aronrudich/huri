@@ -37,6 +37,11 @@ function ParkRequestPage() {
     if (!user) return;
     if (!ro.trim()) return toast.error("RO # is required");
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (suspended) {
+      toast.success("Park request sent");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
     const { error } = await supabase.from("pickup_requests").insert({

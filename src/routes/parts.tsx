@@ -25,9 +25,14 @@ function PartsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
+    if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (suspended) {
+      toast.success("Parts request sent");
+      navigate({ to: "/", replace: true });
+      return;
+    }
     setBusy(true);
     try {
-      if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
       await sendPartsAlert({ data: { techName: techName || null, ro: ro.trim() || null, notes: notes.trim() || null } });
       toast.success("Parts request sent");
       navigate({ to: "/", replace: true });

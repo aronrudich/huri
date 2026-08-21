@@ -38,6 +38,11 @@ function ShuttlePage() {
     if (!user) return;
     // Nothing is required on a shuttle request.
     const digits = phone.replace(/\D/g, "");
+    if (suspended) {
+      toast.success("Shuttle request sent");
+      navigate({ to: "/pickup", replace: true });
+      return;
+    }
     setBusy(true);
     try {
       await sendShuttleAlert({

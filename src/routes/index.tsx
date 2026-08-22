@@ -253,9 +253,24 @@ function InboxPage() {
     navigate({ to: "/thread/$threadId", params: { threadId: tid } });
   };
 
+  // Cold start: show the real Huri frame with placeholder rows instead of a
+  // bare "Loading…" screen, so the first paint already looks like the app.
   if (loading || !user) {
-    return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen bg-surface pb-32 safe-top">
+        <header className="sticky top-0 z-10 bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
+          <div className="mb-3 flex items-center gap-2"><HuriLogo /></div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="h-10 w-full rounded-xl bg-muted" />
+          </div>
+        </header>
+        <ListSkeleton rows={7} />
+        <BottomBar active="inbox" />
+      </div>
+    );
   }
+
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">

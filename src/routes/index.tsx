@@ -2,17 +2,19 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { searchCars } from "@/lib/directory.functions";
-import { directoryQuery, formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
+import { directoryQuery, formatRecipient, messageRecipientsQuery, messagesQuery, rolesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
+import { ListSkeleton } from "@/components/ListSkeleton";
 
 import { formatDistanceToNow } from "date-fns";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({

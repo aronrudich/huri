@@ -54,7 +54,8 @@ type CarHit = { id: string; ro_number: string | null; car_model: string | null; 
 function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const queryClient = useQueryClient();
+
   const [q, setQ] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);

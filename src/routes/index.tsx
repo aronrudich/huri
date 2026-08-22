@@ -337,12 +337,15 @@ function InboxPage() {
         </div>
       )}
 
+      {messagesPending && threads.length === 0 && <ListSkeleton rows={7} />}
+
       <ul className="divide-y divide-border bg-background">
-        {threads.length === 0 && (
+        {!messagesPending && threads.length === 0 && (
           <li className="px-5 py-16 text-center text-sm text-muted-foreground">
             No messages yet. Tap the blue compose button to send one.
           </li>
         )}
+
         {threads.map((t) => (
           <li key={t.thread_id}>
             <SwipeRow onDelete={() => hideThread(t.thread_id, t.at)}>

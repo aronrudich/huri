@@ -9,9 +9,6 @@ export const getRouter = () => {
     routeTree,
     context: { queryClient },
     scrollRestoration: true,
-    // Fetch a tab's code as soon as the user touches/hovers its link, so the
-    // tap itself doesn't wait on a network request.
-    defaultPreload: "intent",
     defaultPreloadStaleTime: 0,
 
   });

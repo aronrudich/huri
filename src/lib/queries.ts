@@ -99,3 +99,60 @@ export const pickupsQuery = <T,>() =>
       return (data ?? []) as T[];
     },
   });
+
+export type MessageRow = {
+  id: string;
+  thread_id: string;
+  sender_id: string | null;
+  recipient_id: string | null;
+  recipient_role_id: string | null;
+  body: string;
+  created_at: string;
+  read_at?: string | null;
+};
+
+/** Every message the signed-in user can see (direct, sent, or to one of their roles). */
+export const messagesQuery = (userId: string, roleIds: string[]) =>
+  queryOptions({
+    queryKey: ["messages", userId, [...roleIds].sort().join(",")],
+    staleTime: 30_000,
+    // Keep the previous list on screen while a new key (role loaded) fetches,
+    // so the inbox never flashes its "no messages yet" empty state.
+    placeholderData: (prev: MessageRow[] | undefined) => prev,
+    queryFn: async (): Promise<MessageRow[]> => {
+      const parts = [
+        `recipient_id.eq.${userId}`,
+        `sender_id.eq.${userId}`,
+        `thread_id.like.group:*:${userId}`,
+      ];
+      if (roleIds.length) parts.push(`recipient_role_id.in.(${roleIds.join(",")})`);
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .or(parts.join(","))
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) throw error;
+      return (data ?? []) as MessageRow[];
+    },
+  });
+
+export type ActivePickupRow = {
+  ro_number: string | null; lot_position: string | null;
+  kind: string | null; status: string; is_staged?: boolean | null;
+};
+
+/** Slim view of open submissions used by the lot map to color stalls. */
+export const lotActivePickupsQuery = () =>
+  queryOptions({
+    queryKey: ["lot-active-pickups"],
+    staleTime: 30_000,
+    queryFn: async (): Promise<ActivePickupRow[]> => {
+      const { data, error } = await supabase
+        .from("pickup_requests")
+        .select("ro_number, lot_position, kind, status, is_staged")
+        .neq("status", "completed");
+      if (error) throw error;
+      return (data ?? []) as ActivePickupRow[];
+    },
+  });

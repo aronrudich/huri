@@ -2,17 +2,19 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { searchCars } from "@/lib/directory.functions";
-import { directoryQuery, formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
+import { directoryQuery, formatRecipient, messageRecipientsQuery, messagesQuery, rolesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
+import { ListSkeleton } from "@/components/ListSkeleton";
 
 import { formatDistanceToNow } from "date-fns";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -52,7 +54,8 @@ type CarHit = { id: string; ro_number: string | null; car_model: string | null; 
 function InboxPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const [messages, setMessages] = useState<Msg[]>([]);
+  const queryClient = useQueryClient();
+
   const [q, setQ] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<PersonHit | null>(null);
   const [viewProfileId, setViewProfileId] = useState<string | null>(null);
@@ -111,34 +114,38 @@ function InboxPage() {
     if (peopleError) console.warn("[inbox] failed to load message recipients", peopleError);
   }, [peopleError]);
 
-  // load messages relevant to me
+  // Include our own role; if we're Valet & Parts, also include the Valet role id.
+  const myRoleIds = useMemo(() => {
+    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
+    const ids = new Set<string>();
+    if (profile?.role_id) ids.add(profile.role_id);
+    if (profile?.role_name === "Valet & Parts" && valetRoleId) ids.add(valetRoleId);
+    return ids;
+  }, [profile?.role_id, profile?.role_name, roles]);
+
+  // Messages live in the query cache, so returning to the inbox paints the
+  // previous list instantly instead of starting empty and refetching.
+  const messagesOptions = useMemo(
+    () => messagesQuery(user?.id ?? "", Array.from(myRoleIds)),
+    [user?.id, myRoleIds],
+  );
+  const {
+    data: messages = [],
+    isPending: messagesPending,
+    error: messagesError,
+  } = useQuery({ ...messagesOptions, enabled: !!user && !!profile });
+
+  useEffect(() => {
+    if (messagesError) console.warn("[inbox] failed to load messages", messagesError);
+  }, [messagesError]);
+
+  const messagesKey = messagesOptions.queryKey;
+  const patchMessages = (updater: (cur: Msg[]) => Msg[]) => {
+    queryClient.setQueryData<Msg[]>(messagesKey, (cur) => updater(cur ?? []));
+  };
+
   useEffect(() => {
     if (!user || !profile) return;
-    // Include our own role; if we're Valet & Parts, also include the Valet role id.
-    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
-    const myRoleIds = new Set<string>();
-    if (profile.role_id) myRoleIds.add(profile.role_id);
-    if (profile.role_name === "Valet & Parts" && valetRoleId) myRoleIds.add(valetRoleId);
-
-    const parts = [
-      `recipient_id.eq.${user.id}`,
-      `sender_id.eq.${user.id}`,
-      // Group threads that we started (as anyone with any role): group:*:<myId>
-      `thread_id.like.group:*:${user.id}`,
-    ];
-    if (myRoleIds.size) {
-      parts.push(`recipient_role_id.in.(${Array.from(myRoleIds).join(",")})`);
-    }
-    const filter = parts.join(",");
-
-    supabase
-      .from("messages")
-      .select("*")
-      .or(filter)
-      .order("created_at", { ascending: false })
-      .limit(500)
-      .then(({ data }) => { if (data) setMessages(data as Msg[]); });
-
     const chan = supabase
       .channel("inbox-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -150,15 +157,17 @@ function InboxPage() {
           m.sender_id === user.id ||
           (m.recipient_role_id && myRoleIds.has(m.recipient_role_id)) ||
           iStarted;
-        if (mine) setMessages((prev) => [m, ...prev]);
+        if (mine) patchMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [m, ...prev]));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
         const upd = payload.new as Msg;
-        setMessages((prev) => prev.map((m) => m.id === upd.id ? upd : m));
+        patchMessages((prev) => prev.map((m) => (m.id === upd.id ? upd : m)));
       })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [user, profile, roles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, myRoleIds, queryClient]);
+
 
 
   const threads = useMemo<ThreadSummary[]>(() => {
@@ -244,9 +253,24 @@ function InboxPage() {
     navigate({ to: "/thread/$threadId", params: { threadId: tid } });
   };
 
+  // Cold start: show the real Huri frame with placeholder rows instead of a
+  // bare "Loading…" screen, so the first paint already looks like the app.
   if (loading || !user) {
-    return <div className="grid min-h-screen place-items-center text-muted-foreground">Loading…</div>;
+    return (
+      <div className="min-h-screen bg-surface pb-32 safe-top">
+        <header className="sticky top-0 z-10 bg-surface/95 px-5 pb-3 pt-4 backdrop-blur">
+          <div className="mb-3 flex items-center gap-2"><HuriLogo /></div>
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <div className="h-10 w-full rounded-xl bg-muted" />
+          </div>
+        </header>
+        <ListSkeleton rows={7} />
+        <BottomBar active="inbox" />
+      </div>
+    );
   }
+
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -313,12 +337,15 @@ function InboxPage() {
         </div>
       )}
 
+      {messagesPending && threads.length === 0 && <ListSkeleton rows={7} />}
+
       <ul className="divide-y divide-border bg-background">
-        {threads.length === 0 && (
+        {!messagesPending && threads.length === 0 && (
           <li className="px-5 py-16 text-center text-sm text-muted-foreground">
             No messages yet. Tap the blue compose button to send one.
           </li>
         )}
+
         {threads.map((t) => (
           <li key={t.thread_id}>
             <SwipeRow onDelete={() => hideThread(t.thread_id, t.at)}>

@@ -2,11 +2,13 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { spotsForLot, lotOf, normalizeSpot, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
+import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
 
 
 export const Route = createFileRoute("/lot")({
@@ -34,8 +36,7 @@ const TABS: { id: LotId; label: string }[] = [
 function LotPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [cars, setCars] = useState<ParkedCar[]>([]);
-  const [activePickups, setActivePickups] = useState<ActivePickup[]>([]);
+  const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
   const [pickupSpots, setPickupSpots] = useState<Set<string>>(new Set());
@@ -46,23 +47,26 @@ function LotPage() {
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
+  // Cars and open submissions come from the shared query cache, so switching
+  // back to this tab paints the previous map instantly.
+  const { data: carsData = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const cars = carsData as ParkedCar[];
+  const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
+  const activePickups = activePickupsData as ActivePickup[];
+
   useEffect(() => {
     if (!user) return;
-    const load = () => supabase.from("parked_cars").select("*")
-      .then(({ data }) => setCars((data as ParkedCar[]) ?? []));
-    load();
-    const loadPickups = () =>
-      supabase.from("pickup_requests")
-        .select("ro_number, lot_position, kind, status, is_staged")
-        .neq("status", "completed")
-        .then(({ data }) => setActivePickups((data as ActivePickup[]) ?? []));
-    loadPickups();
     const chan = supabase.channel("lot-all-spots")
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, load)
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, loadPickups)
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
+        void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });
+      })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [user]);
+  }, [user, queryClient]);
+
 
   const byPos = useMemo(() => {
     const m: Record<string, ParkedCar> = {};

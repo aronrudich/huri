@@ -17,6 +17,7 @@ import { ensureServiceWorker } from "@/lib/push";
 import { NotificationGate } from "@/components/NotificationGate";
 import { IOSInstallHint } from "@/components/IOSInstallHint";
 import { PendingGate } from "@/components/PendingGate";
+import { TabPrefetcher } from "@/components/TabPrefetcher";
 
 function NotFoundComponent() {
   return (
@@ -115,6 +116,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SWRegistrar />
+        <TabPrefetcher />
         <div className="app-scroll">
           <Outlet />
         </div>

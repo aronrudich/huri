@@ -62,7 +62,7 @@ function PickupPage() {
   const queryClient = useQueryClient();
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
-  const { data: pickups = [] } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
+  const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const { data: profiles = {} } = useQuery({
     ...directoryQuery(),
@@ -355,7 +355,10 @@ function PickupPage() {
       )}
 
       <ul className="space-y-2 px-3 pt-1">
-        {sortedPickups.length === 0 && (
+        {pickupsPending && sortedPickups.length === 0 && (
+          <li className="rounded-2xl bg-background px-5 py-12" aria-hidden />
+        )}
+        {!pickupsPending && sortedPickups.length === 0 && (
           <li className="rounded-2xl bg-background px-5 py-12 text-center text-sm text-muted-foreground">
             No active pickups.
           </li>

@@ -14,7 +14,6 @@ export function TabPrefetcher() {
     let cancelled = false;
     const warm = () => {
       if (cancelled) return;
-      if (window.location.search.includes("nopf=1")) return;
       TAB_ROUTES.forEach((id) => {
         const route = router.routesById[id];
         if (route) void Promise.resolve(router.loadRouteChunk(route)).catch(() => {});

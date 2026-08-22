@@ -114,34 +114,38 @@ function InboxPage() {
     if (peopleError) console.warn("[inbox] failed to load message recipients", peopleError);
   }, [peopleError]);
 
-  // load messages relevant to me
+  // Include our own role; if we're Valet & Parts, also include the Valet role id.
+  const myRoleIds = useMemo(() => {
+    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
+    const ids = new Set<string>();
+    if (profile?.role_id) ids.add(profile.role_id);
+    if (profile?.role_name === "Valet & Parts" && valetRoleId) ids.add(valetRoleId);
+    return ids;
+  }, [profile?.role_id, profile?.role_name, roles]);
+
+  // Messages live in the query cache, so returning to the inbox paints the
+  // previous list instantly instead of starting empty and refetching.
+  const messagesOptions = useMemo(
+    () => messagesQuery(user?.id ?? "", Array.from(myRoleIds)),
+    [user?.id, myRoleIds],
+  );
+  const {
+    data: messages = [],
+    isPending: messagesPending,
+    error: messagesError,
+  } = useQuery({ ...messagesOptions, enabled: !!user && !!profile });
+
+  useEffect(() => {
+    if (messagesError) console.warn("[inbox] failed to load messages", messagesError);
+  }, [messagesError]);
+
+  const messagesKey = messagesOptions.queryKey;
+  const patchMessages = (updater: (cur: Msg[]) => Msg[]) => {
+    queryClient.setQueryData<Msg[]>(messagesKey, (cur) => updater(cur ?? []));
+  };
+
   useEffect(() => {
     if (!user || !profile) return;
-    // Include our own role; if we're Valet & Parts, also include the Valet role id.
-    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
-    const myRoleIds = new Set<string>();
-    if (profile.role_id) myRoleIds.add(profile.role_id);
-    if (profile.role_name === "Valet & Parts" && valetRoleId) myRoleIds.add(valetRoleId);
-
-    const parts = [
-      `recipient_id.eq.${user.id}`,
-      `sender_id.eq.${user.id}`,
-      // Group threads that we started (as anyone with any role): group:*:<myId>
-      `thread_id.like.group:*:${user.id}`,
-    ];
-    if (myRoleIds.size) {
-      parts.push(`recipient_role_id.in.(${Array.from(myRoleIds).join(",")})`);
-    }
-    const filter = parts.join(",");
-
-    supabase
-      .from("messages")
-      .select("*")
-      .or(filter)
-      .order("created_at", { ascending: false })
-      .limit(500)
-      .then(({ data }) => { if (data) setMessages(data as Msg[]); });
-
     const chan = supabase
       .channel("inbox-messages")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
@@ -153,15 +157,17 @@ function InboxPage() {
           m.sender_id === user.id ||
           (m.recipient_role_id && myRoleIds.has(m.recipient_role_id)) ||
           iStarted;
-        if (mine) setMessages((prev) => [m, ...prev]);
+        if (mine) patchMessages((prev) => (prev.some((p) => p.id === m.id) ? prev : [m, ...prev]));
       })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
         const upd = payload.new as Msg;
-        setMessages((prev) => prev.map((m) => m.id === upd.id ? upd : m));
+        patchMessages((prev) => prev.map((m) => (m.id === upd.id ? upd : m)));
       })
       .subscribe();
     return () => { supabase.removeChannel(chan); };
-  }, [user, profile, roles]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, profile, myRoleIds, queryClient]);
+
 
 
   const threads = useMemo<ThreadSummary[]>(() => {

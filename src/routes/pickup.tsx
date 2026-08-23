@@ -490,16 +490,8 @@ function PickupPage() {
                       </>
                     )}
                   </div>
-                  {p.status === "claimed" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
-                      <CheckCircle2 className="h-3 w-3" /> In Progress
-                    </span>
-                  ) : (
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                      <Clock className="h-3 w-3" />
-                      
-                      {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
-                    </span>
+                  {isTech && (
+                    <span className="shrink-0 text-xs font-bold text-destructive">Technician</span>
                   )}
                 </div>
 

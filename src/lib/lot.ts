@@ -119,6 +119,17 @@ export function locationLabel(raw: string | null | undefined): string {
   return t;
 }
 
+/** Very short label for the round badge in search lists (fits in a small dot). */
+export function spotBadge(raw: string | null | undefined): string {
+  const t = normalizeSpot(raw);
+  if (!t || t === "UNKNOWN") return "?";
+  if (t === "CP" || t === "BL" || t === "BAY") return t;
+  if (/^SV [0-9]+$/.test(t)) return t.slice(3);
+  return "★";
+}
+
+
+
 
 /** Ordered list of all spot labels for a given lot. */
 export function spotsForLot(lot: LotId): string[] {

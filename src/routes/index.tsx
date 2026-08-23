@@ -11,6 +11,7 @@ import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ListSkeleton } from "@/components/ListSkeleton";
+import { normalizeSpot, spotBadge } from "@/lib/lot";
 
 import { formatDistanceToNow } from "date-fns";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
@@ -320,15 +321,19 @@ function InboxPage() {
                   search={{ id: c.id }}
                   className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left last:border-b-0 active:bg-accent"
                 >
-                  <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                    {c.lot_position?.toUpperCase() || <Car className="h-4 w-4" />}
+                  <div className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-[11px] font-bold leading-none tracking-tight text-primary">
+                    {c.lot_position ? <span className="whitespace-nowrap">{spotBadge(c.lot_position)}</span> : <Car className="h-4 w-4" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-medium">
                       {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                       {c.car_model && <span className="text-muted-foreground"> · {c.car_model}</span>}
                     </p>
-                    <p className="text-xs text-muted-foreground">Spot {c.lot_position?.toUpperCase() || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {normalizeSpot(c.lot_position) === "UNKNOWN" || !c.lot_position
+                        ? "Spot unknown"
+                        : `Spot ${normalizeSpot(c.lot_position)}`}
+                    </p>
                   </div>
                 </Link>
               </li>

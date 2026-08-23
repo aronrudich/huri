@@ -6,8 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { useSuspended } from "@/lib/suspension";
-import { formatDistanceToNow, format } from "date-fns";
-import { adjacentSpots, spotsForLot, lotOf, locationLabel } from "@/lib/lot";
+import { format } from "date-fns";
+import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
@@ -336,8 +336,8 @@ function PickupPage() {
                 search={{ ro: c.ro_number ?? undefined }}
                 className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                  {c.lot_position === "UNKNOWN" ? "?" : c.lot_position}
+                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden whitespace-nowrap rounded-full bg-primary/10 text-[11px] font-bold leading-none tracking-tight text-primary">
+                  {spotBadge(c.lot_position)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
@@ -387,52 +387,55 @@ function PickupPage() {
           // Everyone can cancel their own submission; technicians can only cancel
           // their own so nobody kills another employee's request.
           const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
-          const ringClass = isShuttle
-            ? "ring-2 ring-success"
-            : isStaged
-            ? "ring-2 ring-foreground"
-            : isParts
-              ? "ring-2 ring-warning"
-              : isTech
-                ? "ring-2 ring-destructive"
-                : "ring-2 ring-primary";
-          const headerBar = isShuttle
-            ? "bg-success text-success-foreground"
-            : isStaged
-            ? "text-foreground"
-            : isParts
-              ? "bg-warning text-warning-foreground"
-              : isTech
-                ? "bg-destructive text-destructive-foreground"
-                : null;
-          const headerLabel = isShuttle
-            ? p.shuttle_kind === "dropoff" ? "🚐 Shuttle drop off" : "🚐 Shuttle pickup"
-            : isStaged
+          // Every card looks the same; only this small pill is colored so the
+          // list stays uniform and the type still reads at a glance.
+          const pillLabel = isStaged
             ? "Staged"
-            : isParts
-              ? "🔧 Parts request"
-              : p.kind === "park"
-                ? "🅿️ Park request — bay"
-                : isTech
-                  ? "🚨 Technician pickup"
-                  : null;
+            : isShuttle
+              ? p.shuttle_kind === "dropoff" ? "Shuttle drop off" : "Shuttle"
+              : isParts
+                ? "Parts"
+                : p.kind === "park"
+                  ? "Park request"
+                  : isTech
+                    ? "Technician pickup"
+                    : "Pickup";
+          const pillClass = isStaged
+            ? "border border-foreground/30 bg-muted text-foreground"
+            : isShuttle
+              ? "bg-success/15 text-success"
+              : isParts
+                ? "bg-warning/20 text-warning"
+                : p.kind === "park"
+                  ? "bg-success/15 text-success"
+                  : isTech
+                    ? "bg-destructive/15 text-destructive"
+                    : "bg-primary/10 text-primary";
           return (
             <li
               key={p.id}
               onClick={isShuttle ? () => setDetail(p) : undefined}
-              className={`overflow-hidden rounded-2xl bg-background ${ringClass} ${isShuttle ? "cursor-pointer" : ""}`}
+              className={`overflow-hidden rounded-2xl border border-border bg-background ${isShuttle ? "cursor-pointer" : ""}`}
             >
-              {headerBar && (
-                <div
-                  className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}
-                  style={isStaged ? CHECKER : undefined}
-                >
-                  <span className={isStaged ? "rounded bg-background/90 px-1.5 py-0.5" : undefined}>
-                    {headerLabel}
-                  </span>
-                </div>
-              )}
               <div className="px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}
+                    style={isStaged ? CHECKER : undefined}
+                  >
+                    <span className={isStaged ? "rounded bg-background/90 px-1.5" : undefined}>{pillLabel}</span>
+                  </span>
+                  {p.status === "claimed" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
+                      <CheckCircle2 className="h-3 w-3" /> In Progress
+                    </span>
+                  ) : (
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(p.created_at), "h:mm a")}
+                    </span>
+                  )}
+                </div>
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">
@@ -487,16 +490,8 @@ function PickupPage() {
                       </>
                     )}
                   </div>
-                  {p.status === "claimed" ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
-                      <CheckCircle2 className="h-3 w-3" /> In Progress
-                    </span>
-                  ) : (
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${isTech ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
-                      <Clock className="h-3 w-3" />
-                      
-                      {formatDistanceToNow(new Date(p.created_at), { addSuffix: false })} ago
-                    </span>
+                  {isTech && (
+                    <span className="shrink-0 text-xs font-bold text-destructive">Technician</span>
                   )}
                 </div>
 
@@ -531,7 +526,7 @@ function PickupPage() {
                     <button
                       onClick={() => claim(p)}
                       disabled={cooldownLeftMs > 0}
-                      className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
+                      className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                     >
                       {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
                     </button>

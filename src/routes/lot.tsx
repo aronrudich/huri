@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { spotsForLot, lotOf, normalizeSpot, type LotId } from "@/lib/lot";
+import { spotsForLot, lotOf, normalizeSpot, spotBadge, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
@@ -224,8 +224,8 @@ function LotPage() {
                     }}
                     className="flex w-full items-center gap-3 border-b border-border px-3 py-2.5 text-left last:border-b-0 active:bg-accent"
                   >
-                    <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                      {normalizeSpot(c.lot_position) === "UNKNOWN" ? "?" : normalizeSpot(c.lot_position)?.replace("SV ", "")}
+                    <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden whitespace-nowrap rounded-full bg-primary/10 text-[11px] font-bold leading-none tracking-tight text-primary">
+                      {spotBadge(c.lot_position)}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-semibold">

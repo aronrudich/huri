@@ -336,8 +336,8 @@ function PickupPage() {
                 search={{ ro: c.ro_number ?? undefined }}
                 className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                  {c.lot_position === "UNKNOWN" ? "?" : c.lot_position}
+                <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden whitespace-nowrap rounded-full bg-primary/10 text-[11px] font-bold leading-none tracking-tight text-primary">
+                  {spotBadge(c.lot_position)}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">

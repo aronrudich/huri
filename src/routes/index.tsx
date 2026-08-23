@@ -11,7 +11,7 @@ import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ListSkeleton } from "@/components/ListSkeleton";
-import { spotBadge } from "@/lib/lot";
+import { normalizeSpot, spotBadge } from "@/lib/lot";
 
 import { formatDistanceToNow } from "date-fns";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";

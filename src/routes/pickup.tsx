@@ -387,52 +387,55 @@ function PickupPage() {
           // Everyone can cancel their own submission; technicians can only cancel
           // their own so nobody kills another employee's request.
           const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
-          const ringClass = isShuttle
-            ? "ring-2 ring-success"
-            : isStaged
-            ? "ring-2 ring-foreground"
-            : isParts
-              ? "ring-2 ring-warning"
-              : isTech
-                ? "ring-2 ring-destructive"
-                : "ring-2 ring-primary";
-          const headerBar = isShuttle
-            ? "bg-success text-success-foreground"
-            : isStaged
-            ? "text-foreground"
-            : isParts
-              ? "bg-warning text-warning-foreground"
-              : isTech
-                ? "bg-destructive text-destructive-foreground"
-                : null;
-          const headerLabel = isShuttle
-            ? p.shuttle_kind === "dropoff" ? "🚐 Shuttle drop off" : "🚐 Shuttle pickup"
-            : isStaged
+          // Every card looks the same; only this small pill is colored so the
+          // list stays uniform and the type still reads at a glance.
+          const pillLabel = isStaged
             ? "Staged"
-            : isParts
-              ? "🔧 Parts request"
-              : p.kind === "park"
-                ? "🅿️ Park request — bay"
-                : isTech
-                  ? "🚨 Technician pickup"
-                  : null;
+            : isShuttle
+              ? p.shuttle_kind === "dropoff" ? "Shuttle drop off" : "Shuttle"
+              : isParts
+                ? "Parts"
+                : p.kind === "park"
+                  ? "Park request"
+                  : isTech
+                    ? "Technician pickup"
+                    : "Pickup";
+          const pillClass = isStaged
+            ? "border border-foreground/30 bg-muted text-foreground"
+            : isShuttle
+              ? "bg-success/15 text-success"
+              : isParts
+                ? "bg-warning/20 text-warning"
+                : p.kind === "park"
+                  ? "bg-success/15 text-success"
+                  : isTech
+                    ? "bg-destructive/15 text-destructive"
+                    : "bg-primary/10 text-primary";
           return (
             <li
               key={p.id}
               onClick={isShuttle ? () => setDetail(p) : undefined}
-              className={`overflow-hidden rounded-2xl bg-background ${ringClass} ${isShuttle ? "cursor-pointer" : ""}`}
+              className={`overflow-hidden rounded-2xl border border-border bg-background ${isShuttle ? "cursor-pointer" : ""}`}
             >
-              {headerBar && (
-                <div
-                  className={`${headerBar} px-4 py-1.5 text-xs font-semibold uppercase tracking-wide`}
-                  style={isStaged ? CHECKER : undefined}
-                >
-                  <span className={isStaged ? "rounded bg-background/90 px-1.5 py-0.5" : undefined}>
-                    {headerLabel}
-                  </span>
-                </div>
-              )}
               <div className="px-4 py-3">
+                <div className="mb-2 flex items-center justify-between gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}
+                    style={isStaged ? CHECKER : undefined}
+                  >
+                    <span className={isStaged ? "rounded bg-background/90 px-1.5" : undefined}>{pillLabel}</span>
+                  </span>
+                  {p.status === "claimed" ? (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
+                      <CheckCircle2 className="h-3 w-3" /> In Progress
+                    </span>
+                  ) : (
+                    <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="h-3 w-3" />
+                      {format(new Date(p.created_at), "h:mm a")}
+                    </span>
+                  )}
+                </div>
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
                     <p className="text-base font-semibold">

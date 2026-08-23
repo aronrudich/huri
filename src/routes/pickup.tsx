@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { useSuspended } from "@/lib/suspension";
-import { formatDistanceToNow, format } from "date-fns";
+import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

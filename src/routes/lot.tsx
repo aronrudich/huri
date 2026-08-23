@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { spotsForLot, lotOf, normalizeSpot, type LotId } from "@/lib/lot";
+import { spotsForLot, lotOf, normalizeSpot, spotBadge, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";

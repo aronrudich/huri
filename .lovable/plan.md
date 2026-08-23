@@ -29,9 +29,8 @@ New style, matching the reference screenshot:
   colored word on a soft tint of the same color:
   - Pickup — Huri blue
   - Technician pickup — red (stays red, as today)
-  - Park request — blue-violet (no longer red)
+  - Park request — green (no longer red)
   - Parts — amber
-  - Shuttle — green
   - Staged — dark/neutral outline (keeps the checkered treatment off the card,
     on the pill only)
 - Submission time stays on the top-right of the card.

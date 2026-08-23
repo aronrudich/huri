@@ -27,7 +27,7 @@ New style, matching the reference screenshot:
   padding. No colored rings, no full-width colored header bars.
 - The type is shown as one small pill at the top-left of the card, with a bold
   colored word on a soft tint of the same color:
-  - Pickup — neutral grey
+  - Pickup — Huri blue
   - Technician pickup — red (stays red, as today)
   - Park request — blue-violet (no longer red)
   - Parts — amber

@@ -526,7 +526,7 @@ function PickupPage() {
                     <button
                       onClick={() => claim(p)}
                       disabled={cooldownLeftMs > 0}
-                      className={`flex-1 rounded-xl py-3 text-sm font-semibold active:scale-[0.98] disabled:opacity-50 ${isStaged ? "border border-foreground bg-background text-foreground" : isParts ? "bg-warning text-warning-foreground" : isTech ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground"}`}
+                      className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                     >
                       {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
                     </button>

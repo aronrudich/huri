@@ -329,7 +329,11 @@ function InboxPage() {
                       {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                       {c.car_model && <span className="text-muted-foreground"> · {c.car_model}</span>}
                     </p>
-                    <p className="text-xs text-muted-foreground">Spot {c.lot_position?.toUpperCase() || "—"}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {normalizeSpot(c.lot_position) === "UNKNOWN" || !c.lot_position
+                        ? "Spot unknown"
+                        : `Spot ${normalizeSpot(c.lot_position)}`}
+                    </p>
                   </div>
                 </Link>
               </li>

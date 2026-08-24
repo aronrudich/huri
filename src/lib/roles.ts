@@ -99,9 +99,10 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
   if (r === "Shuttle") return [];
   if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return ["pickup", "new", "stage", "shuttle"];
+  if (r === "Advisor") return ["pickup", "new", "stage"];
   if (isTechRole(r)) return ["bringme", "park", "new"];
-  return ["pickup", "new", "stage", "parts", "shuttle", "park"];
+  return ["pickup", "new", "stage", "parts", "park"];
+
 }
 
 /**

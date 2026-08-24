@@ -401,16 +401,17 @@ function PickupPage() {
                     ? "Technician pickup"
                     : "Pickup";
           const pillClass = isStaged
-            ? "border border-foreground/30 bg-muted text-foreground"
+            ? "border border-foreground/40 bg-foreground text-background"
             : isShuttle
-              ? "bg-success/15 text-success"
+              ? "bg-success text-success-foreground"
               : isParts
-                ? "bg-warning/20 text-warning"
+                ? "bg-warning text-warning-foreground"
                 : p.kind === "park"
-                  ? "bg-success/15 text-success"
+                  ? "bg-success text-success-foreground"
                   : isTech
-                    ? "bg-destructive/15 text-destructive"
-                    : "bg-primary/10 text-primary";
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-primary text-primary-foreground";
+
           return (
             <li
               key={p.id}

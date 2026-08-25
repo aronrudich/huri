@@ -94,7 +94,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, email, dealership_id, avatar_url")
+      .select("id, full_name, nickname, role_name, email, dealership_id, has_avatar, avatar_version")
       .eq("id", data.userId)
       .eq("dealership_id", dealershipId)
       .maybeSingle();

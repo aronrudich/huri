@@ -101,6 +101,9 @@ function ProfilePage() {
           })),
         ),
       );
+  }, [isAdmin]);
+
+
 
   useEffect(() => {
     if (!profile?.dealership_id) { setDealershipName(""); return; }

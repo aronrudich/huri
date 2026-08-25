@@ -114,7 +114,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       nickname: profile.nickname,
       roleName: profile.role_name,
       email: profile.email,
-      avatarUrl: profile.avatar_url ?? null,
+      avatarUrl: avatarUrlFor(profile.id, profile.has_avatar, profile.avatar_version),
       dealershipName: dealer?.name ?? null,
     };
   });

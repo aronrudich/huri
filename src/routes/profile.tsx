@@ -9,6 +9,7 @@ import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref } from "@/lib/push";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPush } from "@/lib/push.functions";
+import { avatarUrlFor } from "@/lib/directory.functions";
 import {
   listPendingApprovals,
   approveAccount,

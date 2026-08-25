@@ -78,7 +78,9 @@ export const parkedCarsQuery = () =>
     queryKey: ["parked-cars"],
     staleTime: 60_000,
     queryFn: async (): Promise<ParkedCarRow[]> => {
-      const { data, error } = await supabase.from("parked_cars").select("*");
+      const { data, error } = await supabase
+        .from("parked_cars")
+        .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at");
       if (error) throw error;
       return (data ?? []) as ParkedCarRow[];
     },

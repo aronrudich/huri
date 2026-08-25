@@ -133,7 +133,7 @@ export const messagesQuery = (userId: string, roleIds: string[]) =>
         .select("*")
         .or(parts.join(","))
         .order("created_at", { ascending: false })
-        .limit(500);
+        .limit(200);
       if (error) throw error;
       return (data ?? []) as MessageRow[];
     },

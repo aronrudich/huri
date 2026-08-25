@@ -269,12 +269,14 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          avatar_version: string | null
           created_at: string
           deactivated_at: string | null
           deactivated_by: string | null
           dealership_id: string
           email: string
           full_name: string
+          has_avatar: boolean | null
           id: string
           is_active: boolean
           is_owner: boolean
@@ -286,12 +288,14 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          avatar_version?: string | null
           created_at?: string
           deactivated_at?: string | null
           deactivated_by?: string | null
           dealership_id?: string
           email: string
           full_name: string
+          has_avatar?: boolean | null
           id: string
           is_active?: boolean
           is_owner?: boolean
@@ -303,12 +307,14 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          avatar_version?: string | null
           created_at?: string
           deactivated_at?: string | null
           deactivated_by?: string | null
           dealership_id?: string
           email?: string
           full_name?: string
+          has_avatar?: boolean | null
           id?: string
           is_active?: boolean
           is_owner?: boolean
@@ -443,6 +449,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      directory_for: {
+        Args: { _uid: string }
+        Returns: {
+          avatar_version: string
+          full_name: string
+          has_avatar: boolean
+          id: string
+          is_active: boolean
+          nickname: string
+          role_id: string
+          role_name: string
+        }[]
+      }
       log_car_event: {
         Args: {
           _actor: string
@@ -453,6 +472,17 @@ export type Database = {
           _type: string
         }
         Returns: undefined
+      }
+      message_recipients_for: {
+        Args: { _uid: string }
+        Returns: {
+          avatar_version: string
+          full_name: string
+          has_avatar: boolean
+          id: string
+          nickname: string
+          role_name: string
+        }[]
       }
     }
     Enums: {

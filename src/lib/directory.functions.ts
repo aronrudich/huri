@@ -8,22 +8,24 @@ async function callerDealership(userId: string) {
   return data?.dealership_id ?? null;
 }
 
+/**
+ * Photos live on the profile row as base64. Lists send a cacheable image URL
+ * instead of the image data, so a roster response stays a few KB.
+ */
+export const avatarUrlFor = (
+  id: string,
+  hasAvatar?: boolean | null,
+  version?: string | null,
+): string | null => (hasAvatar ? `/api/public/avatar/${id}?v=${version ?? ""}` : null);
+
 export const getMessageRecipients = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const dealershipId = await callerDealership(context.userId);
-    if (!dealershipId) return [];
-
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name, nickname, role_name, avatar_url")
-      .eq("is_active", true)
-      .eq("status", "approved")
-      .eq("dealership_id", dealershipId)
-      .neq("id", context.userId)
-      .order("full_name", { ascending: true });
-
+    // Single round trip: the function scopes to the caller's dealership itself.
+    const { data, error } = await supabaseAdmin.rpc("message_recipients_for", {
+      _uid: context.userId,
+    });
     if (error) throw error;
 
     return (data ?? []).map((person) => ({
@@ -31,7 +33,7 @@ export const getMessageRecipients = createServerFn({ method: "GET" })
       fullName: person.full_name,
       nickname: person.nickname,
       roleName: person.role_name,
-      avatarUrl: person.avatar_url ?? null,
+      avatarUrl: avatarUrlFor(person.id, person.has_avatar, person.avatar_version),
     }));
   });
 
@@ -39,18 +41,23 @@ export const getDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const dealershipId = await callerDealership(context.userId);
-    if (!dealershipId) return [];
-
-    const { data, error } = await supabaseAdmin
-      .from("profiles")
-      .select("id, full_name, nickname, role_name, role_id, is_active, avatar_url")
-      .eq("dealership_id", dealershipId);
-
+    const { data, error } = await supabaseAdmin.rpc("directory_for", {
+      _uid: context.userId,
+    });
     if (error) throw error;
 
-    return data ?? [];
+    return (data ?? []).map((person) => ({
+      id: person.id,
+      full_name: person.full_name,
+      nickname: person.nickname,
+      role_name: person.role_name,
+      role_id: person.role_id,
+      is_active: person.is_active,
+      avatar_url: avatarUrlFor(person.id, person.has_avatar, person.avatar_version),
+    }));
   });
+
+
 
 
 export const searchCars = createServerFn({ method: "GET" })
@@ -87,7 +94,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
 
     const { data: profile, error } = await supabaseAdmin
       .from("profiles")
-      .select("id, full_name, nickname, role_name, email, dealership_id, avatar_url")
+      .select("id, full_name, nickname, role_name, email, dealership_id, has_avatar, avatar_version")
       .eq("id", data.userId)
       .eq("dealership_id", dealershipId)
       .maybeSingle();
@@ -107,7 +114,7 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       nickname: profile.nickname,
       roleName: profile.role_name,
       email: profile.email,
-      avatarUrl: profile.avatar_url ?? null,
+      avatarUrl: avatarUrlFor(profile.id, profile.has_avatar, profile.avatar_version),
       dealershipName: dealer?.name ?? null,
     };
   });

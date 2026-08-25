@@ -9,6 +9,7 @@ import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref } from "@/lib/push";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPush } from "@/lib/push.functions";
+import { avatarUrlFor } from "@/lib/directory.functions";
 import {
   listPendingApprovals,
   approveAccount,
@@ -82,10 +83,28 @@ function ProfilePage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner, avatar_url")
+    supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner, has_avatar, avatar_version")
       .eq("is_active", true).eq("status", "approved").order("full_name")
-      .then(({ data }) => setStaff((data as Employee[]) ?? []));
+      .then(({ data }) =>
+        setStaff(
+          ((data ?? []) as Array<Record<string, unknown>>).map((p) => ({
+            id: p.id as string,
+            full_name: p.full_name as string,
+            nickname: (p.nickname as string | null) ?? null,
+            role_name: p.role_name as string,
+            email: p.email as string,
+            is_owner: (p.is_owner as boolean | undefined) ?? false,
+            avatar_url: avatarUrlFor(
+              p.id as string,
+              p.has_avatar as boolean | null,
+              p.avatar_version as string | null,
+            ),
+          })),
+        ),
+      );
   }, [isAdmin]);
+
+
 
   useEffect(() => {
     if (!profile?.dealership_id) { setDealershipName(""); return; }

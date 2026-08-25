@@ -24,6 +24,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
+import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 
 const ShuttleRoute = ShuttleRouteImport.update({
   id: '/shuttle',
@@ -101,6 +102,11 @@ const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
   path: '/api/public/hooks/stale-cars',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
+  id: '/api/public/avatar/$id',
+  path: '/api/public/avatar/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -116,6 +122,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
@@ -151,6 +159,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
@@ -170,6 +179,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/shuttle'
     | '/thread/$threadId'
+    | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
   fileRoutesByTo: FileRoutesByTo
@@ -187,6 +197,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/shuttle'
     | '/thread/$threadId'
+    | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
   id:
@@ -204,6 +215,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/shuttle'
     | '/thread/$threadId'
+    | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
   fileRoutesById: FileRoutesById
@@ -222,6 +234,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   ShuttleRoute: typeof ShuttleRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
+  ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
   ApiPublicHooksUnclaimedReminderRoute: typeof ApiPublicHooksUnclaimedReminderRoute
 }
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksStaleCarsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/avatar/$id': {
+      id: '/api/public/avatar/$id'
+      path: '/api/public/avatar/$id'
+      fullPath: '/api/public/avatar/$id'
+      preLoaderRoute: typeof ApiPublicAvatarIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -350,6 +370,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   ShuttleRoute: ShuttleRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
+  ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,
   ApiPublicHooksUnclaimedReminderRoute: ApiPublicHooksUnclaimedReminderRoute,
 }

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
@@ -56,6 +57,8 @@ type ParkedCar = {
 };
 
 function PickupPage() {
+  // Bumped when the app returns from the background so channels rebuild.
+  const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const suspended = useSuspended();
@@ -141,9 +144,9 @@ function PickupPage() {
             : [...list, row];
         });
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient]);
+  }, [user, queryClient, realtimeGen]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
@@ -173,9 +176,9 @@ function PickupPage() {
           "/pickup",
         );
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [profile]);
+  }, [profile, realtimeGen]);
 
   // Auto-archive claimed pickups/parts after 20 minutes without changing their saved spot snapshot.
   // Staged cars that were claimed land in the CP lot at the same 20-minute mark.

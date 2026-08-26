@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, PenSquare, MessageSquare, X, User, Car } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { searchCars } from "@/lib/directory.functions";
 import { directoryQuery, formatRecipient, messageRecipientsQuery, messagesQuery, rolesQuery } from "@/lib/queries";
@@ -53,6 +54,8 @@ type PersonHit = { id: string; name: string; avatarUrl: string | null };
 type CarHit = { id: string; ro_number: string | null; car_model: string | null; lot_position: string };
 
 function InboxPage() {
+  // Bumped when the app returns from the background so channels rebuild.
+  const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -97,9 +100,9 @@ function InboxPage() {
           });
         },
       )
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user]);
+  }, [user, realtimeGen]);
 
   // Directory / recipients / roles are cached by React Query, so revisits paint
   // instantly instead of refetching from scratch on every mount.
@@ -164,10 +167,10 @@ function InboxPage() {
         const upd = payload.new as Msg;
         patchMessages((prev) => prev.map((m) => (m.id === upd.id ? upd : m)));
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, profile, myRoleIds, queryClient]);
+  }, [user, profile, myRoleIds, queryClient, realtimeGen]);
 
 
 

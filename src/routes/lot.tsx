@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
@@ -34,6 +35,8 @@ const TABS: { id: LotId; label: string }[] = [
 ];
 
 function LotPage() {
+  // Bumped when the app returns from the background so channels rebuild.
+  const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
@@ -63,9 +66,9 @@ function LotPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient]);
+  }, [user, queryClient, realtimeGen]);
 
 
   const byPos = useMemo(() => {

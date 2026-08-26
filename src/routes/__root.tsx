@@ -18,6 +18,7 @@ import { NotificationGate } from "@/components/NotificationGate";
 import { IOSInstallHint } from "@/components/IOSInstallHint";
 import { PendingGate } from "@/components/PendingGate";
 import { TabPrefetcher } from "@/components/TabPrefetcher";
+import { useRealtimeRecovery } from "@/lib/realtime-recovery";
 
 function NotFoundComponent() {
   return (
@@ -105,6 +106,11 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function RealtimeRecovery() {
+  useRealtimeRecovery();
+  return null;
+}
+
 function SWRegistrar() {
   useEffect(() => { ensureServiceWorker(); }, []);
   return null;
@@ -116,6 +122,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SWRegistrar />
+        <RealtimeRecovery />
         <TabPrefetcher />
         <div className="app-scroll">
           <Outlet />

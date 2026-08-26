@@ -19,6 +19,7 @@ import { IOSInstallHint } from "@/components/IOSInstallHint";
 import { PendingGate } from "@/components/PendingGate";
 import { TabPrefetcher } from "@/components/TabPrefetcher";
 import { useRealtimeRecovery } from "@/lib/realtime-recovery";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 function NotFoundComponent() {
   return (
@@ -124,9 +125,9 @@ function RootComponent() {
         <SWRegistrar />
         <RealtimeRecovery />
         <TabPrefetcher />
-        <div className="app-scroll">
+        <PullToRefresh>
           <Outlet />
-        </div>
+        </PullToRefresh>
 
         <NotificationGate />
         <IOSInstallHint />

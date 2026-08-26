@@ -17,6 +17,17 @@ export function bumpRealtimeGeneration() {
   listeners.forEach((fn) => fn(generation));
 }
 
+/** Reconnect realtime immediately and make every mounted channel subscribe again. */
+export function reconnectRealtime() {
+  try {
+    supabase.realtime.disconnect();
+    supabase.realtime.connect();
+  } catch (error) {
+    console.warn("[realtime] reconnect failed", error);
+  }
+  bumpRealtimeGeneration();
+}
+
 /** Re-subscribe key: include it in a channel effect's dependency array. */
 export function useRealtimeGeneration(): number {
   const [gen, setGen] = useState(generation);
@@ -44,13 +55,7 @@ export function useRealtimeRecovery() {
       if (now - last < 1500) return;
       last = now;
 
-      try {
-        supabase.realtime.disconnect();
-        supabase.realtime.connect();
-      } catch (error) {
-        console.warn("[realtime] reconnect failed", error);
-      }
-      bumpRealtimeGeneration();
+      reconnectRealtime();
       void queryClient.invalidateQueries({ type: "active" });
     };
 

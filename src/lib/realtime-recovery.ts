@@ -70,12 +70,19 @@ export function useRealtimeRecovery() {
  * Channel status handler: a dropped/errored channel triggers the same recovery
  * path, so a mid-session socket failure heals itself instead of going silent.
  */
+let retries: number[] = [];
+
 export function handleChannelStatus(status: string) {
-  if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
-    setTimeout(() => {
-      if (typeof document === "undefined" || document.visibilityState === "visible") {
-        bumpRealtimeGeneration();
-      }
-    }, 3000);
-  }
+  if (status !== "CHANNEL_ERROR" && status !== "TIMED_OUT" && status !== "CLOSED") return;
+  const now = Date.now();
+  retries = retries.filter((t) => now - t < 60_000);
+  // Cap the self-healing attempts so a persistently failing channel can't loop.
+  if (retries.length >= 4) return;
+  retries.push(now);
+  const delay = 2000 * retries.length;
+  setTimeout(() => {
+    if (typeof document === "undefined" || document.visibilityState === "visible") {
+      bumpRealtimeGeneration();
+    }
+  }, delay);
 }

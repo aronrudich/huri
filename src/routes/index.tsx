@@ -97,9 +97,9 @@ function InboxPage() {
           });
         },
       )
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user]);
+  }, [user, realtimeGen]);
 
   // Directory / recipients / roles are cached by React Query, so revisits paint
   // instantly instead of refetching from scratch on every mount.
@@ -164,10 +164,10 @@ function InboxPage() {
         const upd = payload.new as Msg;
         patchMessages((prev) => prev.map((m) => (m.id === upd.id ? upd : m)));
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, profile, myRoleIds, queryClient]);
+  }, [user, profile, myRoleIds, queryClient, realtimeGen]);
 
 
 

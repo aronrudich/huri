@@ -64,9 +64,9 @@ function ThreadPage() {
         (p) => { setMsgs((prev) => [...prev, p.new as Msg]); void markRead(); })
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages", filter: `thread_id=eq.${threadId}` },
         (p) => { const upd = p.new as Msg; setMsgs((prev) => prev.map((m) => m.id === upd.id ? upd : m)); })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [threadId, user]);
+  }, [threadId, user, realtimeGen]);
 
   const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
   const isGroup = !!groupMatch;

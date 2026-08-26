@@ -141,9 +141,9 @@ function PickupPage() {
             : [...list, row];
         });
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient]);
+  }, [user, queryClient, realtimeGen]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
@@ -173,9 +173,9 @@ function PickupPage() {
           "/pickup",
         );
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [profile]);
+  }, [profile, realtimeGen]);
 
   // Auto-archive claimed pickups/parts after 20 minutes without changing their saved spot snapshot.
   // Staged cars that were claimed land in the CP lot at the same 20-minute mark.

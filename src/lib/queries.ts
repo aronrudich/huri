@@ -2,6 +2,17 @@ import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
 
+/**
+ * A phone that falls asleep mid-request leaves the fetch hanging forever, which
+ * is what made screens stick on old data until the app was force-quit. Every
+ * read gets a 10s ceiling so it fails fast and React Query retries it.
+ */
+const timeoutSignal = (signal?: AbortSignal, ms = 10_000): AbortSignal => {
+  const timeout = AbortSignal.timeout(ms);
+  const any = (AbortSignal as unknown as { any?: (s: AbortSignal[]) => AbortSignal }).any;
+  return signal && any ? any([signal, timeout]) : timeout;
+};
+
 export type DirectoryMap = Record<string, { name: string; avatarUrl: string | null }>;
 export type RolesMap = Record<string, string>;
 export type RecipientHit = { id: string; name: string; avatarUrl: string | null };
@@ -57,8 +68,8 @@ export const rolesQuery = () =>
   queryOptions({
     queryKey: ["roles"],
     staleTime: 30 * 60_000,
-    queryFn: async (): Promise<RolesMap> => {
-      const { data, error } = await supabase.from("roles").select("id, name");
+    queryFn: async ({ signal }): Promise<RolesMap> => {
+      const { data, error } = await supabase.from("roles").select("id, name").abortSignal(timeoutSignal(signal));
       if (error) throw error;
       const map: RolesMap = {};
       (data ?? []).forEach((r) => { map[r.id] = r.name; });
@@ -77,10 +88,11 @@ export const parkedCarsQuery = () =>
   queryOptions({
     queryKey: ["parked-cars"],
     staleTime: 60_000,
-    queryFn: async (): Promise<ParkedCarRow[]> => {
+    queryFn: async ({ signal }): Promise<ParkedCarRow[]> => {
       const { data, error } = await supabase
         .from("parked_cars")
-        .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at");
+        .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at")
+        .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as ParkedCarRow[];
     },
@@ -91,12 +103,13 @@ export const pickupsQuery = <T,>() =>
   queryOptions({
     queryKey: ["pickups"],
     staleTime: 30_000,
-    queryFn: async (): Promise<T[]> => {
+    queryFn: async ({ signal }): Promise<T[]> => {
       const { data, error } = await supabase
         .from("pickup_requests")
         .select("*")
         .neq("status", "completed")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as T[];
     },
@@ -121,7 +134,7 @@ export const messagesQuery = (userId: string, roleIds: string[]) =>
     // Keep the previous list on screen while a new key (role loaded) fetches,
     // so the inbox never flashes its "no messages yet" empty state.
     placeholderData: (prev: MessageRow[] | undefined) => prev,
-    queryFn: async (): Promise<MessageRow[]> => {
+    queryFn: async ({ signal }): Promise<MessageRow[]> => {
       const parts = [
         `recipient_id.eq.${userId}`,
         `sender_id.eq.${userId}`,
@@ -133,7 +146,8 @@ export const messagesQuery = (userId: string, roleIds: string[]) =>
         .select("*")
         .or(parts.join(","))
         .order("created_at", { ascending: false })
-        .limit(200);
+        .limit(200)
+        .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as MessageRow[];
     },
@@ -149,11 +163,12 @@ export const lotActivePickupsQuery = () =>
   queryOptions({
     queryKey: ["lot-active-pickups"],
     staleTime: 30_000,
-    queryFn: async (): Promise<ActivePickupRow[]> => {
+    queryFn: async ({ signal }): Promise<ActivePickupRow[]> => {
       const { data, error } = await supabase
         .from("pickup_requests")
         .select("ro_number, lot_position, kind, status, is_staged")
-        .neq("status", "completed");
+        .neq("status", "completed")
+        .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as ActivePickupRow[];
     },

@@ -63,9 +63,9 @@ function LotPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });
       })
-      .subscribe();
+      .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient]);
+  }, [user, queryClient, realtimeGen]);
 
 
   const byPos = useMemo(() => {

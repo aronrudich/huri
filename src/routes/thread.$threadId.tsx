@@ -8,8 +8,8 @@ import { toast } from "sonner";
 import { useSuspended } from "@/lib/suspension";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
-import { useQuery } from "@tanstack/react-query";
-import { directoryQuery, rolesQuery } from "@/lib/queries";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { directoryQuery, rolesQuery, type MessageRow } from "@/lib/queries";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser } from "@/lib/thread-visibility";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
@@ -33,6 +33,7 @@ function ThreadPage() {
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const queryClient = useQueryClient();
   const suspended = useSuspended();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
@@ -52,12 +53,23 @@ function ThreadPage() {
     const markRead = async () => {
       const readAt = new Date().toISOString();
       setMsgs((prev) => prev.map((m) => (m.thread_id === threadId && m.sender_id !== user.id && !m.read_at ? { ...m, read_at: readAt } : m)));
-      await supabase
+      queryClient.setQueriesData<MessageRow[]>({ queryKey: ["messages", user.id] }, (current) =>
+        current?.map((message) =>
+          message.thread_id === threadId && message.sender_id !== user.id && !message.read_at
+            ? { ...message, read_at: readAt }
+            : message,
+        ),
+      );
+      const { error } = await supabase
         .from("messages")
         .update({ read_at: readAt })
         .eq("thread_id", threadId)
         .is("read_at", null)
         .neq("sender_id", user.id);
+      if (error) {
+        console.warn("[thread] failed to mark messages read", error);
+        void queryClient.invalidateQueries({ queryKey: ["messages", user.id] });
+      }
     };
     loadThreadCutoffsForUser(user.id).then(setThreadCutoffs);
     supabase.from("messages").select("*").eq("thread_id", threadId).order("created_at", { ascending: true })
@@ -69,7 +81,7 @@ function ThreadPage() {
         (p) => { const upd = p.new as Msg; setMsgs((prev) => prev.map((m) => m.id === upd.id ? upd : m)); })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [threadId, user, realtimeGen]);
+  }, [threadId, user, realtimeGen, queryClient]);
 
   const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
   const isGroup = !!groupMatch;

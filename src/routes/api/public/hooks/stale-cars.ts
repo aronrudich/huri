@@ -13,6 +13,18 @@ function pacificHour(now: Date): number {
   return Number(hour) % 24;
 }
 
+/** Pacific calendar date keeps each morning's digest in its own inbox thread. */
+function pacificDate(now: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(now);
+  const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? "";
+  return `${value("year")}-${value("month")}-${value("day")}`;
+}
+
 export const Route = createFileRoute("/api/public/hooks/stale-cars")({
   server: {
     handlers: {
@@ -22,6 +34,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
         if (!apiKey || !acceptedKeys.includes(apiKey)) return new Response("Unauthorized", { status: 401 });
 
         const now = new Date();
+        const digestDate = pacificDate(now);
         const url = new URL(request.url);
         // The cron fires at both possible UTC hours; only the 9 AM Pacific one runs.
         if (url.searchParams.get("force") !== "1" && pacificHour(now) !== 9) {
@@ -82,7 +95,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
 
           await supabaseAdmin.from("messages").insert(
             ids.map((id) => ({
-              thread_id: `huri:${id}`,
+               thread_id: `huri:${id}:${digestDate}`,
               sender_id: null,
               recipient_id: id,
               dealership_id: dealershipId,

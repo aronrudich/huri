@@ -114,6 +114,22 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-y: contain;
   }
+  .pull-refresh-indicator {
+    display: grid;
+    height: 0;
+    flex-shrink: 0;
+    place-items: center;
+    overflow: hidden;
+    background-color: var(--color-surface);
+    transition: height 180ms ease-out;
+  }
+  .pull-refresh-indicator[data-ready="true"] .pull-refresh-icon {
+    animation: spin 700ms linear infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .pull-refresh-indicator { transition: none; }
+    .pull-refresh-indicator[data-ready="true"] .pull-refresh-icon { animation: none; }
+  }
   /* Safe-area helpers for iOS PWA */
   .safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
   .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }

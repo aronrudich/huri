@@ -134,7 +134,7 @@ export const messagesQuery = (userId: string, roleIds: string[]) =>
     // Keep the previous list on screen while a new key (role loaded) fetches,
     // so the inbox never flashes its "no messages yet" empty state.
     placeholderData: (prev: MessageRow[] | undefined) => prev,
-    queryFn: async ({ signal }): Promise<MessageRow[]> => {
+    queryFn: async ({ signal }: { signal: AbortSignal }): Promise<MessageRow[]> => {
       const parts = [
         `recipient_id.eq.${userId}`,
         `sender_id.eq.${userId}`,

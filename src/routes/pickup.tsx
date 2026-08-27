@@ -423,12 +423,10 @@ function PickupPage() {
             >
               <div className="px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}
-                    style={isStaged ? CHECKER : undefined}
-                  >
-                    <span className={isStaged ? "rounded bg-background/90 px-1.5" : undefined}>{pillLabel}</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}>
+                    {pillLabel}
                   </span>
+
                   {p.status === "claimed" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
                       <CheckCircle2 className="h-3 w-3" /> In Progress

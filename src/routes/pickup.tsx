@@ -22,12 +22,6 @@ const CLAIM_HIDE_MS = 20 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 const CLAIM_COOLDOWN_MS = 1 * 60 * 1000;
 
-/** Black-and-white checker used for staged cars (matches the lot map). */
-const CHECKER = {
-  backgroundImage:
-    "repeating-conic-gradient(var(--foreground) 0% 25%, var(--background) 0% 50%)",
-  backgroundSize: "10px 10px",
-} as const;
 
 const isTechSource = (role: string | null | undefined) =>
   role === "Technician" || role === "Shop Foreman";
@@ -180,41 +174,19 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile, realtimeGen]);
 
-  // Auto-archive claimed pickups/parts after 20 minutes without changing their saved spot snapshot.
-  // Staged cars that were claimed land in the CP lot at the same 20-minute mark.
+  // Auto-archive claimed pickups/parts after 20 minutes without changing their
+  // saved spot snapshot. The car's destination is applied the moment it is
+  // claimed, so nothing here touches car locations and no car is ever deleted.
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
         if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
-          const car = p.ro_number ? carsByRo[p.ro_number] : undefined;
-          // Someone re-parked the car after the claim: keep the newer location.
-          // Claiming itself frees the spot (location becomes UNKNOWN), so only a
-          // real location logged after the claim counts as "the car moved".
-          const movedSinceClaim =
-            !!car?.located_at && !!p.claimed_at &&
-            car.lot_position !== "UNKNOWN" &&
-            new Date(car.located_at).getTime() > new Date(p.claimed_at).getTime();
-          supabase.from("pickup_requests").update({ status: "completed", completed_at: new Date().toISOString() }).eq("id", p.id).then(() => {
-            if (movedSinceClaim) { void loadCars(); return; }
-            if (p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" && p.ro_number) {
-              supabase.from("parked_cars")
-                .update({ lot_position: "CP", is_staged: false })
-                .eq("ro_number", p.ro_number)
-                .then(() => loadCars());
-            } else if (
-              !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" &&
-              p.ro_number && isTechSource(p.source_role)
-            ) {
-              // A technician's car ends up in their bay 20 minutes after the claim.
-              const patch: { lot_position: string; notes?: string } = { lot_position: "BAY" };
-              if (p.advisor_name) patch.notes = `Bay — ${p.advisor_name}`;
-              supabase.from("parked_cars")
-                .update(patch)
-                .eq("ro_number", p.ro_number)
-                .then(() => loadCars());
-            }
-          });
+          supabase
+            .from("pickup_requests")
+            .update({ status: "completed", completed_at: new Date().toISOString() })
+            .eq("id", p.id)
+            .then(() => loadCars());
         }
       });
     };
@@ -223,7 +195,8 @@ function PickupPage() {
       archiveExpired();
     }, 30000);
     return () => clearInterval(t);
-  }, [pickups, carsByRo]);
+  }, [pickups]);
+
 
 
   // One claim at a time: the database enforces the 2-minute cooldown, and this
@@ -404,7 +377,8 @@ function PickupPage() {
                     ? "Technician pickup"
                     : "Pickup";
           const pillClass = isStaged
-            ? "border border-foreground/40 bg-foreground text-background"
+            ? "bg-foreground text-background"
+
             : isShuttle
               ? "bg-success text-success-foreground"
               : isParts
@@ -423,12 +397,10 @@ function PickupPage() {
             >
               <div className="px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}
-                    style={isStaged ? CHECKER : undefined}
-                  >
-                    <span className={isStaged ? "rounded bg-background/90 px-1.5" : undefined}>{pillLabel}</span>
+                  <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}>
+                    {pillLabel}
                   </span>
+
                   {p.status === "claimed" ? (
                     <span className="inline-flex items-center gap-1 rounded-full bg-success/15 px-2.5 py-1 text-xs font-semibold text-success">
                       <CheckCircle2 className="h-3 w-3" /> In Progress

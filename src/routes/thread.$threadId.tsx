@@ -65,7 +65,9 @@ function ThreadPage() {
         .update({ read_at: readAt })
         .eq("thread_id", threadId)
         .is("read_at", null)
-        .neq("sender_id", user.id);
+        // Huri system digests have no sender, so `neq` alone would skip them.
+        .or(`sender_id.is.null,sender_id.neq.${user.id}`);
+
       if (error) {
         console.warn("[thread] failed to mark messages read", error);
         void queryClient.invalidateQueries({ queryKey: ["messages", user.id] });

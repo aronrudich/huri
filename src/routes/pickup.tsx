@@ -20,7 +20,6 @@ import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/
 /** Claimed submissions leave the list 20 minutes after the claim. */
 const CLAIM_HIDE_MS = 20 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
-const CLAIM_COOLDOWN_MS = 1 * 60 * 1000;
 
 
 const isTechSource = (role: string | null | undefined) =>
@@ -199,28 +198,9 @@ function PickupPage() {
 
 
 
-  // One claim at a time: the database enforces the 2-minute cooldown, and this
-  // mirrors it in the UI so the button shows the countdown instead of erroring.
-  const [now, setNow] = useState(Date.now());
-  useEffect(() => {
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  const lastClaimAt = useMemo(() => {
-    if (!user) return 0;
-    return pickups
-      .filter((p) => p.claimed_by === user.id && p.claimed_at)
-      .reduce((max, p) => Math.max(max, new Date(p.claimed_at!).getTime()), 0);
-  }, [pickups, user]);
-  const cooldownLeftMs = Math.max(0, lastClaimAt + CLAIM_COOLDOWN_MS - now);
-  const cooldownLabel = `${Math.floor(cooldownLeftMs / 60000)}:${String(Math.ceil((cooldownLeftMs % 60000) / 1000)).padStart(2, "0")}`;
-
   const claim = async (p: Pickup) => {
     if (!user) return;
     if (suspended) { toast.success("Claimed"); return; }
-    if (cooldownLeftMs > 0) {
-      return toast.error(`One claim at a time — wait ${cooldownLabel} before claiming another.`);
-    }
     const { data: claimed, error } = await supabase.rpc("claim_pickup_request", { _pickup_id: p.id });
     if (error) return toast.error(error.message);
     if (claimed) setPickups((current) => current.map((item) => item.id === p.id ? claimed as Pickup : item));
@@ -501,10 +481,9 @@ function PickupPage() {
                   {p.status === "unclaimed" ? (
                     <button
                       onClick={() => claim(p)}
-                      disabled={cooldownLeftMs > 0}
                       className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                     >
-                      {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
+                      {isParts || isShuttle ? "On it" : "Claim"}
                     </button>
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">

@@ -149,10 +149,11 @@ function LotPage() {
     );
   }, [tab, carsInCP, carsInBL, q]);
 
-  // Cars with an UNKNOWN location that match the search — surfaced from every tab.
+  // Cars with an UNKNOWN or custom location — always browsable from every tab so
+  // a car without a spot is never invisible, and filtered when searching.
   const filteredUnknown = useMemo(() => {
     const n = q.trim().toLowerCase();
-    if (!n) return [];
+    if (!n) return carsOffLot;
     return carsOffLot.filter((c) =>
       c.tag_number?.toLowerCase().includes(n) ||
       c.ro_number?.toLowerCase().includes(n) ||
@@ -160,6 +161,7 @@ function LotPage() {
       c.lot_position?.toLowerCase().includes(n),
     );
   }, [carsOffLot, q]);
+
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.
   useEffect(() => {

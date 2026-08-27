@@ -482,10 +482,9 @@ function PickupPage() {
                   {p.status === "unclaimed" ? (
                     <button
                       onClick={() => claim(p)}
-                      disabled={cooldownLeftMs > 0}
                       className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                     >
-                      {cooldownLeftMs > 0 ? `Wait ${cooldownLabel}` : isParts || isShuttle ? "On it" : "Claim"}
+                      {isParts || isShuttle ? "On it" : "Claim"}
                     </button>
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">

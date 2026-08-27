@@ -404,7 +404,8 @@ function PickupPage() {
                     ? "Technician pickup"
                     : "Pickup";
           const pillClass = isStaged
-            ? "border border-foreground/40 bg-foreground text-background"
+            ? "bg-foreground text-background"
+
             : isShuttle
               ? "bg-success text-success-foreground"
               : isParts

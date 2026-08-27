@@ -20,7 +20,6 @@ import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/
 /** Claimed submissions leave the list 20 minutes after the claim. */
 const CLAIM_HIDE_MS = 20 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
-const CLAIM_COOLDOWN_MS = 1 * 60 * 1000;
 
 
 const isTechSource = (role: string | null | undefined) =>

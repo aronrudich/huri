@@ -61,7 +61,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin", "Service Manager"])
+      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
@@ -224,7 +224,7 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
     if (!caller?.dealership_id) return { sent: 0 };
     const allowedRoles = [
       "Technician", "Shop Foreman", "Manager", "Assistant Service Manager",
-      "Parts Manager", "Director", "Service Director", "General Manager",
+      "Parts Manager", "Director", "Admin", "Service Manager", "Service Director", "General Manager",
     ];
     if (!caller.is_active || !allowedRoles.includes(caller.role_name)) throw new Error("You do not have access to Parts requests");
 
@@ -244,7 +244,7 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet & Parts", "Admin", "Service Manager"])
+      .in("role_name", ["Valet & Parts", "Admin"])
       .eq("is_active", true);
     if (rErr) throw rErr;
     if (!recipients?.length) return { sent: 0 };
@@ -321,7 +321,7 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin", "Service Manager"])
+      .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin"])
       .eq("is_active", true);
     if (!recipients?.length) return { sent: 0 };
 

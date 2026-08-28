@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-// 14-day parked-car alerts go to the Admin role only (may widen later).
-const ALERT_ROLES = ["Service Manager", "Admin"];
+// Administrative roles receive the daily 14-day parked-car digest.
+const ALERT_ROLES = ["Admin", "Service Manager", "Service Director"];
 
 /** Current hour (0-23) in Pacific time, so the digest lands at 9 AM PST/PDT. */
 function pacificHour(now: Date): number {

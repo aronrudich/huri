@@ -5,8 +5,6 @@ export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Record<string, never>) => d)
   .handler(async ({ context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0, pruned: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -52,8 +50,6 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     staged?: boolean | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -129,8 +125,6 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     isAnonymous?: boolean;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -173,7 +167,6 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       const ids = await membersForRole(data.recipientRoleId);
       recipientIds = ids.filter((id) => id !== context.userId);
     }
-    recipientIds = await withoutSuspended(recipientIds);
     if (!recipientIds.length) return { sent: 0 };
 
 
@@ -223,8 +216,6 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { techName?: string | null; ro?: string | null; notes?: string | null }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -303,8 +294,6 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
     address?: string | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 

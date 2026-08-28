@@ -159,9 +159,11 @@ function PickupPage() {
           ? "🔧 Parts request"
           : p.kind === "shuttle"
             ? "🚐 Shuttle request"
-            : p.kind === "park"
-              ? "🅿️ Park request"
-              : "New pickup request";
+            : p.kind === "wash"
+              ? "🧼 Wash request"
+              : p.kind === "park"
+                ? "🅿️ Park request"
+                : "New pickup request";
         notify(
           title,
           [p.ro_number && `RO #${p.ro_number}`, p.advisor_name]

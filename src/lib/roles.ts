@@ -99,10 +99,12 @@ export const canStageRole = (role: string | null | undefined) => {
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
   if (r === "Shuttle") return [];
+  // The car wash employee doesn't request washes — they just relocate cars once washed.
+  if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return ["pickup", "new", "stage"];
-  if (isTechRole(r)) return ["bringme", "park", "new"];
-  return ["pickup", "new", "stage", "parts", "park"];
+  if (r === "Advisor") return ["pickup", "new", "stage", "wash"];
+  if (isTechRole(r)) return ["bringme", "park", "new", "wash"];
+  return ["pickup", "new", "stage", "parts", "park", "wash"];
 
 }
 

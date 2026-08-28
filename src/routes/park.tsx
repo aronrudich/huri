@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Map as MapIcon, X } from "lucide-react";
+import { ArrowLeft, Map as MapIcon, X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -11,6 +11,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { canStageRole, isTechRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
+import { format } from "date-fns";
 
 type MapCar = {
   id: string;

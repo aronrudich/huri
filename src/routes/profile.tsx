@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, isAdminRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -57,6 +57,7 @@ function ProfilePage() {
   const role = profile?.role_name ?? "";
   const isAdmin = isOwner || isAdminRole(role);
   const isApprover = isAdmin;
+  const canViewRoster = isOwner || MANAGEMENT_ROLES.includes(role) || /manager|director/i.test(role);
 
 
   const fetchPending = useServerFn(listPendingApprovals);
@@ -79,7 +80,7 @@ function ProfilePage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (!canViewRoster) return;
     supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner, has_avatar, avatar_version")
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) =>
@@ -99,7 +100,7 @@ function ProfilePage() {
           })),
         ),
       );
-  }, [isAdmin]);
+  }, [canViewRoster]);
 
 
 
@@ -299,7 +300,7 @@ function ProfilePage() {
         )}
       </section>
 
-      {isAdmin && (
+      {canViewRoster && (
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
             <Crown className="h-4 w-4 text-amber-500" /> Roster ({staff.filter((e) => e.id !== user?.id).length})
@@ -328,9 +329,11 @@ function ProfilePage() {
                         <Shuffle className="h-4 w-4" />
                       </button>
                     )}
-                    <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    {isAdmin && (
+                      <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    )}
                   </>
                 )}
 

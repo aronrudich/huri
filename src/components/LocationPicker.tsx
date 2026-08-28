@@ -59,7 +59,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
     setChoice(next);
     setOpen(false);
     setDetail("");
-    emit(next === "BL" || next === "CP" || next === "BAY" || next === "UNKNOWN" ? next : "");
+    emit(next === "BL" || next === "CP" || next === "BAY" || next === "WASH" || next === "UNKNOWN" ? next : "");
   };
 
 

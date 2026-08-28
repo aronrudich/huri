@@ -63,6 +63,8 @@
   --success-foreground: oklch(1 0 0);
   --warning: oklch(0.78 0.18 70);                   /* iOS systemOrange */
   --warning-foreground: oklch(0.2 0.05 60);
+  --wash: oklch(0.66 0.13 195);                     /* iOS systemTeal */
+  --wash-foreground: oklch(1 0 0);
   --border: oklch(0.91 0.005 247);
   --input: oklch(0.91 0.005 247);
   --ring: oklch(0.62 0.19 257);

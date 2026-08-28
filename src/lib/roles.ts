@@ -28,8 +28,14 @@ export const ROLE_OPTIONS = [
   "Other",
 ];
 
+/** Roles with the full administrative capability set. */
+export const ADMIN_ROLES = ["Admin", "Service Manager", "Service Director"];
+
+export const isAdminRole = (role: string | null | undefined) =>
+  ADMIN_ROLES.includes(role ?? "");
+
 /** Roles that handle join requests and role change approvals. */
-export const APPROVER_ROLES = ["Admin", "Service Manager"];
+export const APPROVER_ROLES = ADMIN_ROLES;
 
 export const isApproverRole = (role: string | null | undefined) =>
   APPROVER_ROLES.includes(role ?? "");

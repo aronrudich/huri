@@ -24,7 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isApproverRole } from "@/lib/roles";
+import { ROLE_OPTIONS, isAdminRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -54,12 +54,9 @@ function ProfilePage() {
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
   const isOwner = !!profile?.is_owner;
-  // Roster is visible to any management-type role plus Service Director / General Manager.
   const role = profile?.role_name ?? "";
-  const isAdmin =
-    isOwner || MANAGEMENT_ROLES.includes(role) || /manager|director/i.test(role);
-  // Only Admins (and the owner, as a lockout safety net) handle approvals.
-  const isApprover = isOwner || isApproverRole(role);
+  const isAdmin = isOwner || isAdminRole(role);
+  const isApprover = isAdmin;
 
 
   const fetchPending = useServerFn(listPendingApprovals);

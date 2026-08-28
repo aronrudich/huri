@@ -1,80 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-// Approver roles plus the owner handle approvals.
-import { isApproverRole } from "@/lib/roles";
-
-const idSchema = z.object({ userId: z.string().uuid() });
-const roleReqSchema = z.object({ newRole: z.string().trim().min(1).max(120) });
-
-
-type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
-
-async function callerContext(userId: string): Promise<CallerCtx> {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("profiles")
-    .select("is_owner, role_name, status, is_active, dealership_id")
-    .eq("id", userId).maybeSingle();
-  const isOwner = !!data?.is_owner;
-  const isAdmin =
-    isOwner ||
-    (!!data &&
-      data.is_active === true &&
-      data.status === "approved" &&
-      isApproverRole(data.role_name));
-  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
-}
-
-async function assertAdmin(userId: string): Promise<CallerCtx> {
-  const ctx = await callerContext(userId);
-  if (!ctx.isAdmin) throw new Error("Admins only.");
-  return ctx;
-}
-
-async function assertOwner(userId: string): Promise<CallerCtx> {
-  const ctx = await callerContext(userId);
-  if (!ctx.isOwner) throw new Error("Owner only.");
-  return ctx;
-}
-
-async function targetInDealership(targetId: string, dealershipId: string) {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { data } = await supabaseAdmin
-    .from("profiles").select("dealership_id").eq("id", targetId).maybeSingle();
-  if (!data || data.dealership_id !== dealershipId) {
-    throw new Error("That employee is not in your dealership.");
-  }
-}
-
-async function notifyAdmins(dealershipId: string, title: string, body: string, url = "/profile") {
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const { sendWebPush } = await import("./push-server.server");
-  const { data: admins } = await supabaseAdmin
-    .from("profiles")
-    .select("id, is_owner, role_name")
-    .eq("dealership_id", dealershipId)
-    .eq("is_active", true)
-    .eq("status", "approved");
-  const adminIds = (admins ?? [])
-    .filter((p) => p.is_owner || isApproverRole(p.role_name))
-    .map((p) => p.id);
-  if (!adminIds.length) return;
-  const { data: subs } = await supabaseAdmin
-    .from("push_subscriptions").select("id, endpoint, p256dh, auth")
-    .in("user_id", adminIds);
-  if (!subs?.length) return;
-  const payload = { title, body, url, tag: "huri-approval" };
-  const stale: string[] = [];
-  await Promise.all(subs.map(async (s) => {
-    try { await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload); }
-    catch (e: unknown) {
-      const code = (e as { statusCode?: number })?.statusCode;
-      if (code === 404 || code === 410) stale.push(s.id);
-    }
-  }));
-  if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
-}
+import { assertAdmin, assertOwner, notifyAdmins, targetInDealership } from "@/lib/admin.server";
 
 // Approvals list (admins in the same dealership)
 export const listPendingApprovals = createServerFn({ method: "GET" })
@@ -102,7 +29,7 @@ export const listPendingApprovals = createServerFn({ method: "GET" })
 
 export const approveAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     await targetInDealership(data.userId, dealershipId);
@@ -115,7 +42,7 @@ export const approveAccount = createServerFn({ method: "POST" })
 
 export const denyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     await targetInDealership(data.userId, dealershipId);
@@ -127,7 +54,7 @@ export const denyAccount = createServerFn({ method: "POST" })
 
 export const requestRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => roleReqSchema.parse(d))
+  .inputValidator((d) => z.object({ newRole: z.string().trim().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
@@ -151,7 +78,7 @@ export const requestRoleChange = createServerFn({ method: "POST" })
 
 export const approveRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     await targetInDealership(data.userId, dealershipId);
@@ -171,7 +98,7 @@ export const approveRoleChange = createServerFn({ method: "POST" })
 
 export const denyRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     await targetInDealership(data.userId, dealershipId);
@@ -183,10 +110,9 @@ export const denyRoleChange = createServerFn({ method: "POST" })
   });
 
 // Admin-initiated role change — bypasses the pending-approval flow.
-const setRoleSchema = z.object({ userId: z.string().uuid(), newRole: z.string().trim().min(1).max(120) });
 export const setEmployeeRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => setRoleSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid(), newRole: z.string().trim().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     await targetInDealership(data.userId, dealershipId);
@@ -212,7 +138,7 @@ export const deleteOwnAccount = createServerFn({ method: "POST" })
 
 export const removeEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertAdmin(context.userId);
     if (data.userId === context.userId) throw new Error("You can't remove yourself.");
@@ -229,7 +155,7 @@ export const removeEmployee = createServerFn({ method: "POST" })
 
 export const transferOwnership = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d) => idSchema.parse(d))
+  .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
     const { dealershipId } = await assertOwner(context.userId);
     if (data.userId === context.userId) throw new Error("Already the owner.");

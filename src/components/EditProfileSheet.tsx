@@ -81,7 +81,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
 
 
   const savePassword = async () => {
-    if (newPass.length < 8) return toast.error("Password must be 8+ characters");
+    if (!newPass) return toast.error("Enter a new password");
     if (newPass !== confirmPass) return toast.error("Passwords don't match");
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPass });

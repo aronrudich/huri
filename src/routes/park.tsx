@@ -102,6 +102,22 @@ function ParkPage() {
       });
   }, [savedPos]);
 
+  // "Washed" is tied to the RO #, so it follows the car through every later move.
+  useEffect(() => {
+    const target = (ro || roParam || "").trim();
+    if (!target) { setWashedAt(null); return; }
+    let alive = true;
+    supabase
+      .from("car_washes")
+      .select("washed_at")
+      .eq("ro_number", target)
+      .maybeSingle()
+      .then(({ data }) => { if (alive) setWashedAt((data?.washed_at as string | undefined) ?? null); });
+    return () => { alive = false; };
+  }, [ro, roParam, savedPos]);
+
+
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");

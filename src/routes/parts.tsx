@@ -4,7 +4,6 @@ import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { sendPartsAlert } from "@/lib/push.functions";
 
 export const Route = createFileRoute("/parts")({
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/parts")({
 function PartsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const suspended = useSuspended();
   const [busy, setBusy] = useState(false);
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
@@ -28,11 +26,6 @@ function PartsPage() {
     e.preventDefault();
     if (!user) return;
     if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
-    if (suspended) {
-      toast.success("Parts request sent");
-      navigate({ to: "/", replace: true });
-      return;
-    }
     setBusy(true);
     try {
       await sendPartsAlert({ data: { techName: techName || null, ro: ro.trim() || null, notes: notes.trim() || null } });

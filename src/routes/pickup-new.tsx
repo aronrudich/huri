@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { sendPickupAlert } from "@/lib/push.functions";
 import { isTechRole } from "@/lib/roles";
 
@@ -23,7 +22,6 @@ export const Route = createFileRoute("/pickup-new")({
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const suspended = useSuspended();
   const { staged, ro: roParam } = Route.useSearch();
   const isStage = !!staged;
   const [ro, setRo] = useState(roParam ?? "");
@@ -42,11 +40,6 @@ function NewPickupPage() {
     if (!ro.trim()) return toast.error("RO # is required");
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     if (!user) return;
-    if (suspended) {
-      toast.success(isStage ? "Stage submitted" : "Pickup submitted");
-      navigate({ to: "/pickup", replace: true });
-      return;
-    }
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
     // Snapshot the car's current spot + notes so valets can still find it after the spot is freed on claim.

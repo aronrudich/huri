@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as WashRouteImport } from './routes/wash'
 import { Route as ShuttleRouteImport } from './routes/shuttle'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
@@ -26,6 +27,11 @@ import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/ap
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
 import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 
+const WashRoute = WashRouteImport.update({
+  id: '/wash',
+  path: '/wash',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ShuttleRoute = ShuttleRouteImport.update({
   id: '/shuttle',
   path: '/shuttle',
@@ -121,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
+  '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -139,6 +146,7 @@ export interface FileRoutesByTo {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
+  '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -158,6 +166,7 @@ export interface FileRoutesById {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/shuttle': typeof ShuttleRoute
+  '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -178,6 +187,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/shuttle'
+    | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/shuttle'
+    | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -214,6 +225,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/shuttle'
+    | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -233,6 +245,7 @@ export interface RootRouteChildren {
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
   ShuttleRoute: typeof ShuttleRoute
+  WashRoute: typeof WashRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
@@ -241,6 +254,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/wash': {
+      id: '/wash'
+      path: '/wash'
+      fullPath: '/wash'
+      preLoaderRoute: typeof WashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/shuttle': {
       id: '/shuttle'
       path: '/shuttle'
@@ -369,6 +389,7 @@ const rootRouteChildren: RootRouteChildren = {
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
   ShuttleRoute: ShuttleRoute,
+  WashRoute: WashRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,

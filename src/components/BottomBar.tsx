@@ -69,6 +69,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     shuttle: "Shuttle",
     park: "Park My Car",
     bringme: "Bring Me",
+    wash: "Wash",
   };
 
   // Short plain-English description shown under each action label (optional).
@@ -78,6 +79,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     parts: "Bring Me Parts",
     shuttle: "Pickup/Dropoff Customer",
     bringme: "Car or Parts",
+    wash: "Bring Car To Wash",
   };
 
 
@@ -90,6 +92,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "shuttle": return { to: "/shuttle" };
       case "park": return { to: "/park-request" };
       case "bringme": return { to: "/bring-me" };
+      case "wash": return { to: "/wash" };
       default: return { to: "/pickup" };
     }
   };

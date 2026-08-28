@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme" | "wash";
 
 export const VALET_ROLES = ["Valet", "Valet & Parts", "Valet & Shuttle"];
 export const SHUTTLE_ROLES = ["Shuttle", "Valet & Shuttle"];
@@ -15,6 +15,7 @@ export const ROLE_OPTIONS = [
   "Valet & Parts",
   "Shuttle",
   "Valet & Shuttle",
+  "Car Wash",
   "Advisor",
   "Technician",
   "Shop Foreman",
@@ -98,10 +99,12 @@ export const canStageRole = (role: string | null | undefined) => {
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
   if (r === "Shuttle") return [];
+  // The car wash employee doesn't request washes — they just relocate cars once washed.
+  if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return ["pickup", "new", "stage"];
-  if (isTechRole(r)) return ["bringme", "park", "new"];
-  return ["pickup", "new", "stage", "parts", "park"];
+  if (r === "Advisor") return ["pickup", "new", "stage", "wash"];
+  if (isTechRole(r)) return ["bringme", "park", "new", "wash"];
+  return ["pickup", "new", "stage", "parts", "park", "wash"];
 
 }
 

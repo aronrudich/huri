@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.record_wash_on_leaving_wash() FROM PUBLIC, anon, authenticated;

@@ -55,6 +55,44 @@ export type Database = {
           },
         ]
       }
+      car_washes: {
+        Row: {
+          created_at: string
+          dealership_id: string
+          id: string
+          ro_number: string
+          updated_at: string
+          washed_at: string
+          washed_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          dealership_id?: string
+          id?: string
+          ro_number: string
+          updated_at?: string
+          washed_at?: string
+          washed_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          dealership_id?: string
+          id?: string
+          ro_number?: string
+          updated_at?: string
+          washed_at?: string
+          washed_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "car_washes_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealerships: {
         Row: {
           created_at: string

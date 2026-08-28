@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Map as MapIcon, X } from "lucide-react";
+import { ArrowLeft, Map as MapIcon, X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -11,6 +11,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { canStageRole, isTechRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
+import { format } from "date-fns";
 
 type MapCar = {
   id: string;
@@ -48,6 +49,8 @@ function ParkPage() {
   const [staged, setStaged] = useState(false);
   // Saved location of the loaded car, used for the SV map snapshot.
   const [savedPos, setSavedPos] = useState<string | null>(null);
+  // Wash record for this RO — it stays with the RO forever, wherever the car goes.
+  const [washedAt, setWashedAt] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
   const svSpots = useMemo(() => spotsForLot("sv"), []);
@@ -98,6 +101,22 @@ function ParkPage() {
         setCarsBySpot(by);
       });
   }, [savedPos]);
+
+  // "Washed" is tied to the RO #, so it follows the car through every later move.
+  useEffect(() => {
+    const target = (ro || roParam || "").trim();
+    if (!target) { setWashedAt(null); return; }
+    let alive = true;
+    supabase
+      .from("car_washes")
+      .select("washed_at")
+      .eq("ro_number", target)
+      .maybeSingle()
+      .then(({ data }) => { if (alive) setWashedAt((data?.washed_at as string | undefined) ?? null); });
+    return () => { alive = false; };
+  }, [ro, roParam, savedPos]);
+
+
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,6 +210,11 @@ function ParkPage() {
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
+        {washedAt && (
+          <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+            <CheckCircle2 className="h-4 w-4" /> Washed · {format(new Date(washedAt), "MMM d, yyyy")}
+          </p>
+        )}
         {!hideModel && <Field label="Car Model" value={model} onChange={setModel} />}
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>

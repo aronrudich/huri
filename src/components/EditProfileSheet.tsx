@@ -183,7 +183,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
               <Field label="Confirm new password">
                 <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className="input" autoComplete="new-password" />
               </Field>
-              <p className="text-xs text-muted-foreground">At least 8 characters.</p>
+              <p className="text-xs text-muted-foreground">Any password works.</p>
               <PrimaryBtn busy={busy} onClick={savePassword}>Update password</PrimaryBtn>
             </div>
           )}

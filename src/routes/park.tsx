@@ -210,6 +210,11 @@ function ParkPage() {
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
+        {washedAt && (
+          <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+            <CheckCircle2 className="h-4 w-4" /> Washed · {format(new Date(washedAt), "MMM d, yyyy")}
+          </p>
+        )}
         {!hideModel && <Field label="Car Model" value={model} onChange={setModel} />}
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>

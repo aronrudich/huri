@@ -116,6 +116,7 @@ export function locationLabel(raw: string | null | undefined): string {
   if (t === "CP") return "CP · Customer Parking";
   if (t === "BL") return "BL · Back Lot";
   if (t === "BAY") return "Technician Bay";
+  if (t === "WASH") return "Wash";
   return t;
 }
 
@@ -123,6 +124,7 @@ export function locationLabel(raw: string | null | undefined): string {
 export function spotBadge(raw: string | null | undefined): string {
   const t = normalizeSpot(raw);
   if (!t || t === "UNKNOWN") return "?";
+  if (t === "WASH") return "W";
   if (t === "CP" || t === "BL" || t === "BAY") return t;
   if (/^SV [0-9]+$/.test(t)) return t.slice(3);
   return "★";

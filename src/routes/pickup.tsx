@@ -353,11 +353,13 @@ function PickupPage() {
               ? p.shuttle_kind === "dropoff" ? "Shuttle drop off" : "Shuttle"
               : isParts
                 ? "Parts"
-                : p.kind === "park"
-                  ? "Park request"
-                  : isTech
-                    ? "Technician pickup"
-                    : "Pickup";
+                : p.kind === "wash"
+                  ? "Wash"
+                  : p.kind === "park"
+                    ? "Park request"
+                    : isTech
+                      ? "Technician pickup"
+                      : "Pickup";
           const pillClass = isStaged
             ? "bg-foreground text-background"
 
@@ -365,11 +367,13 @@ function PickupPage() {
               ? "bg-success text-success-foreground"
               : isParts
                 ? "bg-warning text-warning-foreground"
-                : p.kind === "park"
-                  ? "bg-success text-success-foreground"
-                  : isTech
-                    ? "bg-destructive text-destructive-foreground"
-                    : "bg-primary text-primary-foreground";
+                : p.kind === "wash"
+                  ? "bg-wash text-wash-foreground"
+                  : p.kind === "park"
+                    ? "bg-success text-success-foreground"
+                    : isTech
+                      ? "bg-destructive text-destructive-foreground"
+                      : "bg-primary text-primary-foreground";
 
           return (
             <li

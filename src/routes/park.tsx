@@ -49,6 +49,8 @@ function ParkPage() {
   const [staged, setStaged] = useState(false);
   // Saved location of the loaded car, used for the SV map snapshot.
   const [savedPos, setSavedPos] = useState<string | null>(null);
+  // Wash record for this RO — it stays with the RO forever, wherever the car goes.
+  const [washedAt, setWashedAt] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
   const svSpots = useMemo(() => spotsForLot("sv"), []);

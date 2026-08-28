@@ -80,6 +80,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
 
     const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";
     const isPark = data.kind === "park";
+    const isWash = data.kind === "wash";
     const isStaged = !!data.staged;
     const body =
       [data.ro && `RO #${data.ro}`, data.tag && `Tag #${data.tag}`, data.advisor, data.model]
@@ -87,12 +88,14 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     const payload = {
       title: isStaged
         ? "🏁 Car staged — bring to CP"
-        : isPark
-          ? "🅿️ Park request — come to the bay"
-          : isTech ? "🚨 Tech pickup request" : "New pickup request",
+        : isWash
+          ? "🧼 Wash request — bring car to wash"
+          : isPark
+            ? "🅿️ Park request — come to the bay"
+            : isTech ? "🚨 Tech pickup request" : "New pickup request",
       body,
       url: "/pickup",
-      tag: isStaged ? "stage" : isPark ? "park" : "pickup",
+      tag: isStaged ? "stage" : isWash ? "wash" : isPark ? "park" : "pickup",
       variant: !isStaged && (isTech || isPark) ? "tech" : "default",
     };
 

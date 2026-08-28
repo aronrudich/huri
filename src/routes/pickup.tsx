@@ -351,7 +351,7 @@ function PickupPage() {
               : isParts
                 ? "Parts"
                 : p.kind === "wash"
-                  ? "Wash"
+                  ? "🧼 Wash"
                   : p.kind === "park"
                     ? "Park request"
                     : isTech

@@ -46,10 +46,10 @@ export function isValidSpot(raw: string): boolean {
   return t.length <= 60;
 }
 
-/** True when the spot is a custom location, not SV / CP / BL / BAY / unknown. */
+/** True when the spot is a custom location, not SV / CP / BL / BAY / WASH / unknown. */
 export function isCustomSpot(raw: string | null | undefined): boolean {
   const t = normalizeSpot(raw);
-  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL" || t === "BAY") return false;
+  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL" || t === "BAY" || t === "WASH") return false;
   return !/^SV [0-9]+$/.test(t);
 }
 
@@ -58,7 +58,7 @@ export function locationChoice(raw: string | null | undefined): LocationChoice {
   const normalized = normalizeSpot(raw);
   if (!normalized) return null;
   if (normalized === "UNKNOWN") return "UNKNOWN";
-  if (normalized === "CP" || normalized === "BL" || normalized === "BAY") return normalized;
+  if (normalized === "CP" || normalized === "BL" || normalized === "BAY" || normalized === "WASH") return normalized;
   if (normalized.startsWith("SV ")) return "SV";
   return "OTHER";
 }

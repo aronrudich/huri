@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { formatRecipient, messageRecipientsQuery, rolesQuery } from "@/lib/queries";
 import { sendMessagePush } from "@/lib/push.functions";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { HuriLogo } from "@/components/BottomBar";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
@@ -25,7 +24,6 @@ type Recipient =
 function ComposePage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const suspended = useSuspended();
   const [q, setQ] = useState("");
   const [selected, setSelected] = useState<Recipient | null>(null);
   const [body, setBody] = useState("");
@@ -76,12 +74,6 @@ function ComposePage() {
   const send = async () => {
     if (!selected || !body.trim() || !user) return;
     setBusy(true);
-    if (suspended) {
-      setBusy(false);
-      toast.success("Sent");
-      navigate({ to: "/", replace: true });
-      return;
-    }
     let thread_id: string;
     const payload: any = {
       body: body.trim(),

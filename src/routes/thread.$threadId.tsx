@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -34,7 +33,6 @@ function ThreadPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const queryClient = useQueryClient();
-  const suspended = useSuspended();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
   const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
@@ -118,7 +116,6 @@ function ThreadPage() {
 
   const send = async () => {
     if (!body.trim() || !user) return;
-    if (suspended) { setBody(""); return; }
     setBusy(true);
     const payload: any = {
       thread_id: threadId,

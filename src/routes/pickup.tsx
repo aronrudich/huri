@@ -6,7 +6,6 @@ import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recov
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
 import { notify } from "@/lib/push";
@@ -54,7 +53,6 @@ function PickupPage() {
   const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const suspended = useSuspended();
   const queryClient = useQueryClient();
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
@@ -202,7 +200,6 @@ function PickupPage() {
 
   const claim = async (p: Pickup) => {
     if (!user) return;
-    if (suspended) { toast.success("Claimed"); return; }
     const { data: claimed, error } = await supabase.rpc("claim_pickup_request", { _pickup_id: p.id });
     if (error) return toast.error(error.message);
     if (claimed) setPickups((current) => current.map((item) => item.id === p.id ? claimed as Pickup : item));
@@ -354,7 +351,7 @@ function PickupPage() {
               : isParts
                 ? "Parts"
                 : p.kind === "wash"
-                  ? "Wash"
+                  ? "🧼 Wash"
                   : p.kind === "park"
                     ? "Park request"
                     : isTech
@@ -512,11 +509,6 @@ function PickupPage() {
                   <button
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
-                      if (suspended) {
-                        setPickups((cur) => cur.filter((x) => x.id !== p.id));
-                        toast.message("Canceled");
-                        return;
-                      }
                       const { error } = await supabase.from("pickup_requests")
                         .update({ status: "completed", completed_at: new Date().toISOString() })
                         .eq("id", p.id);

@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { useSuspended } from "@/lib/suspension";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
@@ -37,7 +36,6 @@ export const Route = createFileRoute("/park")({
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const suspended = useSuspended();
   const { ro: roParam, id: idParam, spot: spotParam } = Route.useSearch();
   const [ro, setRo] = useState(roParam ?? "");
   const [pos, setPos] = useState(spotParam ?? "");
@@ -125,11 +123,6 @@ function ParkPage() {
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Invalid spot");
     if (!user) return;
-    if (suspended) {
-      toast.success(editing ? "Car updated" : "Car logged");
-      navigate({ to: "/pickup", replace: true });
-      return;
-    }
 
     const normalizedRo = ro.trim();
     const normalizedPos = normalizeSpot(pos.trim());
@@ -232,11 +225,6 @@ function ParkPage() {
             disabled={busy}
             onClick={async () => {
               if (!window.confirm("Delete this car from the lot? The spot will be freed.")) return;
-              if (suspended) {
-                toast.success("Car deleted");
-                navigate({ to: "/lot", replace: true });
-                return;
-              }
               setBusy(true);
               const { error } = await supabase.from("parked_cars").delete().eq("id", existingId);
               setBusy(false);

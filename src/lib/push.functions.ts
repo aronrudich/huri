@@ -5,8 +5,6 @@ export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: Record<string, never>) => d)
   .handler(async ({ context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0, pruned: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -52,8 +50,6 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
     staged?: boolean | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -65,7 +61,7 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"])
+      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin", "Service Manager"])
       .eq("is_active", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
@@ -129,8 +125,6 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     isAnonymous?: boolean;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser, withoutSuspended } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -173,7 +167,6 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       const ids = await membersForRole(data.recipientRoleId);
       recipientIds = ids.filter((id) => id !== context.userId);
     }
-    recipientIds = await withoutSuspended(recipientIds);
     if (!recipientIds.length) return { sent: 0 };
 
 
@@ -223,8 +216,6 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { techName?: string | null; ro?: string | null; notes?: string | null }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -253,7 +244,7 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet & Parts", "Admin"])
+      .in("role_name", ["Valet & Parts", "Admin", "Service Manager"])
       .eq("is_active", true);
     if (rErr) throw rErr;
     if (!recipients?.length) return { sent: 0 };
@@ -303,8 +294,6 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
     address?: string | null;
   }) => d)
   .handler(async ({ data, context }) => {
-    const { isSuspendedUser } = await import("./suspension.server");
-    if (await isSuspendedUser(context.userId)) return { sent: 0 };
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
 
@@ -332,7 +321,7 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin"])
+      .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin", "Service Manager"])
       .eq("is_active", true);
     if (!recipients?.length) return { sent: 0 };
 

@@ -19,7 +19,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   if (raw == null) return null;
   const t = raw.trim().toUpperCase();
   if (t === "" || t === "UNKNOWN") return "UNKNOWN";
-  if (t === "BL" || t === "CP" || t === "BAY") return t;
+  if (t === "BL" || t === "CP" || t === "BAY" || t === "WASH") return t;
   if (/^SV\s*[0-9]+$/.test(t)) {
     const n = parseInt(t.replace(/^SV\s*/, ""), 10);
     return n >= MIN_SPOT && n <= MAX_SPOT ? `SV ${n}` : null;

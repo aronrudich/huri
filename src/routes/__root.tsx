@@ -123,6 +123,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SWRegistrar />
+        <PushSync />
         <RealtimeRecovery />
         <TabPrefetcher />
         <PullToRefresh>

@@ -223,7 +223,7 @@ function PickupPage() {
       .slice(0, 8);
   }, [q, allCars]);
 
-  // Parts requests are visible to everyone in the pickup list; only Valet & Parts get push notifications.
+  // Parts requests are visible and claimable by everyone in the pickup list.
   const visiblePickups = useMemo(
     () => pickups.filter((p) => {
       if (!canSeeKind(profile?.role_name, p.kind)) return false;

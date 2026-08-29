@@ -133,7 +133,7 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
     if (!caller?.dealership_id) return { sent: 0 };
 
-    // Helper: expand a role_id to include Valet & Parts users when the role is Valet.
+    // Helper: expand a role_id to include Shop Foreman when the role is Technician.
     const membersForRole = async (roleId: string) => {
       const { data: roleRow } = await supabaseAdmin
         .from("roles").select("name").eq("id", roleId).maybeSingle();

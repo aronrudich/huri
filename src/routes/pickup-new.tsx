@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { sendPickupAlert } from "@/lib/push.functions";
+import { submitPickupRequest } from "@/lib/pickup.functions";
 import { isTechRole } from "@/lib/roles";
 
 type PickupNewSearch = { staged?: boolean; ro?: string };
@@ -28,6 +29,7 @@ function NewPickupPage() {
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitPickup = useServerFn(submitPickupRequest);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -49,42 +51,34 @@ function NewPickupPage() {
       .eq("ro_number", ro.trim())
       .maybeSingle();
     const noteText = notes.trim();
-    const { error } = await supabase.from("pickup_requests").insert({
-      ro_number: ro.trim(),
-      advisor_name: advisorName || null,
-      car_model: model.trim() || car?.car_model || null,
-      requested_by: user.id,
-      source_role: sourceRole,
-      lot_position: car?.lot_position ?? null,
-      car_notes: noteText || car?.notes || null,
-      is_staged: isStage,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    // Staging flags the car so its map spot shows the checkered pattern; a real
-    // pickup on an already-staged car clears that flag instead.
-    if (car) {
-      const patch: { is_staged?: boolean; notes?: string } = {};
-      if (isStage) patch.is_staged = true;
-      else if (car.is_staged) patch.is_staged = false;
-      if (noteText) patch.notes = noteText;
-      if (Object.keys(patch).length) {
-        supabase.from("parked_cars").update(patch).eq("ro_number", ro.trim()).then();
-      }
-    }
-    // Valets are notified for every submission type, stages included.
-    sendPickupAlert({
-      data: {
-        tag: null,
+    try {
+      await submitPickup({ data: {
         ro: ro.trim(),
         advisor: advisorName || null,
-        model: model.trim() || null,
+        model: model.trim() || car?.car_model || null,
+        notes: noteText || car?.notes || null,
         sourceRole,
+        lotPosition: car?.lot_position ?? null,
         staged: isStage,
-      },
-    }).catch((e) => console.warn("push fan-out failed", e));
-    toast.success(isStage ? "Stage submitted" : "Pickup submitted");
-    navigate({ to: "/pickup", replace: true });
+      } });
+      // Staging flags the car so its map spot shows the checkered pattern; a real
+      // pickup on an already-staged car clears that flag instead.
+      if (car) {
+        const patch: { is_staged?: boolean; notes?: string } = {};
+        if (isStage) patch.is_staged = true;
+        else if (car.is_staged) patch.is_staged = false;
+        if (noteText) patch.notes = noteText;
+        if (Object.keys(patch).length) {
+          await supabase.from("parked_cars").update(patch).eq("ro_number", ro.trim());
+        }
+      }
+      toast.success(isStage ? "Stage submitted" : "Pickup submitted");
+      navigate({ to: "/pickup", replace: true });
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to submit pickup");
+    } finally {
+      setBusy(false);
+    }
   };
 
 

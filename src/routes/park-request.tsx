@@ -1,13 +1,13 @@
 // "Park" = ask a valet to come to the bay and park the technician's car.
 // This is NOT the same as "New" (/park), which only logs a car into the system.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { sendPickupAlert } from "@/lib/push.functions";
+import { submitPickupRequest } from "@/lib/pickup.functions";
 
 export const Route = createFileRoute("/park-request")({
   head: () => ({
@@ -27,6 +27,7 @@ function ParkRequestPage() {
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitPickup = useServerFn(submitPickupRequest);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -39,28 +40,22 @@ function ParkRequestPage() {
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
-    const { error } = await supabase.from("pickup_requests").insert({
-      kind: "park",
-      ro_number: ro.trim(),
-      advisor_name: requesterName || null,
-      car_notes: notes.trim() || null,
-      lot_position: "BAY",
-      requested_by: user.id,
-      source_role: sourceRole,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    sendPickupAlert({
-      data: {
-        tag: null,
+    try {
+      await submitPickup({ data: {
         ro: ro.trim(),
         advisor: requesterName || null,
+        notes: notes.trim() || null,
         sourceRole,
         kind: "park",
-      },
-    }).catch((err) => console.warn("push fan-out failed", err));
-    toast.success("Park request sent");
-    navigate({ to: "/pickup", replace: true });
+        lotPosition: "BAY",
+      } });
+      toast.success("Park request sent");
+      navigate({ to: "/pickup", replace: true });
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to send request");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

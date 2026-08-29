@@ -7,6 +7,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { searchCars } from "@/lib/directory.functions";
 import { directoryQuery, formatRecipient, messageRecipientsQuery, messagesQuery, rolesQuery } from "@/lib/queries";
 import { useAuth } from "@/lib/auth-context";
+import { isSpectatorRole } from "@/lib/roles";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { SwipeRow } from "@/components/SwipeRow";
 import { ProfileViewSheet } from "@/components/ProfileViewSheet";

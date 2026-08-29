@@ -1,0 +1,223 @@
+// Reports — claim volume and claim speed per employee.
+// Days run 6:30 AM → 6:30 PM Pacific, so "Today" resets at 6:30 AM.
+// Claims slower than 20 minutes are counted but never averaged (anomalies).
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { ArrowLeft } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
+import { HuriLogo } from "@/components/BottomBar";
+import { canViewReports } from "@/lib/roles";
+import { getReport } from "@/lib/reports.functions";
+import { RANGE_LABELS, formatDuration, type RangeKey } from "@/lib/report-range";
+import { ListSkeleton } from "@/components/ListSkeleton";
+
+export const Route = createFileRoute("/reports")({
+  head: () => ({
+    meta: [
+      { title: "Reports · Huri" },
+      { name: "description", content: "Claim counts and average claim times per employee." },
+      { property: "og:title", content: "Reports · Huri" },
+      { property: "og:description", content: "Claim counts and average claim times per employee." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
+  component: ReportsPage,
+});
+
+const KIND_LABELS: Record<string, string> = {
+  pickup: "Pickups",
+  stage: "Stage requests",
+  parts: "Parts",
+  park: "Park requests",
+  wash: "Wash",
+  shuttle: "Shuttle",
+};
+
+function ReportsPage() {
+  const navigate = useNavigate();
+  const { user, loading, profile } = useAuth();
+  const [range, setRange] = useState<RangeKey>("day");
+  const fetchReport = useServerFn(getReport);
+
+  const allowed = canViewReports(profile?.role_name) || !!profile?.is_owner;
+
+  useEffect(() => {
+    if (!loading && !user) navigate({ to: "/auth", replace: true });
+  }, [user, loading, navigate]);
+
+  const { data, isPending, error } = useQuery({
+    queryKey: ["report", range],
+    enabled: !!user && allowed,
+    staleTime: 60_000,
+    queryFn: () => fetchReport({ data: { range } }),
+  });
+
+  if (!loading && user && !allowed) {
+    return (
+      <div className="min-h-screen bg-surface px-4 pb-32 safe-top">
+        <Header />
+        <p className="mt-10 text-center text-sm text-muted-foreground">
+          Reports are only available to management and spectator accounts.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-surface pb-32 safe-top">
+      <div className="px-4">
+        <Header />
+      </div>
+
+      <div className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-1 backdrop-blur">
+        <div className="flex gap-1 rounded-xl bg-muted p-1">
+          {(Object.keys(RANGE_LABELS) as RangeKey[]).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setRange(key)}
+              className={`flex-1 rounded-lg py-2 text-xs font-semibold transition-colors md:text-sm ${
+                range === key
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground active:bg-accent"
+              }`}
+            >
+              {RANGE_LABELS[key]}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-5 px-4">
+        {error && (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-destructive">
+            {(error as Error).message}
+          </p>
+        )}
+
+        {isPending && !data ? (
+          <ListSkeleton rows={5} />
+        ) : data ? (
+          <>
+            <section className="grid grid-cols-2 gap-3">
+              <Stat label="Submissions" value={String(data.total)} />
+              <Stat label="Claimed" value={String(data.claimed)} />
+              <Stat label="Avg claim time" value={formatDuration(data.avgMs)} />
+              <Stat label="Still unclaimed" value={String(data.unclaimed)} />
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                Employees
+              </h2>
+              {data.employees.length === 0 ? (
+                <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                  No claims in this window yet.
+                </p>
+              ) : (
+                <ul className="space-y-2">
+                  {data.employees.map((e, i) => (
+                    <li key={e.id} className="rounded-xl border border-border bg-card p-3">
+                      <div className="flex items-center gap-3">
+                        <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                          {i + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold">{e.name}</p>
+                          <p className="truncate text-xs text-muted-foreground">{e.role || "—"}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-base font-bold leading-tight">{e.claims}</p>
+                          <p className="text-[11px] leading-tight text-muted-foreground">claims</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2 text-center">
+                        <Mini label="Avg" value={formatDuration(e.avgMs)} />
+                        <Mini label="Fastest" value={formatDuration(e.fastestMs)} />
+                        <Mini label="Over 20m" value={String(e.anomalies)} />
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <section>
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                By submission type
+              </h2>
+              {data.kinds.length === 0 ? (
+                <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                  No submissions in this window.
+                </p>
+              ) : (
+                <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
+                  {data.kinds.map((k) => (
+                    <li key={k.kind} className="flex items-center gap-3 px-3 py-2.5">
+                      <span className="min-w-0 flex-1 truncate text-sm font-semibold">
+                        {KIND_LABELS[k.kind] ?? k.kind}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {k.claimed}/{k.total} claimed
+                      </span>
+                      <span className="w-16 text-right text-sm font-semibold">
+                        {formatDuration(k.avgMs)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
+              Days start at 6:30 AM Pacific. Claims over 20 minutes still count toward totals
+              but are left out of every average.
+            </p>
+          </>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function Header() {
+  const navigate = useNavigate();
+  return (
+    <header className="flex items-center gap-2 pb-3 pt-3">
+      <button
+        type="button"
+        aria-label="Back"
+        onClick={() => navigate({ to: "/pickup" })}
+        className="rounded-full p-1 active:bg-accent"
+      >
+        <ArrowLeft className="h-6 w-6" />
+      </button>
+      <HuriLogo />
+      <div className="flex-1" />
+      <span className="text-sm font-semibold text-muted-foreground">Reports</span>
+    </header>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-border bg-card p-3">
+      <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+        {label}
+      </p>
+      <p className="mt-0.5 text-xl font-bold leading-tight">{value}</p>
+    </div>
+  );
+}
+
+function Mini({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="text-sm font-semibold leading-tight">{value}</p>
+    </div>
+  );
+}

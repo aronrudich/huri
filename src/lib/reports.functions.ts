@@ -158,6 +158,8 @@ export const getReport = createServerFn({ method: "POST" })
 
     return {
       rangeStart: start ? start.toISOString() : null,
+      rangeEnd: end ? end.toISOString() : null,
+
       total: list.length,
       claimed: claimedRows.length,
       unclaimed: list.filter((r) => r.status === "unclaimed").length,

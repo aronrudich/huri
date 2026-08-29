@@ -4,6 +4,7 @@ import { ArrowLeft, Send, Trash2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
+import { isSpectatorRole } from "@/lib/roles";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";
@@ -31,7 +32,7 @@ function ThreadPage() {
   const realtimeGen = useRealtimeGeneration();
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
@@ -230,21 +231,27 @@ function ThreadPage() {
       </ol>
 
       <div className="sticky bottom-0 border-t border-border bg-background p-3 safe-bottom">
-        <div className="flex items-end gap-2">
-          <textarea
-            rows={1}
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Message…"
-            className="flex-1 resize-none rounded-2xl border border-input bg-background px-3 py-2 text-base outline-none focus:border-primary"
-          />
-          <button
-            onClick={send} disabled={!body.trim() || busy}
-            className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-          >
-            <Send className="h-4 w-4" />
-          </button>
-        </div>
+        {isSpectatorRole(profile?.role_name) ? (
+          <p className="py-1 text-center text-xs text-muted-foreground">
+            Spectator accounts can read messages but can’t send them.
+          </p>
+        ) : (
+          <div className="flex items-end gap-2">
+            <textarea
+              rows={1}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder="Message…"
+              className="flex-1 resize-none rounded-2xl border border-input bg-background px-3 py-2 text-base outline-none focus:border-primary"
+            />
+            <button
+              onClick={send} disabled={!body.trim() || busy}
+              className="grid h-10 w-10 place-items-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
       {showProfile && otherUserId && (

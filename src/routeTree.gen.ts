@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WashRouteImport } from './routes/wash'
 import { Route as ShuttleRouteImport } from './routes/shuttle'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
 import { Route as PickupRouteImport } from './routes/pickup'
@@ -35,6 +36,11 @@ const WashRoute = WashRouteImport.update({
 const ShuttleRoute = ShuttleRouteImport.update({
   id: '/shuttle',
   path: '/shuttle',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -126,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
+  '/reports': typeof ReportsRoute
   '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/reports'
     | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/reports'
     | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
@@ -224,6 +235,7 @@ export interface FileRouteTypes {
     | '/pickup'
     | '/pickup-new'
     | '/profile'
+    | '/reports'
     | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
@@ -244,6 +256,7 @@ export interface RootRouteChildren {
   PickupRoute: typeof PickupRoute
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
+  ReportsRoute: typeof ReportsRoute
   ShuttleRoute: typeof ShuttleRoute
   WashRoute: typeof WashRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
@@ -266,6 +279,13 @@ declare module '@tanstack/react-router' {
       path: '/shuttle'
       fullPath: '/shuttle'
       preLoaderRoute: typeof ShuttleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -388,6 +408,7 @@ const rootRouteChildren: RootRouteChildren = {
   PickupRoute: PickupRoute,
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
+  ReportsRoute: ReportsRoute,
   ShuttleRoute: ShuttleRoute,
   WashRoute: WashRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,

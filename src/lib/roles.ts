@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme" | "wash";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme" | "wash" | "reports";
 
 export const VALET_ROLES = ["Valet", "Valet & Parts", "Valet & Shuttle"];
 export const SHUTTLE_ROLES = ["Shuttle", "Valet & Shuttle"];
@@ -25,6 +25,7 @@ export const ROLE_OPTIONS = [
   "Manager",
   "Director",
   "Admin",
+  "Spectator",
   "Other",
 ];
 
@@ -33,6 +34,23 @@ export const ADMIN_ROLES = ["Admin", "Service Manager", "Service Director"];
 
 export const isAdminRole = (role: string | null | undefined) =>
   ADMIN_ROLES.includes(role ?? "");
+
+/** Read-only role: can browse Huri but never submits, claims, or messages. */
+export const isSpectatorRole = (role: string | null | undefined) =>
+  (role ?? "") === "Spectator";
+
+/** Roles that can open the Reports screen. */
+export const REPORTS_ROLES = [
+  "Admin",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Spectator",
+];
+
+export const canViewReports = (role: string | null | undefined) =>
+  REPORTS_ROLES.includes(role ?? "");
+
 
 /** Roles that handle join requests and role change approvals. */
 export const APPROVER_ROLES = ADMIN_ROLES;
@@ -95,13 +113,17 @@ export const canStageRole = (role: string | null | undefined) => {
 /** Header actions, in the exact top-to-bottom order they should appear. */
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
+  const withReports = (ids: ActionId[]): ActionId[] =>
+    canViewReports(r) ? [...ids, "reports"] : ids;
+  // Spectators are read-only: Reports is the only thing they can open.
+  if (isSpectatorRole(r)) return ["reports"];
   if (r === "Shuttle") return [];
   // The car wash employee doesn't request washes — they just relocate cars once washed.
   if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return ["pickup", "new", "stage", "wash"];
-  if (isTechRole(r)) return ["bringme", "park", "new", "wash"];
-  return ["pickup", "new", "stage", "parts", "park", "wash"];
+  if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
+  if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
+  return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);
 
 }
 

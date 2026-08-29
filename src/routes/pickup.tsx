@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canCancelAnyRole, canSeeKind, isShuttleRole, isValetRole } from "@/lib/roles";
+import { canCancelAnyRole, canSeeKind, isShuttleRole, isSpectatorRole, isValetRole } from "@/lib/roles";
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */
@@ -53,6 +53,8 @@ function PickupPage() {
   const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  // Spectators can watch the queue but never claim or cancel anything.
+  const isSpectator = isSpectatorRole(profile?.role_name);
   const queryClient = useQueryClient();
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
@@ -341,7 +343,7 @@ function PickupPage() {
           const isStaged = !!p.is_staged;
           // Everyone can cancel their own submission; technicians can only cancel
           // their own so nobody kills another employee's request.
-          const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
+          const canCancel = !isSpectator && ((!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name));
           // Every card looks the same; only this small pill is colored so the
           // list stays uniform and the type still reads at a glance.
           const pillLabel = isStaged
@@ -482,12 +484,16 @@ function PickupPage() {
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (
-                    <button
-                      onClick={() => claim(p)}
-                      className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
-                    >
-                      {isParts || isShuttle ? "On it" : "Claim"}
-                    </button>
+                    isSpectator ? (
+                      <p className="flex-1 text-xs text-muted-foreground">Unclaimed</p>
+                    ) : (
+                      <button
+                        onClick={() => claim(p)}
+                        className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isParts || isShuttle ? "On it" : "Claim"}
+                      </button>
+                    )
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
                       {isParts || isShuttle ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}

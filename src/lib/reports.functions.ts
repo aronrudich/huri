@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
-import { shiftWindowStart, type RangeKey } from "@/lib/report-range";
+import {
+  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, type RangeKey,
+} from "@/lib/report-range";
+
 
 export type EmployeeStat = {
   id: string;
@@ -23,6 +26,8 @@ export type KindStat = {
 
 export type ReportData = {
   rangeStart: string | null;
+  rangeEnd?: string | null;
+
   total: number;
   claimed: number;
   unclaimed: number;
@@ -40,11 +45,17 @@ const kindOf = (row: { kind: string | null; is_staged: boolean | null }) =>
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { range: RangeKey }) => {
-    const allowed: RangeKey[] = ["day", "week", "month", "all"];
+  .inputValidator((input: { range: RangeKey; start?: string; end?: string }) => {
+    const allowed: RangeKey[] = ["day", "week", "month", "all", "custom"];
     if (!allowed.includes(input?.range)) throw new Error("Invalid range");
+    if (input.range === "custom") {
+      if (!isDayKey(input.start) || !isDayKey(input.end)) throw new Error("Pick a start and end date");
+      if (input.start > input.end) throw new Error("Start date must come before the end date");
+      return { range: input.range, start: input.start, end: input.end };
+    }
     return { range: input.range };
   })
+
   .handler(async ({ data, context }): Promise<ReportData> => {
     const { supabase, userId } = context;
 
@@ -58,7 +69,9 @@ export const getReport = createServerFn({ method: "POST" })
       (me.is_owner === true || canViewReports(me.role_name));
     if (!allowed) throw new Error("Reports are not available for your role.");
 
-    const start = shiftWindowStart(data.range);
+    const custom = data.range === "custom" && data.start && data.end;
+    const start = custom ? shiftDayStart(data.start!) : shiftWindowStart(data.range);
+    const end = custom ? shiftDayEnd(data.end!) : null;
 
     let query = supabase
       .from("pickup_requests")
@@ -66,6 +79,8 @@ export const getReport = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(20000);
     if (start) query = query.gte("created_at", start.toISOString());
+    if (end) query = query.lt("created_at", end.toISOString());
+
     const { data: rows, error } = await query;
     if (error) throw error;
 
@@ -143,6 +158,8 @@ export const getReport = createServerFn({ method: "POST" })
 
     return {
       rangeStart: start ? start.toISOString() : null,
+      rangeEnd: end ? end.toISOString() : null,
+
       total: list.length,
       claimed: claimedRows.length,
       unclaimed: list.filter((r) => r.status === "unclaimed").length,

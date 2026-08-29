@@ -95,6 +95,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "park": return { to: "/park-request" };
       case "bringme": return { to: "/bring-me" };
       case "wash": return { to: "/wash" };
+      case "reports": return { to: "/reports" };
       default: return { to: "/pickup" };
     }
   };

@@ -2,14 +2,16 @@
 // so every window starts on a 6:30 AM Pacific boundary and the "1 day"
 // numbers reset at 6:30 AM each morning.
 
-export type RangeKey = "day" | "week" | "month" | "all";
+export type RangeKey = "day" | "week" | "month" | "all" | "custom";
 
 export const RANGE_LABELS: Record<RangeKey, string> = {
   day: "Today",
   week: "7 Days",
   month: "30 Days",
   all: "All Time",
+  custom: "Custom",
 };
+
 
 const TZ = "America/Los_Angeles";
 const SHIFT_START_HOUR = 6;

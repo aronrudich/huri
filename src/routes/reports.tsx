@@ -44,20 +44,30 @@ function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [range, setRange] = useState<RangeKey>("day");
+  const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
+    start: null, end: null,
+  });
   const fetchReport = useServerFn(getReport);
 
   const allowed = canViewReports(profile?.role_name) || !!profile?.is_owner;
+  const customReady = range !== "custom" || (!!custom.start && !!custom.end);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["report", range],
-    enabled: !!user && allowed,
+    queryKey: ["report", range, custom.start, custom.end],
+    enabled: !!user && allowed && customReady,
     staleTime: 60_000,
-    queryFn: () => fetchReport({ data: { range } }),
+    queryFn: () =>
+      fetchReport({
+        data: range === "custom"
+          ? { range, start: custom.start!, end: custom.end! }
+          : { range },
+      }),
   });
+
 
   if (!loading && user && !allowed) {
     return (

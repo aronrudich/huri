@@ -10,8 +10,12 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo } from "@/components/BottomBar";
 import { canViewReports } from "@/lib/roles";
 import { getReport } from "@/lib/reports.functions";
-import { RANGE_LABELS, formatDuration, type RangeKey } from "@/lib/report-range";
+import {
+  RANGE_LABELS, formatDuration, formatDayKey, type RangeKey,
+} from "@/lib/report-range";
 import { ListSkeleton } from "@/components/ListSkeleton";
+import { DateRangeCalendar } from "@/components/DateRangeCalendar";
+
 
 export const Route = createFileRoute("/reports")({
   head: () => ({

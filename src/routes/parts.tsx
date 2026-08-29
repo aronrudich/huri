@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { sendPartsAlert } from "@/lib/push.functions";
+import { submitPickupRequest } from "@/lib/pickup.functions";
 
 export const Route = createFileRoute("/parts")({
   head: () => ({ meta: [{ title: "Request Parts · Huri" }] }),
@@ -17,6 +18,7 @@ function PartsPage() {
   const [busy, setBusy] = useState(false);
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
+  const submitPickup = useServerFn(submitPickupRequest);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -28,7 +30,13 @@ function PartsPage() {
     if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     setBusy(true);
     try {
-      await sendPartsAlert({ data: { techName: techName || null, ro: ro.trim() || null, notes: notes.trim() || null } });
+      await submitPickup({ data: {
+        kind: "parts",
+        advisor: techName || null,
+        ro: ro.trim() || null,
+        notes: notes.trim() || null,
+        sourceRole: profile?.role_name ?? null,
+      } });
       toast.success("Parts request sent");
       navigate({ to: "/", replace: true });
     } catch (err) {

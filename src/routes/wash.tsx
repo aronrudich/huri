@@ -2,13 +2,13 @@
 // The car wash employee sets the car's next location when the wash is done,
 // which is what stamps the car as washed.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
-import { sendPickupAlert } from "@/lib/push.functions";
+import { submitPickupRequest } from "@/lib/pickup.functions";
 
 export const Route = createFileRoute("/wash")({
   head: () => ({
@@ -30,6 +30,7 @@ function WashRequestPage() {
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  const submitPickup = useServerFn(submitPickupRequest);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -42,27 +43,21 @@ function WashRequestPage() {
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
-    const { error } = await supabase.from("pickup_requests").insert({
-      kind: "wash",
-      ro_number: ro.trim(),
-      advisor_name: requesterName || null,
-      car_notes: notes.trim() || null,
-      requested_by: user.id,
-      source_role: sourceRole,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    sendPickupAlert({
-      data: {
-        tag: null,
+    try {
+      await submitPickup({ data: {
         ro: ro.trim(),
         advisor: requesterName || null,
+        notes: notes.trim() || null,
         sourceRole,
         kind: "wash",
-      },
-    }).catch((err) => console.warn("push fan-out failed", err));
-    toast.success("Wash request sent");
-    navigate({ to: "/pickup", replace: true });
+      } });
+      toast.success("Wash request sent");
+      navigate({ to: "/pickup", replace: true });
+    } catch (error) {
+      toast.error((error as Error).message || "Failed to send request");
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (

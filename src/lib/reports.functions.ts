@@ -69,7 +69,9 @@ export const getReport = createServerFn({ method: "POST" })
       (me.is_owner === true || canViewReports(me.role_name));
     if (!allowed) throw new Error("Reports are not available for your role.");
 
-    const start = shiftWindowStart(data.range);
+    const custom = data.range === "custom" && data.start && data.end;
+    const start = custom ? shiftDayStart(data.start!) : shiftWindowStart(data.range);
+    const end = custom ? shiftDayEnd(data.end!) : null;
 
     let query = supabase
       .from("pickup_requests")
@@ -77,6 +79,8 @@ export const getReport = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(20000);
     if (start) query = query.gte("created_at", start.toISOString());
+    if (end) query = query.lt("created_at", end.toISOString());
+
     const { data: rows, error } = await query;
     if (error) throw error;
 

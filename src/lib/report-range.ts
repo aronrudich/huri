@@ -59,11 +59,12 @@ export function currentShiftStart(now = new Date()): Date {
   return beforeShift ? new Date(base.getTime() - 24 * 3600_000) : base;
 }
 
-/** Window start for a range key; null means "all time". */
+/** Window start for a range key; null means "all time" (or a custom range). */
 export function shiftWindowStart(range: RangeKey, now = new Date()): Date | null {
-  if (range === "all") return null;
+  if (range === "all" || range === "custom") return null;
   const today = currentShiftStart(now);
   const daysBack = range === "day" ? 0 : range === "week" ? 6 : 29;
+
   if (daysBack === 0) return today;
   // Step back whole days from the Pacific wall clock so DST shifts stay on 6:30.
   const p = laParts(new Date(today.getTime() + 12 * 3600_000));

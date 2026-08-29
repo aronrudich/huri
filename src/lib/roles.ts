@@ -35,6 +35,23 @@ export const ADMIN_ROLES = ["Admin", "Service Manager", "Service Director"];
 export const isAdminRole = (role: string | null | undefined) =>
   ADMIN_ROLES.includes(role ?? "");
 
+/** Read-only role: can browse Huri but never submits, claims, or messages. */
+export const isSpectatorRole = (role: string | null | undefined) =>
+  (role ?? "") === "Spectator";
+
+/** Roles that can open the Reports screen. */
+export const REPORTS_ROLES = [
+  "Admin",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Spectator",
+];
+
+export const canViewReports = (role: string | null | undefined) =>
+  REPORTS_ROLES.includes(role ?? "");
+
+
 /** Roles that handle join requests and role change approvals. */
 export const APPROVER_ROLES = ADMIN_ROLES;
 

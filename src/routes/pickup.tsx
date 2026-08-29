@@ -341,7 +341,7 @@ function PickupPage() {
           const isStaged = !!p.is_staged;
           // Everyone can cancel their own submission; technicians can only cancel
           // their own so nobody kills another employee's request.
-          const canCancel = (!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name);
+          const canCancel = !isSpectator && ((!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name));
           // Every card looks the same; only this small pill is colored so the
           // list stays uniform and the type still reads at a glance.
           const pillLabel = isStaged

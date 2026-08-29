@@ -25,6 +25,7 @@ export const ROLE_OPTIONS = [
   "Manager",
   "Director",
   "Admin",
+  "Spectator",
   "Other",
 ];
 

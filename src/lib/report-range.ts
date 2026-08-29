@@ -75,6 +75,47 @@ export function shiftWindowStart(range: RangeKey, now = new Date()): Date | null
   );
 }
 
+const ISO_DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
+
+/** Is this a valid "YYYY-MM-DD" day key? */
+export function isDayKey(value: unknown): value is string {
+  return typeof value === "string" && ISO_DAY.test(value);
+}
+
+/** 6:30 AM Pacific on the given calendar day ("YYYY-MM-DD"). */
+export function shiftDayStart(day: string): Date {
+  const m = ISO_DAY.exec(day);
+  if (!m) throw new Error("Invalid date");
+  return laWallToUtc(Number(m[1]), Number(m[2]), Number(m[3]), SHIFT_START_HOUR, SHIFT_START_MIN);
+}
+
+/** 6:30 AM Pacific the morning after the given calendar day — exclusive end. */
+export function shiftDayEnd(day: string): Date {
+  const m = ISO_DAY.exec(day);
+  if (!m) throw new Error("Invalid date");
+  const stepped = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 1));
+  return laWallToUtc(
+    stepped.getUTCFullYear(), stepped.getUTCMonth() + 1, stepped.getUTCDate(),
+    SHIFT_START_HOUR, SHIFT_START_MIN,
+  );
+}
+
+/** Today's Pacific calendar day as "YYYY-MM-DD". */
+export function pacificToday(now = new Date()): string {
+  const p = laParts(now);
+  return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
+}
+
+/** "Aug 12" for a day key. */
+export function formatDayKey(day: string): string {
+  const m = ISO_DAY.exec(day);
+  if (!m) return day;
+  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
+    .format(new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))));
+}
+
+
+
 /** "4m 12s" / "38s" / "1h 04m" */
 export function formatDuration(ms: number | null | undefined): string {
   if (ms === null || ms === undefined) return "—";

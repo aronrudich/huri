@@ -32,7 +32,7 @@ function ThreadPage() {
   const realtimeGen = useRealtimeGeneration();
   const { threadId } = Route.useParams();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });

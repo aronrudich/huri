@@ -26,6 +26,8 @@ export type KindStat = {
 
 export type ReportData = {
   rangeStart: string | null;
+  rangeEnd?: string | null;
+
   total: number;
   claimed: number;
   unclaimed: number;

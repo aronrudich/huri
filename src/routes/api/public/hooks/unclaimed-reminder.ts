@@ -36,6 +36,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
             .select("id")
             .eq("dealership_id", p.dealership_id)
             .eq("is_active", true)
+            .eq("notifications_enabled", true)
             .in("role_name", audienceFor(p.kind));
           const ids = (recipients ?? []).map((r) => r.id);
 

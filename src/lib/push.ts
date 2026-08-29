@@ -85,6 +85,28 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
 }
 
 /**
+ * Self-healing sync: called on every app open. Re-reads the browser's current
+ * push subscription (creating one if the browser rotated or dropped it) and
+ * stores it, so a reinstalled/refreshed device becomes reachable again.
+ * Dead endpoints for other devices are pruned server-side on 404/410.
+ */
+export async function syncPushSubscription(userId: string): Promise<boolean> {
+  if (typeof window === "undefined") return false;
+  if (!("Notification" in window) || Notification.permission !== "granted") return false;
+  if (!getNotifPref()) return false;
+  return registerPushSubscription(userId);
+}
+
+/** Persist the on/off switch on the user's account so the server honours it. */
+export async function saveNotifPrefRemote(userId: string, on: boolean) {
+  try {
+    await supabase.from("profiles").update({ notifications_enabled: on }).eq("id", userId);
+  } catch (e) {
+    console.warn("saveNotifPrefRemote failed", e);
+  }
+}
+
+/**
  * Back-compat wrapper used by older call sites. Prefer the split functions above.
  */
 export async function subscribePush(userId: string): Promise<"ok" | "denied" | "unsupported"> {

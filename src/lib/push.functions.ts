@@ -61,8 +61,9 @@ export const sendPickupAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"])
-      .eq("is_active", true);
+      .in("role_name", ["Valet", "Valet & Shuttle", "Admin"])
+      .eq("is_active", true)
+      .eq("notifications_enabled", true);
     if (vErr) throw vErr;
     if (!valets?.length) return { sent: 0 };
 
@@ -132,19 +133,19 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
     if (!caller?.dealership_id) return { sent: 0 };
 
-    // Helper: expand a role_id to include Valet & Parts users when the role is Valet.
+    // Helper: expand a role_id to include Shop Foreman when the role is Technician.
     const membersForRole = async (roleId: string) => {
       const { data: roleRow } = await supabaseAdmin
         .from("roles").select("name").eq("id", roleId).maybeSingle();
       let roleNames: string[] | null = null;
-      if (roleRow?.name === "Valet") roleNames = ["Valet", "Valet & Parts"];
-      else if (roleRow?.name === "Technician") roleNames = ["Technician", "Shop Foreman"];
+      if (roleRow?.name === "Technician") roleNames = ["Technician", "Shop Foreman"];
       let q = supabaseAdmin
         .from("profiles")
         .select("id")
         .eq("dealership_id", caller.dealership_id)
         .eq("is_active", true);
       q = roleNames ? q.in("role_name", roleNames) : q.eq("role_id", roleId);
+      q = q.eq("notifications_enabled", true);
       const { data: members } = await q;
       return (members ?? []).map((m) => m.id);
     };
@@ -228,7 +229,7 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
     ];
     if (!caller.is_active || !allowedRoles.includes(caller.role_name)) throw new Error("You do not have access to Parts requests");
 
-    // Insert a parts request into the pickup queue so Valet & Parts can see it in the list.
+    // Insert a parts request into the pickup queue so every valet sees it in the list.
     await supabaseAdmin.from("pickup_requests").insert({
       kind: "parts",
       source_role: caller.role_name,
@@ -244,8 +245,9 @@ export const sendPartsAlert = createServerFn({ method: "POST" })
       .from("profiles")
       .select("id")
       .eq("dealership_id", caller.dealership_id)
-      .in("role_name", ["Valet & Parts", "Admin"])
-      .eq("is_active", true);
+      .in("role_name", ["Valet", "Valet & Shuttle", "Admin"])
+      .eq("is_active", true)
+      .eq("notifications_enabled", true);
     if (rErr) throw rErr;
     if (!recipients?.length) return { sent: 0 };
 
@@ -322,7 +324,8 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       .select("id")
       .eq("dealership_id", caller.dealership_id)
       .in("role_name", ["Shuttle", "Valet & Shuttle", "Admin"])
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("notifications_enabled", true);
     if (!recipients?.length) return { sent: 0 };
 
     const { data: subs } = await supabaseAdmin

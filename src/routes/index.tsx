@@ -119,14 +119,12 @@ function InboxPage() {
     if (peopleError) console.warn("[inbox] failed to load message recipients", peopleError);
   }, [peopleError]);
 
-  // Include our own role; if we're Valet & Parts, also include the Valet role id.
+  // Role-addressed threads we belong to.
   const myRoleIds = useMemo(() => {
-    const valetRoleId = Object.entries(roles).find(([, name]) => name === "Valet")?.[0];
     const ids = new Set<string>();
     if (profile?.role_id) ids.add(profile.role_id);
-    if (profile?.role_name === "Valet & Parts" && valetRoleId) ids.add(valetRoleId);
     return ids;
-  }, [profile?.role_id, profile?.role_name, roles]);
+  }, [profile?.role_id]);
 
   // Messages live in the query cache, so returning to the inbox paints the
   // previous list instantly instead of starting empty and refetching.

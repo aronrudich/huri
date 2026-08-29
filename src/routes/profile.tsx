@@ -6,7 +6,7 @@ import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref } from "@/lib/push";
+import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref, saveNotifPrefRemote } from "@/lib/push";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPush } from "@/lib/push.functions";
 import { avatarUrlFor } from "@/lib/directory.functions";
@@ -79,6 +79,13 @@ function ProfilePage() {
     setNotifOn(getNotifPref());
   }, []);
 
+  // The account-level switch is the source of truth so the server can skip this
+  // user entirely while notifications are paused.
+  useEffect(() => {
+    const remote = (profile as { notifications_enabled?: boolean } | null)?.notifications_enabled;
+    if (typeof remote === "boolean") { setNotifOn(remote); setNotifPref(remote); }
+  }, [profile]);
+
   useEffect(() => {
     if (!canViewRoster) return;
     supabase.from("profiles").select("id, full_name, nickname, role_name, email, is_owner, has_avatar, avatar_version")
@@ -133,20 +140,29 @@ function ProfilePage() {
         const result = await requestNotifPermission();
         if (result === "granted") {
           setPerm("granted"); setNotifOn(true); setNotifPref(true);
-          toast.success("Notifications on"); void registerPushSubscription(user.id); return;
+          await saveNotifPrefRemote(user.id, true);
+          toast.success("Notifications on"); void registerPushSubscription(user.id);
+          void refreshProfile(); return;
         }
         if (result === "denied") return toast.error("Permission denied — enable in browser settings");
         return toast.error("Push not supported on this device");
       }
-      setNotifPref(true); setNotifOn(true); toast.success("Notifications on"); void registerPushSubscription(user.id);
-    } else { setNotifPref(false); setNotifOn(false); toast.message("Notifications paused"); }
+      setNotifPref(true); setNotifOn(true);
+      await saveNotifPrefRemote(user.id, true);
+      toast.success("Notifications on"); void registerPushSubscription(user.id); void refreshProfile();
+    } else {
+      setNotifPref(false); setNotifOn(false);
+      await saveNotifPrefRemote(user.id, false);
+      toast.message("Notifications paused"); void refreshProfile();
+    }
   };
 
   const handleSendTest = async () => {
     try {
       const r = await sendTest({ data: {} });
-      if (r.sent > 0) toast.success(`Test sent to ${r.sent} device${r.sent === 1 ? "" : "s"}`);
-      else toast.error("No active push subscriptions on this device yet.");
+      const pruned = r.pruned ? ` · ${r.pruned} dead device${r.pruned === 1 ? "" : "s"} removed` : "";
+      if (r.sent > 0) toast.success(`Test sent to ${r.sent} device${r.sent === 1 ? "" : "s"}${pruned}`);
+      else toast.error(`No reachable devices${pruned || " — turn the switch off and on to re-register"}.`);
     } catch (e) { toast.error((e as Error).message); }
   };
 

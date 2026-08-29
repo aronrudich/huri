@@ -389,14 +389,16 @@ function InboxPage() {
         ))}
       </ul>
 
-      {/* Compose FAB (bottom-right) */}
-      <Link
-        to="/compose"
-        className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95"
-        aria-label="Compose"
-      >
-        <PenSquare className="h-6 w-6" />
-      </Link>
+      {/* Compose FAB (bottom-right) — spectators are read-only. */}
+      {!isSpectatorRole(profile?.role_name) && (
+        <Link
+          to="/compose"
+          className="fixed bottom-24 right-5 z-20 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg active:scale-95"
+          aria-label="Compose"
+        >
+          <PenSquare className="h-6 w-6" />
+        </Link>
+      )}
 
       {selectedPerson && (
         <div

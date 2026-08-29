@@ -53,6 +53,8 @@ function PickupPage() {
   const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  // Spectators can watch the queue but never claim or cancel anything.
+  const isSpectator = isSpectatorRole(profile?.role_name);
   const queryClient = useQueryClient();
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).

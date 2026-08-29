@@ -319,6 +319,7 @@ export type Database = {
           is_active: boolean
           is_owner: boolean
           nickname: string | null
+          notifications_enabled: boolean
           pending_role_name: string | null
           role_id: string | null
           role_name: string
@@ -338,6 +339,7 @@ export type Database = {
           is_active?: boolean
           is_owner?: boolean
           nickname?: string | null
+          notifications_enabled?: boolean
           pending_role_name?: string | null
           role_id?: string | null
           role_name: string
@@ -357,6 +359,7 @@ export type Database = {
           is_active?: boolean
           is_owner?: boolean
           nickname?: string | null
+          notifications_enabled?: boolean
           pending_role_name?: string | null
           role_id?: string | null
           role_name?: string

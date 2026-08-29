@@ -5,8 +5,8 @@ const REMIND_AFTER_MS = 5 * 60 * 1000;
 
 const audienceFor = (kind: string | null) => {
   if (kind === "shuttle") return ["Shuttle", "Valet & Shuttle", "Admin"];
-  if (kind === "parts") return ["Valet & Parts", "Admin"];
-  return ["Valet", "Valet & Parts", "Valet & Shuttle", "Admin"];
+  // Parts follows the same audience as every other pickup-list submission.
+  return ["Valet", "Valet & Shuttle", "Admin"];
 };
 
 export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({

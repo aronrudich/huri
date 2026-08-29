@@ -15,6 +15,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 import { ensureServiceWorker } from "@/lib/push";
 import { NotificationGate } from "@/components/NotificationGate";
+import { PushSync } from "@/components/PushSync";
 import { IOSInstallHint } from "@/components/IOSInstallHint";
 import { PendingGate } from "@/components/PendingGate";
 import { TabPrefetcher } from "@/components/TabPrefetcher";

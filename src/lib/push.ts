@@ -86,30 +86,15 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
 
 /**
  * Self-healing sync: called on every app open. Re-reads the browser's current
- * push subscription (creating one if the browser dropped it), stores it, and
- * deletes any other rows for this user so stale endpoints stop swallowing pushes.
+ * push subscription (creating one if the browser rotated or dropped it) and
+ * stores it, so a reinstalled/refreshed device becomes reachable again.
+ * Dead endpoints for other devices are pruned server-side on 404/410.
  */
 export async function syncPushSubscription(userId: string): Promise<boolean> {
   if (typeof window === "undefined") return false;
   if (!("Notification" in window) || Notification.permission !== "granted") return false;
   if (!getNotifPref()) return false;
-  const ok = await registerPushSubscription(userId);
-  if (!ok) return false;
-  try {
-    const reg = await navigator.serviceWorker.getRegistration();
-    const sub = await reg?.pushManager.getSubscription();
-    const endpoint = sub?.endpoint;
-    if (endpoint) {
-      await supabase
-        .from("push_subscriptions")
-        .delete()
-        .eq("user_id", userId)
-        .neq("endpoint", endpoint);
-    }
-  } catch (e) {
-    console.warn("prune stale subscriptions failed", e);
-  }
-  return true;
+  return registerPushSubscription(userId);
 }
 
 /** Persist the on/off switch on the user's account so the server honours it. */

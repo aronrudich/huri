@@ -4,6 +4,7 @@ import { ArrowLeft, Send, Trash2, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
+import { isSpectatorRole } from "@/lib/roles";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { sendMessagePush } from "@/lib/push.functions";

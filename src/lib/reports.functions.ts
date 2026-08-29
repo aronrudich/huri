@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
-import { shiftWindowStart, type RangeKey } from "@/lib/report-range";
+import {
+  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, type RangeKey,
+} from "@/lib/report-range";
+
 
 export type EmployeeStat = {
   id: string;

@@ -70,6 +70,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     park: "Park My Car",
     bringme: "Bring Me",
     wash: "Wash",
+    reports: "Reports",
   };
 
   // Short plain-English description shown under each action label (optional).

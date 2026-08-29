@@ -45,11 +45,17 @@ const kindOf = (row: { kind: string | null; is_staged: boolean | null }) =>
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { range: RangeKey }) => {
-    const allowed: RangeKey[] = ["day", "week", "month", "all"];
+  .inputValidator((input: { range: RangeKey; start?: string; end?: string }) => {
+    const allowed: RangeKey[] = ["day", "week", "month", "all", "custom"];
     if (!allowed.includes(input?.range)) throw new Error("Invalid range");
+    if (input.range === "custom") {
+      if (!isDayKey(input.start) || !isDayKey(input.end)) throw new Error("Pick a start and end date");
+      if (input.start > input.end) throw new Error("Start date must come before the end date");
+      return { range: input.range, start: input.start, end: input.end };
+    }
     return { range: input.range };
   })
+
   .handler(async ({ data, context }): Promise<ReportData> => {
     const { supabase, userId } = context;
 

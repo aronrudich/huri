@@ -81,6 +81,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     shuttle: "Pickup/Dropoff Customer",
     bringme: "Car or Parts",
     wash: "Bring Car To Wash",
+    reports: "Stats & Claim Times",
   };
 
 

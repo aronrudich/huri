@@ -484,12 +484,16 @@ function PickupPage() {
 
                 <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   {p.status === "unclaimed" ? (
-                    <button
-                      onClick={() => claim(p)}
-                      className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
-                    >
-                      {isParts || isShuttle ? "On it" : "Claim"}
-                    </button>
+                    isSpectator ? (
+                      <p className="flex-1 text-xs text-muted-foreground">Unclaimed</p>
+                    ) : (
+                      <button
+                        onClick={() => claim(p)}
+                        className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
+                      >
+                        {isParts || isShuttle ? "On it" : "Claim"}
+                      </button>
+                    )
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
                       {isParts || isShuttle ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}

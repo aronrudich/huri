@@ -69,7 +69,19 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
     if (!reg) return false;
     // Wait for SW activation so pushManager.subscribe doesn't race.
     if (!reg.active) await navigator.serviceWorker.ready;
+    const fingerprint = keyFingerprint(VAPID_PUBLIC);
     let sub = await reg.pushManager.getSubscription();
+
+    // The server's VAPID keypair may have been rotated. A subscription made with
+    // the old key can never receive pushes again, so swap it out silently — the
+    // browser does not re-prompt while permission is already "granted".
+    if (sub && localStorage.getItem(KEY_FINGERPRINT_KEY) !== fingerprint) {
+      const staleEndpoint = sub.endpoint;
+      try { await sub.unsubscribe(); } catch { /* already gone */ }
+      try { await supabase.from("push_subscriptions").delete().eq("endpoint", staleEndpoint); } catch { /* best effort */ }
+      sub = null;
+    }
+
     if (!sub) {
       const key = urlBase64ToUint8Array(VAPID_PUBLIC);
       sub = await reg.pushManager.subscribe({
@@ -83,9 +95,11 @@ export async function registerPushSubscription(userId: string): Promise<boolean>
         { user_id: userId, endpoint: json.endpoint, p256dh: json.keys.p256dh, auth: json.keys.auth },
         { onConflict: "endpoint" },
       );
+      localStorage.setItem(KEY_FINGERPRINT_KEY, fingerprint);
       return true;
     }
     return false;
+
   } catch (e) {
     console.warn("registerPushSubscription failed", e);
     return false;

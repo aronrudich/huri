@@ -70,7 +70,12 @@ export const searchCars = createServerFn({ method: "GET" })
     const dealershipId = await callerDealership(context.userId);
     if (!dealershipId) return [];
 
-    const like = `%${q.replace(/[%_]/g, "\\$&")}%`;
+    // Commas and parentheses are structural in PostgREST's .or() grammar, so they
+    // are stripped from user input before the filter string is assembled.
+    const safe = q.replace(/[(),]/g, " ").replace(/[%_]/g, "\\$&");
+    if (!safe.trim()) return [];
+    const like = `%${safe}%`;
+
     const { data: rows, error } = await supabaseAdmin
       .from("parked_cars")
       .select("id, ro_number, car_model, lot_position, notes")

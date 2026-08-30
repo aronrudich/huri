@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPersistedQueryCache } from "@/lib/query-persist";
 
 export type Profile = {
   id: string;
@@ -125,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const finish = () => { if (!settled) { settled = true; clearTimeout(watchdog); setLoading(false); } };
     watchdog = setTimeout(() => {
       if (settled) return;
+      clearPersistedQueryCache();
       void supabase.auth.signOut({ scope: "local" }).catch(() => {});
       setSession(null);
       applyProfile(null);
@@ -132,6 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, 6000);
 
     const signOutLocally = async () => {
+      clearPersistedQueryCache();
       await supabase.auth.signOut({ scope: "local" }).catch(() => {});
       setSession(null);
       applyProfile(null);

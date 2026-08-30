@@ -112,7 +112,24 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     const targetEmail = data.email.trim().toLowerCase();
     const fullName = data.fullName.trim();
     const nickname = data.nickname?.trim() || null;
-    const roleName = data.roleName.trim();
+    const requestedRole = data.roleName.trim();
+    // This endpoint is unauthenticated, and the sanitize_profile_insert trigger does
+    // not fire for service-role writes, so privileged roles are blocked here: the
+    // request is recorded as pending_role_name for an approver to grant.
+    const PRIVILEGED_ROLES = [
+      "Admin",
+      "Manager",
+      "Director",
+      "Service Manager",
+      "Service Director",
+      "General Manager",
+    ];
+    const privileged = PRIVILEGED_ROLES.some(
+      (role) => role.toLowerCase() === requestedRole.toLowerCase(),
+    );
+    const roleName = privileged ? "Employee" : requestedRole;
+    const pendingRoleName = privileged ? requestedRole : null;
+
 
     const ensureProfile = async (userId: string) => {
       const { data: roleRow, error: roleError } = await adminClient
@@ -130,11 +147,13 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           email: targetEmail,
           role_id: roleRow?.id ?? null,
           role_name: roleName,
+          pending_role_name: pendingRoleName,
           is_active: true,
           status: AUTO_APPROVE_SIGNUPS ? "approved" : "pending",
           deactivated_at: null,
           deactivated_by: null,
           dealership_id: data.dealershipId,
+
         },
         { onConflict: "id" },
       );

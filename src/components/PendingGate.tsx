@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
+import { clearPersistedQueryCache } from "@/lib/query-persist";
 import { toast } from "sonner";
 
 export function PendingGate() {
@@ -15,7 +16,7 @@ export function PendingGate() {
 
   if (!pending) return null;
 
-  const logout = async () => { await supabase.auth.signOut(); };
+  const logout = async () => { clearPersistedQueryCache(); await supabase.auth.signOut(); };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-6 backdrop-blur-sm safe-top safe-bottom">

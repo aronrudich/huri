@@ -1,17 +1,26 @@
 // Server-only VAPID config + web-push sender. Imported only by *.functions.ts handlers.
-// NOTE: For this demo the VAPID private key is inlined. Rotate before shipping by moving
-// to env vars (VAPID_PRIVATE_KEY) and reading process.env here.
+// Keys live in backend secrets (VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY); nothing is hardcoded.
 import webpush from "web-push";
 
-export const VAPID_PUBLIC =
-  "BPm-zOSUh5edeSjmUuo5SKDd6fmdxidekZCItK-t4TA9a_KBXsRBk8F9msZOBCXujIFsPYqxge7S2UtKP0puGb8";
-const VAPID_PRIVATE =
-  process.env.VAPID_PRIVATE_KEY ?? "8q4WSdwWgB8OjlGzfeV2G5Js74d18WpN4e0FwuAk-Is";
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT ?? "mailto:demo@huri.app";
+const publicKey = process.env["VAPID_PUBLIC_KEY"] ?? process.env["VITE_VAPID_PUBLIC_KEY"];
+const privateKey = process.env["VAPID_PRIVATE_KEY"];
+const subject = process.env["VAPID_SUBJECT"] ?? "mailto:notifications@huri.app";
 
-webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC, VAPID_PRIVATE);
+if (!publicKey || !privateKey) {
+  throw new Error(
+    "Push notifications are not configured: VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY must be set.",
+  );
+}
+
+export const VAPID_PUBLIC = publicKey;
+
+webpush.setVapidDetails(subject, publicKey, privateKey);
 
 export type PushSub = { endpoint: string; p256dh: string; auth: string };
+
+/** Endpoints rejected with these codes will never work again — prune them. */
+export const isStalePushStatus = (status: number | undefined) =>
+  status === 404 || status === 410 || status === 401 || status === 403;
 
 export async function sendWebPush(sub: PushSub, payload: object) {
   return webpush.sendNotification(

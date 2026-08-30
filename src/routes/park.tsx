@@ -153,37 +153,45 @@ function ParkPage() {
       targetId = existing.id;
     }
 
-    // Only enforce uniqueness for numbered SV spots; BL, CP, custom, and unknown locations can hold many cars.
-    if (!isPlaceholder) {
-      const { data: occupant } = await supabase
-        .from("parked_cars")
-        .select("id, ro_number, car_model")
-        .eq("lot_position", normalizedPos)
-        .maybeSingle();
-      if (occupant && occupant.id !== targetId) {
-        const label = occupant.ro_number ? `RO #${occupant.ro_number}` : "another car";
-        const carModel = occupant.car_model ? ` (${occupant.car_model})` : "";
-        const ok = window.confirm(
-          `Spot ${normalizedPos} already has ${label}${carModel} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car's location will be marked unknown until someone parks it again.`,
-        );
-        if (!ok) return;
-        await supabase.from("parked_cars").update({ lot_position: "UNKNOWN" }).eq("id", occupant.id);
-      }
+    // The write goes through assign_lot_position, which locks the spot and the car row
+    // so two valets can't claim the same numbered spot at the same moment. Placeholder
+    // locations (BL, CP, UNKNOWN, custom) can still hold many cars.
+    setBusy(true);
+    const args = {
+      _target_id: (targetId ?? null) as string,
+      _ro_number: normalizedRo,
+      _position: normalizedPos,
+      _car_model: model.trim() || null,
+      _notes: notes.trim() || null,
+      _confirm_displace: false,
+    };
+    let { data: result, error } = await supabase.rpc("assign_lot_position", {
+      ...args,
+      _car_model: args._car_model as string,
+      _notes: args._notes as string,
+    });
+
+    const occupied = (result ?? null) as { status?: string; occupant_ro?: string | null; occupant_model?: string | null } | null;
+    if (!error && occupied?.status === "occupied" && !isPlaceholder) {
+      setBusy(false);
+      const label = occupied.occupant_ro ? `RO #${occupied.occupant_ro}` : "another car";
+      const carModel = occupied.occupant_model ? ` (${occupied.occupant_model})` : "";
+      const ok = window.confirm(
+        `Spot ${normalizedPos} already has ${label}${carModel} parked in it.\n\nConfirm that your car is being parked in Spot ${normalizedPos}? The other car's location will be marked unknown until someone parks it again.`,
+      );
+      if (!ok) return;
+      setBusy(true);
+      ({ data: result, error } = await supabase.rpc("assign_lot_position", {
+        ...args,
+        _car_model: args._car_model as string,
+        _notes: args._notes as string,
+        _confirm_displace: true,
+      }));
     }
 
-    setBusy(true);
-    const payload = {
-      ro_number: normalizedRo,
-      car_model: model.trim() || null,
-      lot_position: normalizedPos,
-      notes: notes.trim() || null,
-      parked_by: user.id,
-    };
-    const { error } = targetId
-      ? await supabase.from("parked_cars").update(payload).eq("id", targetId)
-      : await supabase.from("parked_cars").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
+
     toast.success(editing ? "Car updated" : "Car logged");
     navigate({ to: "/pickup", replace: true });
   };

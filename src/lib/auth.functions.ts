@@ -147,11 +147,13 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           email: targetEmail,
           role_id: roleRow?.id ?? null,
           role_name: roleName,
+          pending_role_name: pendingRoleName,
           is_active: true,
           status: AUTO_APPROVE_SIGNUPS ? "approved" : "pending",
           deactivated_at: null,
           deactivated_by: null,
           dealership_id: data.dealershipId,
+
         },
         { onConflict: "id" },
       );

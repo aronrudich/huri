@@ -42,3 +42,12 @@ export function attachQueryPersistence(queryClient: QueryClient) {
     timer = setTimeout(save, 1000);
   });
 }
+
+/**
+ * Wipe the persisted cache. Called on every sign-out so a shared device never
+ * paints the previous user's inbox, pickup list, or lot data.
+ */
+export function clearPersistedQueryCache() {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.removeItem(KEY); } catch { /* storage unavailable */ }
+}

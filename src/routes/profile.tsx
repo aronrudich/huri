@@ -4,6 +4,7 @@ import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
 
 import { supabase } from "@/integrations/supabase/client";
+import { clearPersistedQueryCache } from "@/lib/query-persist";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { requestNotifPermission, registerPushSubscription, getNotifPref, setNotifPref, saveNotifPrefRemote } from "@/lib/push";
@@ -131,7 +132,7 @@ function ProfilePage() {
   }, [isApprover]);
 
 
-  const logout = async () => { await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
+  const logout = async () => { clearPersistedQueryCache(); await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
 
   const toggleNotifs = async (on: boolean) => {
     if (!user) return;
@@ -167,7 +168,7 @@ function ProfilePage() {
   };
 
   const leaveDealership = async () => {
-    try { await deleteSelf({}); await supabase.auth.signOut(); toast.success("Account deleted"); navigate({ to: "/auth", replace: true }); }
+    try { await deleteSelf({}); clearPersistedQueryCache(); await supabase.auth.signOut(); toast.success("Account deleted"); navigate({ to: "/auth", replace: true }); }
     catch (e) { toast.error((e as Error).message); }
   };
 

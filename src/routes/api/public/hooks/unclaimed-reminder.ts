@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
                 sent++;
               } catch (e: unknown) {
                 const code = (e as { statusCode?: number })?.statusCode;
-                if (code === 404 || code === 410) stale.push(s.id);
+                if (code === 404 || code === 410 || code === 401 || code === 403) stale.push(s.id);
               }
             }));
             if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);

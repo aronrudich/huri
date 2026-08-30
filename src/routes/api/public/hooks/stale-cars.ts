@@ -125,7 +125,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
               sent += 1;
             } catch (pushError) {
               const status = (pushError as { statusCode?: number }).statusCode;
-              if (status === 404 || status === 410) staleSubscriptions.push(subscription.id);
+              if (status === 404 || status === 410 || status === 401 || status === 403) staleSubscriptions.push(subscription.id);
             }
           }));
           if (staleSubscriptions.length) {

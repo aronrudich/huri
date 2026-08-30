@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // so the profile fetch is pushed to the next macrotask.
         setTimeout(() => loadProfile(s.user.id), 0);
       } else {
+        clearPersistedQueryCache();
         applyProfile(null);
       }
     });

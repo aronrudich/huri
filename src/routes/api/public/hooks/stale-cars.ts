@@ -29,9 +29,12 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey");
-        const acceptedKeys = [process.env["SUPABASE_PUBLISHABLE_KEY"], process.env["SUPABASE_ANON_KEY"]].filter(Boolean);
-        if (!apiKey || !acceptedKeys.includes(apiKey)) return new Response("Unauthorized", { status: 401 });
+        // Authenticated with a private scheduler token — never the publishable app key,
+        // which ships in the browser bundle.
+        const provided = request.headers.get("x-cron-secret");
+        const expected = process.env["CRON_WEBHOOK_TOKEN"] ?? process.env["CRON_WEBHOOK_SECRET"];
+        if (!expected || provided !== expected) return new Response("Unauthorized", { status: 401 });
+
 
         const now = new Date();
         const digestDate = pacificDate(now);

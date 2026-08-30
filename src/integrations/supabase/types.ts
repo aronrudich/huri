@@ -457,6 +457,17 @@ export type Database = {
     }
     Functions: {
       archive_stale_pickups: { Args: never; Returns: undefined }
+      assign_lot_position: {
+        Args: {
+          _car_model: string
+          _confirm_displace?: boolean
+          _notes: string
+          _position: string
+          _ro_number: string
+          _target_id: string
+        }
+        Returns: Json
+      }
       claim_pickup_request: {
         Args: { _pickup_id: string }
         Returns: {

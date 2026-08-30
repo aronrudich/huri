@@ -146,7 +146,7 @@ export async function createPickupAndNotify(
       sent++;
     } catch (error: unknown) {
       const status = (error as { statusCode?: number })?.statusCode;
-      if (status === 404 || status === 410) stale.push(sub.id);
+      if (status === 404 || status === 410 || status === 401 || status === 403) stale.push(sub.id);
       else {
         failed++;
         console.error("pickup notification delivery failed", pickup.id, status, (error as Error)?.message);

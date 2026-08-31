@@ -393,7 +393,10 @@ function ProfilePage() {
           employeeName={changeRoleFor.full_name}
           currentRole={changeRoleFor.role_name}
           onClose={() => setChangeRoleFor(null)}
-          onSaved={(newRole) => setStaff((s) => s.map((e) => e.id === changeRoleFor.id ? { ...e, role_name: newRole } : e))}
+          onSaved={(newRole) => {
+            setStaff((s) => s.map((e) => e.id === changeRoleFor.id ? { ...e, role_name: newRole } : e));
+            if (changeRoleFor.id === user?.id) void refreshProfile();
+          }}
         />
       )}
 

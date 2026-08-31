@@ -199,7 +199,8 @@ function ProfilePage() {
   };
 
   const filtered = staff.filter((e) => {
-    if (e.id === user?.id) return false;
+    // Admin-equivalent roles (and the owner) can find and re-role themselves.
+    if (e.id === user?.id && !isAdmin) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return e.full_name.toLowerCase().includes(q) || (e.nickname ?? "").toLowerCase().includes(q) || e.role_name.toLowerCase().includes(q);
@@ -320,7 +321,7 @@ function ProfilePage() {
       {canViewRoster && (
         <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
           <div className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            <Crown className="h-4 w-4 text-amber-500" /> Roster ({staff.filter((e) => e.id !== user?.id).length})
+            <Crown className="h-4 w-4 text-amber-500" /> Roster ({isAdmin ? staff.length : staff.filter((e) => e.id !== user?.id).length})
           </div>
           <div className="border-t border-border px-4 py-3">
             <div className="flex items-center gap-2 rounded-xl bg-muted px-3 py-2">
@@ -339,19 +340,15 @@ function ProfilePage() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{emp.role_name}</p>
                 </div>
-                {!emp.is_owner && (
-                  <>
-                    {isAdmin && (
-                      <button onClick={() => setChangeRoleFor(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary" title="Change role">
-                        <Shuffle className="h-4 w-4" />
-                      </button>
-                    )}
-                    {isAdmin && (
-                      <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    )}
-                  </>
+                {isAdmin && (!emp.is_owner || isOwner || emp.id === user?.id) && (
+                  <button onClick={() => setChangeRoleFor(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary" title="Change role">
+                    <Shuffle className="h-4 w-4" />
+                  </button>
+                )}
+                {isAdmin && !emp.is_owner && emp.id !== user?.id && (
+                  <button onClick={() => setConfirmRemove(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-destructive/10 text-destructive" title="Remove & delete">
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 )}
 
               </li>
@@ -396,7 +393,10 @@ function ProfilePage() {
           employeeName={changeRoleFor.full_name}
           currentRole={changeRoleFor.role_name}
           onClose={() => setChangeRoleFor(null)}
-          onSaved={(newRole) => setStaff((s) => s.map((e) => e.id === changeRoleFor.id ? { ...e, role_name: newRole } : e))}
+          onSaved={(newRole) => {
+            setStaff((s) => s.map((e) => e.id === changeRoleFor.id ? { ...e, role_name: newRole } : e));
+            if (changeRoleFor.id === user?.id) void refreshProfile();
+          }}
         />
       )}
 

@@ -199,7 +199,8 @@ function ProfilePage() {
   };
 
   const filtered = staff.filter((e) => {
-    if (e.id === user?.id) return false;
+    // Admin-equivalent roles (and the owner) can find and re-role themselves.
+    if (e.id === user?.id && !isAdmin) return false;
     if (!search.trim()) return true;
     const q = search.toLowerCase();
     return e.full_name.toLowerCase().includes(q) || (e.nickname ?? "").toLowerCase().includes(q) || e.role_name.toLowerCase().includes(q);

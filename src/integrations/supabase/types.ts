@@ -438,7 +438,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          dealership_id?: string
+          dealership_id: string
           hidden_at?: string
           thread_id: string
           user_id: string

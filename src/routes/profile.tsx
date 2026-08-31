@@ -340,7 +340,7 @@ function ProfilePage() {
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{emp.role_name}</p>
                 </div>
-                {isAdmin && (
+                {isAdmin && (!emp.is_owner || isOwner || emp.id === user?.id) && (
                   <button onClick={() => setChangeRoleFor(emp)} className="grid h-8 w-8 place-items-center rounded-full bg-primary/10 text-primary" title="Change role">
                     <Shuffle className="h-4 w-4" />
                   </button>

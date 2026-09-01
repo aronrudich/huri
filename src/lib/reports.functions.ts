@@ -224,6 +224,6 @@ export const getReport = createServerFn({ method: "POST" })
       kinds,
       submitters,
       submittedTotal: submitters.reduce((sum, s) => sum + s.submissions, 0),
-      submitterCount: submitters.length,
+      submitterCount: submitters.filter((s) => s.submissions > 0).length,
     };
   });

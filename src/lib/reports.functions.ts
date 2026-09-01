@@ -72,7 +72,7 @@ export const getReport = createServerFn({ method: "POST" })
 
     const { data: me } = await supabase
       .from("profiles")
-      .select("role_name, is_owner, is_active, status")
+      .select("role_name, is_owner, is_active, status, dealership_id")
       .eq("id", userId)
       .maybeSingle();
     const allowed =

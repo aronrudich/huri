@@ -252,7 +252,7 @@ function PickupPage() {
     const unclaimedStaged = unclaimed.filter((p) => !!p.is_staged).sort(byAge);
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
-      .sort((a, b) => new Date(a.claimed_at ?? a.created_at).getTime() - new Date(b.claimed_at ?? b.created_at).getTime());
+      .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
     return [...unclaimedCustomer, ...unclaimedTech, ...unclaimedStaged, ...claimed];
   }, [visiblePickups]);
 

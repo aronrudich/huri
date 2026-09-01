@@ -17,6 +17,14 @@ export type EmployeeStat = {
   byKind: Record<string, number>;
 };
 
+export type SubmitterStat = {
+  id: string;
+  name: string;
+  role: string;
+  submissions: number;
+  byKind: Record<string, number>;
+};
+
 export type KindStat = {
   kind: string;
   total: number;
@@ -35,6 +43,9 @@ export type ReportData = {
   anomalies: number;
   employees: EmployeeStat[];
   kinds: KindStat[];
+  submitters: SubmitterStat[];
+  submittedTotal: number;
+  submitterCount: number;
 };
 
 /** Claims slower than this are anomalies: counted, but never averaged. */
@@ -75,7 +86,7 @@ export const getReport = createServerFn({ method: "POST" })
 
     let query = supabase
       .from("pickup_requests")
-      .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by")
+      .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by")
       .order("created_at", { ascending: false })
       .limit(20000);
     if (start) query = query.gte("created_at", start.toISOString());
@@ -111,17 +122,41 @@ export const getReport = createServerFn({ method: "POST" })
       perEmployee.set(id, entry);
     });
 
+    // ---- per submitter (who is using the app) --------------------------------
+    const perSubmitter = new Map<string, { submissions: number; byKind: Record<string, number> }>();
+    list.forEach((row) => {
+      const id = row.requested_by as string | null;
+      if (!id) return;
+      const entry = perSubmitter.get(id) ?? { submissions: 0, byKind: {} };
+      entry.submissions += 1;
+      const k = kindOf(row);
+      entry.byKind[k] = (entry.byKind[k] ?? 0) + 1;
+      perSubmitter.set(id, entry);
+    });
+
     const ids = [...perEmployee.keys()];
+    const lookupIds = [...new Set([...ids, ...perSubmitter.keys()])];
     const names = new Map<string, { name: string; role: string }>();
-    if (ids.length) {
+    if (lookupIds.length) {
       const { data: people } = await supabase
         .from("profiles")
         .select("id, full_name, nickname, role_name")
-        .in("id", ids);
+        .in("id", lookupIds);
       (people ?? []).forEach((p) => {
         names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
       });
     }
+
+    const submitters: SubmitterStat[] = [...perSubmitter.entries()].map(([id, entry]) => {
+      const who = names.get(id);
+      return {
+        id,
+        name: who?.name ?? "Former employee",
+        role: who?.role ?? "",
+        submissions: entry.submissions,
+        byKind: entry.byKind,
+      };
+    }).sort((a, b) => b.submissions - a.submissions || a.name.localeCompare(b.name));
 
     const employees: EmployeeStat[] = ids.map((id) => {
       const entry = perEmployee.get(id)!;
@@ -167,5 +202,8 @@ export const getReport = createServerFn({ method: "POST" })
       anomalies: durations.length - clean.length,
       employees,
       kinds,
+      submitters,
+      submittedTotal: submitters.reduce((sum, s) => sum + s.submissions, 0),
+      submitterCount: submitters.length,
     };
   });

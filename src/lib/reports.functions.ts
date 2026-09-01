@@ -72,7 +72,7 @@ export const getReport = createServerFn({ method: "POST" })
 
     const { data: me } = await supabase
       .from("profiles")
-      .select("role_name, is_owner, is_active, status")
+      .select("role_name, is_owner, is_active, status, dealership_id")
       .eq("id", userId)
       .maybeSingle();
     const allowed =
@@ -134,42 +134,62 @@ export const getReport = createServerFn({ method: "POST" })
       perSubmitter.set(id, entry);
     });
 
-    const ids = [...perEmployee.keys()];
-    const lookupIds = [...new Set([...ids, ...perSubmitter.keys()])];
     const names = new Map<string, { name: string; role: string }>();
-    if (lookupIds.length) {
+
+    // Every active, approved teammate — so employees with zero activity still
+    // show up in both leaderboards.
+    const roster = new Set<string>();
+    const { data: everyone } = await supabase
+      .from("profiles")
+      .select("id, full_name, nickname, role_name, is_active, status")
+      .eq("dealership_id", me!.dealership_id)
+      .eq("is_active", true)
+      .eq("status", "approved");
+    (everyone ?? []).forEach((p) => {
+      names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
+      roster.add(p.id);
+    });
+
+    // Anyone with activity but not on the current roster (deactivated/left).
+    const missing = [...new Set([...perEmployee.keys(), ...perSubmitter.keys()])]
+      .filter((id) => !names.has(id));
+    if (missing.length) {
       const { data: people } = await supabase
         .from("profiles")
         .select("id, full_name, nickname, role_name")
-        .in("id", lookupIds);
+        .in("id", missing);
       (people ?? []).forEach((p) => {
         names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
       });
     }
 
-    const submitters: SubmitterStat[] = [...perSubmitter.entries()].map(([id, entry]) => {
+    const submitterIds = [...new Set([...roster, ...perSubmitter.keys()])];
+    const claimerIds = [...new Set([...roster, ...perEmployee.keys()])];
+
+    const submitters: SubmitterStat[] = submitterIds.map((id) => {
+      const entry = perSubmitter.get(id);
       const who = names.get(id);
       return {
         id,
         name: who?.name ?? "Former employee",
         role: who?.role ?? "",
-        submissions: entry.submissions,
-        byKind: entry.byKind,
+        submissions: entry?.submissions ?? 0,
+        byKind: entry?.byKind ?? {},
       };
     }).sort((a, b) => b.submissions - a.submissions || a.name.localeCompare(b.name));
 
-    const employees: EmployeeStat[] = ids.map((id) => {
-      const entry = perEmployee.get(id)!;
+    const employees: EmployeeStat[] = claimerIds.map((id) => {
+      const entry = perEmployee.get(id);
       const who = names.get(id);
       return {
         id,
         name: who?.name ?? "Former employee",
         role: who?.role ?? "",
-        claims: entry.claims,
-        avgMs: avg(entry.clean),
-        fastestMs: entry.clean.length ? Math.min(...entry.clean) : null,
-        anomalies: entry.anomalies,
-        byKind: entry.byKind,
+        claims: entry?.claims ?? 0,
+        avgMs: entry ? avg(entry.clean) : null,
+        fastestMs: entry && entry.clean.length ? Math.min(...entry.clean) : null,
+        anomalies: entry?.anomalies ?? 0,
+        byKind: entry?.byKind ?? {},
       };
     }).sort((a, b) => b.claims - a.claims || a.name.localeCompare(b.name));
 
@@ -204,6 +224,6 @@ export const getReport = createServerFn({ method: "POST" })
       kinds,
       submitters,
       submittedTotal: submitters.reduce((sum, s) => sum + s.submissions, 0),
-      submitterCount: submitters.length,
+      submitterCount: submitters.filter((s) => s.submissions > 0).length,
     };
   });

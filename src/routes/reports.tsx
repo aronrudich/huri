@@ -177,13 +177,13 @@ function ReportsPage() {
               <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
                 Employees
               </h2>
-              {data.employees.length === 0 ? (
+              {(data.employees ?? []).length === 0 ? (
                 <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                   No claims in this window yet.
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {data.employees.map((e, i) => (
+                  {(data.employees ?? []).map((e, i) => (
                     <li key={e.id} className="rounded-xl border border-border bg-card p-3">
                       <div className="flex items-center gap-3">
                         <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
@@ -213,13 +213,13 @@ function ReportsPage() {
               <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
                 By submission type
               </h2>
-              {data.kinds.length === 0 ? (
+              {(data.kinds ?? []).length === 0 ? (
                 <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                   No submissions in this window.
                 </p>
               ) : (
                 <ul className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card">
-                  {data.kinds.map((k) => (
+                  {(data.kinds ?? []).map((k) => (
                     <li key={k.kind} className="flex items-center gap-3 px-3 py-2.5">
                       <span className="min-w-0 flex-1 truncate text-sm font-semibold">
                         {KIND_LABELS[k.kind] ?? k.kind}
@@ -244,21 +244,21 @@ function ReportsPage() {
             ) : (
               <>
                 <section className="grid grid-cols-2 gap-3">
-                  <Stat label="Submissions" value={String(data.submittedTotal)} />
-                  <Stat label="Employees submitting" value={String(data.submitterCount)} />
+                  <Stat label="Submissions" value={String(data.submittedTotal ?? 0)} />
+                  <Stat label="Employees submitting" value={String(data.submitterCount ?? 0)} />
                 </section>
 
                 <section>
                   <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
                     Submissions by employee
                   </h2>
-                  {data.submitters.length === 0 ? (
+                  {(data.submitters ?? []).length === 0 ? (
                     <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
                       No submissions in this window yet.
                     </p>
                   ) : (
                     <ul className="space-y-2">
-                      {data.submitters.map((s, i) => {
+                      {(data.submitters ?? []).map((s, i) => {
                         const open = openSubmitter === s.id;
                         return (
                           <li key={s.id} className="rounded-xl border border-border bg-card">
@@ -283,7 +283,7 @@ function ReportsPage() {
                             </button>
                             {open && (
                               <ul className="border-t border-border px-3 py-2">
-                                {Object.entries(s.byKind)
+                                {Object.entries(s.byKind ?? {})
                                   .sort((a, b) => b[1] - a[1])
                                   .map(([kind, count]) => (
                                     <li key={kind} className="flex items-center justify-between py-1">

@@ -18,19 +18,21 @@ confirm before changing anything.
 
 1. Reproduce: open Reports and switch to Submitting in the preview to capture the exact error.
 2. Bump the saved-cache version so every device starts from a fresh, correctly shaped report
-   instead of an outdated one.
+  instead of an outdated one.
 3. Make the Submitting view tolerant of missing fields, so a stale or partial report shows zeros
-   or a loading state rather than crashing the whole page.
+  or a loading state rather than crashing the whole page.
 4. Re-verify: Today, All Time, and a Custom range on both sub-tabs, checking that Submitting
-   shows historical employees and counts.
+  shows historical employees and counts.
 
 ## Technical notes
 
 - `src/lib/query-persist.ts`: change `KEY` from `huri.query-cache.v1` to `v2` (old entry is
-  orphaned and expires; no migration needed).
+orphaned and expires; no migration needed).
 - `src/routes/reports.tsx`: read submitter data defensively — `data.submitters ?? []`,
-  `data.submittedTotal ?? 0`, `data.submitterCount ?? 0` — and guard `Object.entries(s.byKind ?? {})`.
+`data.submittedTotal ?? 0`, `data.submitterCount ?? 0` — and guard `Object.entries(s.byKind ?? {})`.
 - `src/lib/reports.functions.ts`: no query change needed; `requested_by` is already selected and
-  the range windows are shared with the Claiming view, so history coverage is already identical.
+the range windows are shared with the Claiming view, so history coverage is already identical.
 - Confirm with a Playwright pass against the Reports route (owner session) plus browser console
-  output rather than declaring it fixed from the code alone.
+output rather than declaring it fixed from the code alone.
+
+You need to include all employees in the list for submissions and claims. That way we can know exactly who uses and doesn't use the app properly. 

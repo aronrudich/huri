@@ -44,6 +44,8 @@ function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [range, setRange] = useState<RangeKey>("day");
+  const [view, setView] = useState<"claiming" | "submitting">("claiming");
+  const [openSubmitter, setOpenSubmitter] = useState<string | null>(null);
   const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
     start: null, end: null,
   });

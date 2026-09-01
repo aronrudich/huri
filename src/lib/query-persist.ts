@@ -1,6 +1,6 @@
 import { dehydrate, hydrate, type QueryClient } from "@tanstack/react-query";
 
-const KEY = "huri.query-cache.v1";
+const KEY = "huri.query-cache.v2";
 const MAX_AGE = 24 * 60 * 60 * 1000;
 
 /**

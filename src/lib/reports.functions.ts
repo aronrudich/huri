@@ -17,6 +17,14 @@ export type EmployeeStat = {
   byKind: Record<string, number>;
 };
 
+export type SubmitterStat = {
+  id: string;
+  name: string;
+  role: string;
+  submissions: number;
+  byKind: Record<string, number>;
+};
+
 export type KindStat = {
   kind: string;
   total: number;
@@ -35,6 +43,9 @@ export type ReportData = {
   anomalies: number;
   employees: EmployeeStat[];
   kinds: KindStat[];
+  submitters: SubmitterStat[];
+  submittedTotal: number;
+  submitterCount: number;
 };
 
 /** Claims slower than this are anomalies: counted, but never averaged. */

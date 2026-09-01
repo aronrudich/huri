@@ -202,5 +202,8 @@ export const getReport = createServerFn({ method: "POST" })
       anomalies: durations.length - clean.length,
       employees,
       kinds,
+      submitters,
+      submittedTotal: submitters.reduce((sum, s) => sum + s.submissions, 0),
+      submitterCount: submitters.length,
     };
   });

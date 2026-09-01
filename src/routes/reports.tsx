@@ -105,7 +105,24 @@ function ReportsPage() {
             </button>
           ))}
         </div>
+        <div className="mt-2 flex gap-1 rounded-xl bg-muted p-1">
+          {([["claiming", "Claiming"], ["submitting", "Submitting"]] as const).map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setView(key)}
+              className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition-colors md:text-sm ${
+                view === key
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground active:bg-accent"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
+
 
       <div className="space-y-5 px-4">
         {range === "custom" && (

@@ -86,7 +86,7 @@ export const getReport = createServerFn({ method: "POST" })
 
     let query = supabase
       .from("pickup_requests")
-      .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by")
+      .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by")
       .order("created_at", { ascending: false })
       .limit(20000);
     if (start) query = query.gte("created_at", start.toISOString());

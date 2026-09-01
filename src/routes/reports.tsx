@@ -164,6 +164,8 @@ function ReportsPage() {
 
         ) : data ? (
           <>
+            {view === "claiming" ? (
+              <>
             <section className="grid grid-cols-2 gap-3">
               <Stat label="Submissions" value={String(data.total)} />
               <Stat label="Claimed" value={String(data.claimed)} />

@@ -240,7 +240,75 @@ function ReportsPage() {
               Days start at 6:30 AM Pacific. Claims over 20 minutes still count toward totals
               but are left out of every average.
             </p>
+              </>
+            ) : (
+              <>
+                <section className="grid grid-cols-2 gap-3">
+                  <Stat label="Submissions" value={String(data.submittedTotal)} />
+                  <Stat label="Employees submitting" value={String(data.submitterCount)} />
+                </section>
+
+                <section>
+                  <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">
+                    Submissions by employee
+                  </h2>
+                  {data.submitters.length === 0 ? (
+                    <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+                      No submissions in this window yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {data.submitters.map((s, i) => {
+                        const open = openSubmitter === s.id;
+                        return (
+                          <li key={s.id} className="rounded-xl border border-border bg-card">
+                            <button
+                              type="button"
+                              onClick={() => setOpenSubmitter(open ? null : s.id)}
+                              className="flex w-full items-center gap-3 p-3 text-left active:bg-accent"
+                            >
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                {i + 1}
+                              </span>
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-semibold">{s.name}</p>
+                                <p className="truncate text-xs text-muted-foreground">{s.role || "—"}</p>
+                              </div>
+                              <div className="text-right">
+                                <p className="text-base font-bold leading-tight">{s.submissions}</p>
+                                <p className="text-[11px] leading-tight text-muted-foreground">
+                                  submitted
+                                </p>
+                              </div>
+                            </button>
+                            {open && (
+                              <ul className="border-t border-border px-3 py-2">
+                                {Object.entries(s.byKind)
+                                  .sort((a, b) => b[1] - a[1])
+                                  .map(([kind, count]) => (
+                                    <li key={kind} className="flex items-center justify-between py-1">
+                                      <span className="text-xs text-muted-foreground">
+                                        {KIND_LABELS[kind] ?? kind}
+                                      </span>
+                                      <span className="text-xs font-semibold">{count}</span>
+                                    </li>
+                                  ))}
+                              </ul>
+                            )}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </section>
+
+                <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
+                  Days start at 6:30 AM Pacific. Counts include every submission type.
+                </p>
+              </>
+            )}
           </>
+
         ) : null}
       </div>
     </div>

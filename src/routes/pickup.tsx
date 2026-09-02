@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canCancelAnyRole, canSeeKind, isShuttleRole, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */

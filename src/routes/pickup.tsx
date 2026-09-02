@@ -60,6 +60,7 @@ function PickupPage() {
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: washedRos = new Set<string>() } = useQuery({ ...carWashesQuery(), enabled: !!user });
   const { data: profiles = {} } = useQuery({
     ...directoryQuery(),
     enabled: !!user,

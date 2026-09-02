@@ -19,7 +19,7 @@ import { formatDistanceToNow } from "date-fns";
 import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadCutoffsForUser, mergeThreadCutoffs, saveThreadCutoffs, type ThreadCutoffs } from "@/lib/thread-visibility";
 
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/inbox")({
   head: () => ({
     meta: [
       { title: "Huri" },

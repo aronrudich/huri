@@ -246,10 +246,10 @@ function PickupPage() {
     const unclaimed = visiblePickups.filter((p) => p.status === "unclaimed");
     const unclaimedCustomer = unclaimed
       .filter((p) => !p.is_staged)
-      .filter((p) => p.kind === "parts" || p.kind === "shuttle" || !isTechSource(p.source_role))
+      .filter((p) => p.kind === "parts" || !isTechSource(p.source_role))
       .sort(byAge);
     const unclaimedTech = unclaimed
-      .filter((p) => !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" && isTechSource(p.source_role))
+      .filter((p) => !p.is_staged && p.kind !== "parts" && isTechSource(p.source_role))
       .sort(byAge);
     const unclaimedStaged = unclaimed.filter((p) => !!p.is_staged).sort(byAge);
     const claimed = visiblePickups

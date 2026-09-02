@@ -580,62 +580,6 @@ function PickupPage() {
         </div>
       )}
 
-      {detail && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-3xl bg-background p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Shuttle {detail.shuttle_kind === "dropoff" ? "drop off" : "pickup"}
-              </h2>
-              <button onClick={() => setDetail(null)} aria-label="Close" className="rounded-full p-1 text-muted-foreground">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <dl className="space-y-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">Customer</dt>
-                <dd className="font-semibold">{detail.customer_name ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Phone</dt>
-                <dd>
-                  {detail.customer_phone ? (
-                    <a href={`tel:${detail.customer_phone}`} className="font-semibold text-primary underline">
-                      {detail.customer_phone}
-                    </a>
-                  ) : "—"}
-                </dd>
-              </div>
-              {detail.customer_address && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Address</dt>
-                  <dd className="font-semibold">{detail.customer_address}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-xs text-muted-foreground">RO Number</dt>
-                <dd className="font-semibold">{detail.ro_number ? `RO #${detail.ro_number}` : "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Requested by</dt>
-                <dd>{[detail.advisor_name, format(new Date(detail.created_at), "h:mm a")].filter(Boolean).join(" · ")}</dd>
-              </div>
-              {detail.car_notes && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Notes</dt>
-                  <dd>{detail.car_notes}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        </div>
-      )}
 
       <BottomBar active="pickup" />
     </div>

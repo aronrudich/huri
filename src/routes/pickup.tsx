@@ -320,6 +320,8 @@ function PickupPage() {
         )}
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
+          // Wash confirmations follow the RO #, so the whole list can show it.
+          const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
           const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
           // Claimed pickups must keep showing the saved spot snapshot even after
           // the live parked_cars row is deleted to free the spot in the lot list.

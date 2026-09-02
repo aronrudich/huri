@@ -28,7 +28,7 @@ const PARTS_ROLES = [
   "Parts Manager", "Director", "Admin", "Service Manager", "Service Director", "General Manager",
 ];
 
-const RECIPIENT_ROLES = ["Valet", "Valet & Shuttle", "Admin"];
+const RECIPIENT_ROLES = ["Valet", "Admin"];
 
 function payloadFor(data: PickupSubmission, pickupId: string) {
   const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";

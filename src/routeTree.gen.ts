@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WashRouteImport } from './routes/wash'
-import { Route as ShuttleRouteImport } from './routes/shuttle'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
@@ -31,11 +30,6 @@ import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avata
 const WashRoute = WashRouteImport.update({
   id: '/wash',
   path: '/wash',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ShuttleRoute = ShuttleRouteImport.update({
-  id: '/shuttle',
-  path: '/shuttle',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -133,7 +127,6 @@ export interface FileRoutesByFullPath {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -153,7 +146,6 @@ export interface FileRoutesByTo {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -174,7 +166,6 @@ export interface FileRoutesById {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
-  '/shuttle': typeof ShuttleRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -196,7 +187,6 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
-    | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -216,7 +206,6 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
-    | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -236,7 +225,6 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
-    | '/shuttle'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -257,7 +245,6 @@ export interface RootRouteChildren {
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
-  ShuttleRoute: typeof ShuttleRoute
   WashRoute: typeof WashRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
@@ -272,13 +259,6 @@ declare module '@tanstack/react-router' {
       path: '/wash'
       fullPath: '/wash'
       preLoaderRoute: typeof WashRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/shuttle': {
-      id: '/shuttle'
-      path: '/shuttle'
-      fullPath: '/shuttle'
-      preLoaderRoute: typeof ShuttleRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -409,7 +389,6 @@ const rootRouteChildren: RootRouteChildren = {
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
-  ShuttleRoute: ShuttleRoute,
   WashRoute: WashRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,

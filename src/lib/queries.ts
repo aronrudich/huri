@@ -98,7 +98,7 @@ export const parkedCarsQuery = () =>
     },
   });
 
-/** Open (non-completed) pickup/parts/shuttle submissions, newest first. */
+/** Open (non-completed) pickup/parts submissions, newest first. */
 export const pickupsQuery = <T,>() =>
   queryOptions({
     queryKey: ["pickups"],

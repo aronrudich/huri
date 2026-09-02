@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canCancelAnyRole, canSeeKind, isShuttleRole, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */
@@ -39,7 +39,7 @@ type Pickup = {
   lot_position: string | null; car_notes: string | null;
   is_staged?: boolean | null;
   customer_name?: string | null; customer_phone?: string | null;
-  shuttle_kind?: string | null; customer_address?: string | null;
+  customer_address?: string | null;
 };
 
 type ParkedCar = {
@@ -84,8 +84,6 @@ function PickupPage() {
   const [q, setQ] = useState("");
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSpot, setMapSpot] = useState<string | null>(null);
-  // Shuttle submission opened for details.
-  const [detail, setDetail] = useState<Pickup | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -145,11 +143,11 @@ function PickupPage() {
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
-  //   - Parts/shuttle requests → same valet/shuttle audience; anyone can claim them.
+  //   - Parts requests → same valet audience; anyone can claim them.
   useEffect(() => {
     if (!profile) return;
     const role = profile.role_name;
-    if (!isValetRole(role) && !isShuttleRole(role)) return;
+    if (!isValetRole(role)) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
     const chan = supabase.channel("valet-pickup-alert")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
@@ -158,9 +156,7 @@ function PickupPage() {
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"
           : p.kind === "parts"
-          ? "🔧 Parts request"
-          : p.kind === "shuttle"
-            ? "🚐 Shuttle request"
+            ? "🔧 Parts request"
             : p.kind === "wash"
               ? "🧼 Wash request"
               : p.kind === "park"
@@ -246,10 +242,10 @@ function PickupPage() {
     const unclaimed = visiblePickups.filter((p) => p.status === "unclaimed");
     const unclaimedCustomer = unclaimed
       .filter((p) => !p.is_staged)
-      .filter((p) => p.kind === "parts" || p.kind === "shuttle" || !isTechSource(p.source_role))
+      .filter((p) => p.kind === "parts" || !isTechSource(p.source_role))
       .sort(byAge);
     const unclaimedTech = unclaimed
-      .filter((p) => !p.is_staged && p.kind !== "parts" && p.kind !== "shuttle" && isTechSource(p.source_role))
+      .filter((p) => !p.is_staged && p.kind !== "parts" && isTechSource(p.source_role))
       .sort(byAge);
     const unclaimedStaged = unclaimed.filter((p) => !!p.is_staged).sort(byAge);
     const claimed = visiblePickups
@@ -324,12 +320,11 @@ function PickupPage() {
         )}
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
-          const isShuttle = p.kind === "shuttle";
-          const liveCar = !isParts && !isShuttle && p.ro_number ? carsByRo[p.ro_number] : undefined;
+          const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
           // Claimed pickups must keep showing the saved spot snapshot even after
           // the live parked_cars row is deleted to free the spot in the lot list.
           const displayCar = p.status === "claimed" ? undefined : liveCar;
-          const effectiveSpot = !isParts && !isShuttle
+          const effectiveSpot = !isParts
             ? p.status === "claimed"
               ? (p.lot_position ?? "UNKNOWN")
               : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
@@ -337,7 +332,7 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
-          const hasCarRecord = !isParts && !isShuttle && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
+          const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
           const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
@@ -350,38 +345,33 @@ function PickupPage() {
           // list stays uniform and the type still reads at a glance.
           const pillLabel = isStaged
             ? "Staged"
-            : isShuttle
-              ? p.shuttle_kind === "dropoff" ? "Shuttle drop off" : "Shuttle"
-              : isParts
-                ? "Parts"
-                : p.kind === "wash"
-                  ? "🧼 Wash"
-                  : p.kind === "park"
-                    ? "Park request"
-                    : isTech
-                      ? "Technician pickup"
-                      : "Pickup";
+            : isParts
+              ? "Parts"
+              : p.kind === "wash"
+                ? "🧼 Wash"
+                : p.kind === "park"
+                  ? "Park request"
+                  : isTech
+                    ? "Technician pickup"
+                    : "Pickup";
           const pillClass = isStaged
             ? "bg-foreground text-background"
-
-            : isShuttle
-              ? "bg-success text-success-foreground"
-              : isParts
-                ? "bg-warning text-warning-foreground"
-                : p.kind === "wash"
-                  ? "bg-wash text-wash-foreground"
-                  : p.kind === "park"
-                    ? "bg-success text-success-foreground"
-                    : isTech
-                      ? "bg-destructive text-destructive-foreground"
-                      : "bg-primary text-primary-foreground";
+            : isParts
+              ? "bg-warning text-warning-foreground"
+              : p.kind === "wash"
+                ? "bg-wash text-wash-foreground"
+                : p.kind === "park"
+                  ? "bg-success text-success-foreground"
+                  : isTech
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-primary text-primary-foreground";
 
           return (
             <li
               key={p.id}
-              onClick={isShuttle ? () => setDetail(p) : undefined}
-              className={`overflow-hidden rounded-2xl border border-border bg-background ${isShuttle ? "cursor-pointer" : ""}`}
+              className="overflow-hidden rounded-2xl border border-border bg-background"
             >
+
               <div className="px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}>
@@ -404,37 +394,9 @@ function PickupPage() {
                     <p className="text-base font-semibold">
                       {isParts
                         ? `Parts for ${p.advisor_name ?? "employee"}`
-                        : isShuttle
-                          ? (p.customer_name ?? "Shuttle request")
-                          : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                        : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
-                    {isShuttle && (
-                      <>
-                        {p.customer_phone && (
-                          <a
-                            href={`tel:${p.customer_phone}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm font-semibold text-primary underline"
-                          >
-                            {p.customer_phone}
-                          </a>
-                        )}
-                        {p.customer_address && (
-                          <p className="text-sm text-muted-foreground">
-                            <span className="font-medium">Address:</span> {p.customer_address}
-                          </p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          {[p.ro_number && `RO #${p.ro_number}`, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
-                        </p>
-                        {p.car_notes && (
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            <span className="font-medium">Note:</span> {p.car_notes}
-                          </p>
-                        )}
-                      </>
-                    )}
-                    {!isParts && !isShuttle && (
+                    {!isParts && (
                       <>
                         <p className="text-sm text-muted-foreground">
                           {[displayCar?.car_model ?? p.car_model, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
@@ -458,7 +420,7 @@ function PickupPage() {
                   )}
                 </div>
 
-                {!isParts && !isShuttle && (
+                {!isParts && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Location:</span>{" "}
@@ -493,16 +455,16 @@ function PickupPage() {
                         onClick={() => claim(p)}
                         className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                       >
-                        {isParts || isShuttle ? "On it" : "Claim"}
+                        {isParts ? "On it" : "Claim"}
                       </button>
                     )
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
-                      {isParts || isShuttle ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
+                      {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
                       {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
-                  {!isParts && !isShuttle && (
+                  {!isParts && (
                     <button
                       onClick={() => effectiveSpot && setMapSpot(effectiveSpot)}
                       disabled={!effectiveSpot || lotOf(effectiveSpot) !== "sv"}
@@ -516,7 +478,7 @@ function PickupPage() {
                   {canCancel && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
+                      if (!window.confirm(`Cancel this ${isParts ? "parts request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
                       const { error } = await supabase.from("pickup_requests")
                         .update({ status: "canceled", completed_at: new Date().toISOString() })
                         .eq("id", p.id);
@@ -524,7 +486,7 @@ function PickupPage() {
                       // Canceling puts the car back where it was before the pickup was submitted.
                       // Canceling a stage also clears the car's staged flag so its map spot returns to red.
                       const originalSpot = p.lot_position;
-                      if (!isParts && !isShuttle && p.ro_number) {
+                      if (!isParts && p.ro_number) {
                         const patch: { lot_position?: string; is_staged?: boolean } = {};
                         if (originalSpot && originalSpot !== "UNKNOWN") patch.lot_position = originalSpot;
                         if (isStaged) patch.is_staged = false;
@@ -580,62 +542,6 @@ function PickupPage() {
         </div>
       )}
 
-      {detail && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-          onClick={() => setDetail(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-3xl bg-background p-5 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">
-                Shuttle {detail.shuttle_kind === "dropoff" ? "drop off" : "pickup"}
-              </h2>
-              <button onClick={() => setDetail(null)} aria-label="Close" className="rounded-full p-1 text-muted-foreground">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <dl className="space-y-2 text-sm">
-              <div>
-                <dt className="text-xs text-muted-foreground">Customer</dt>
-                <dd className="font-semibold">{detail.customer_name ?? "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Phone</dt>
-                <dd>
-                  {detail.customer_phone ? (
-                    <a href={`tel:${detail.customer_phone}`} className="font-semibold text-primary underline">
-                      {detail.customer_phone}
-                    </a>
-                  ) : "—"}
-                </dd>
-              </div>
-              {detail.customer_address && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Address</dt>
-                  <dd className="font-semibold">{detail.customer_address}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-xs text-muted-foreground">RO Number</dt>
-                <dd className="font-semibold">{detail.ro_number ? `RO #${detail.ro_number}` : "—"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-muted-foreground">Requested by</dt>
-                <dd>{[detail.advisor_name, format(new Date(detail.created_at), "h:mm a")].filter(Boolean).join(" · ")}</dd>
-              </div>
-              {detail.car_notes && (
-                <div>
-                  <dt className="text-xs text-muted-foreground">Notes</dt>
-                  <dd>{detail.car_notes}</dd>
-                </div>
-              )}
-            </dl>
-          </div>
-        </div>
-      )}
 
       <BottomBar active="pickup" />
     </div>

@@ -324,12 +324,11 @@ function PickupPage() {
         )}
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
-          const isShuttle = p.kind === "shuttle";
-          const liveCar = !isParts && !isShuttle && p.ro_number ? carsByRo[p.ro_number] : undefined;
+          const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
           // Claimed pickups must keep showing the saved spot snapshot even after
           // the live parked_cars row is deleted to free the spot in the lot list.
           const displayCar = p.status === "claimed" ? undefined : liveCar;
-          const effectiveSpot = !isParts && !isShuttle
+          const effectiveSpot = !isParts
             ? p.status === "claimed"
               ? (p.lot_position ?? "UNKNOWN")
               : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
@@ -337,7 +336,7 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
-          const hasCarRecord = !isParts && !isShuttle && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
+          const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
           const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
@@ -350,38 +349,33 @@ function PickupPage() {
           // list stays uniform and the type still reads at a glance.
           const pillLabel = isStaged
             ? "Staged"
-            : isShuttle
-              ? p.shuttle_kind === "dropoff" ? "Shuttle drop off" : "Shuttle"
-              : isParts
-                ? "Parts"
-                : p.kind === "wash"
-                  ? "🧼 Wash"
-                  : p.kind === "park"
-                    ? "Park request"
-                    : isTech
-                      ? "Technician pickup"
-                      : "Pickup";
+            : isParts
+              ? "Parts"
+              : p.kind === "wash"
+                ? "🧼 Wash"
+                : p.kind === "park"
+                  ? "Park request"
+                  : isTech
+                    ? "Technician pickup"
+                    : "Pickup";
           const pillClass = isStaged
             ? "bg-foreground text-background"
-
-            : isShuttle
-              ? "bg-success text-success-foreground"
-              : isParts
-                ? "bg-warning text-warning-foreground"
-                : p.kind === "wash"
-                  ? "bg-wash text-wash-foreground"
-                  : p.kind === "park"
-                    ? "bg-success text-success-foreground"
-                    : isTech
-                      ? "bg-destructive text-destructive-foreground"
-                      : "bg-primary text-primary-foreground";
+            : isParts
+              ? "bg-warning text-warning-foreground"
+              : p.kind === "wash"
+                ? "bg-wash text-wash-foreground"
+                : p.kind === "park"
+                  ? "bg-success text-success-foreground"
+                  : isTech
+                    ? "bg-destructive text-destructive-foreground"
+                    : "bg-primary text-primary-foreground";
 
           return (
             <li
               key={p.id}
-              onClick={isShuttle ? () => setDetail(p) : undefined}
-              className={`overflow-hidden rounded-2xl border border-border bg-background ${isShuttle ? "cursor-pointer" : ""}`}
+              className="overflow-hidden rounded-2xl border border-border bg-background"
             >
+
               <div className="px-4 py-3">
                 <div className="mb-2 flex items-center justify-between gap-2">
                   <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${pillClass}`}>

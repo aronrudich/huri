@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
+import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";

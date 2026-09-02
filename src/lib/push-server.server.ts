@@ -22,6 +22,15 @@ export type PushSub = { endpoint: string; p256dh: string; auth: string };
 export const isStalePushStatus = (status: number | undefined) =>
   status === 404 || status === 410 || status === 401 || status === 403;
 
+/**
+ * A 400/413 means the push service rejected this subscription record itself
+ * (malformed keys, or a subscription made with a rotated VAPID key). It is only
+ * safe to treat as unusable when another device accepted the very same payload —
+ * that proves the payload/VAPID config is fine and the row is the problem.
+ */
+export const isBadSubscriptionStatus = (status: number | undefined) =>
+  status === 400 || status === 413;
+
 export async function sendWebPush(sub: PushSub, payload: object) {
   return webpush.sendNotification(
     { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },

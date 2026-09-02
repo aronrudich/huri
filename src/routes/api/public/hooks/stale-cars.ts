@@ -108,7 +108,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
 
           const { data: subscriptions } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("id, endpoint, p256dh, auth")
+            .select("id, user_id, endpoint, p256dh, auth")
             .in("user_id", ids);
           const staleSubscriptions: string[] = [];
 
@@ -118,7 +118,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
               await sendWebPush(subscription, {
                 title: `${list.length} ${list.length === 1 ? "car" : "cars"} parked 14+ days`,
                 body: "Open Huri to review today's list.",
-                url: "/",
+                url: `/thread/${encodeURIComponent(`huri:${subscription.user_id}:${digestDate}`)}`,
                 tag: "stale-car-digest",
                 variant: "default",
               });

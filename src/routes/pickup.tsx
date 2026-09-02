@@ -516,7 +516,7 @@ function PickupPage() {
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
                       const { error } = await supabase.from("pickup_requests")
-                        .update({ status: "completed", completed_at: new Date().toISOString() })
+                        .update({ status: "canceled", completed_at: new Date().toISOString() })
                         .eq("id", p.id);
                       if (error) return toast.error(error.message);
                       // Canceling puts the car back where it was before the pickup was submitted.

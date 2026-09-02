@@ -211,7 +211,7 @@ function ProfilePage() {
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top safe-bottom">
       <header className="flex items-center gap-2 px-4 pb-3 pt-4">
-        <Link to="/" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <Link to="/pickup" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         <HuriLogo />
         <div className="flex-1" />
         <TopActions />

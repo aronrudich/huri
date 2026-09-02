@@ -154,7 +154,7 @@ function ThreadPage() {
   return (
     <div className="flex min-h-screen flex-col bg-surface safe-top">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <Link to="/inbox" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         {!isGroup && otherUserId && (
           <Avatar
             url={profiles[otherUserId]?.avatarUrl}
@@ -182,7 +182,7 @@ function ThreadPage() {
             if (!window.confirm("Delete this conversation? It will be removed from your inbox.")) return;
             try {
               await hideThreadForUser(user.id, threadId, new Date().toISOString());
-              navigate({ to: "/", replace: true });
+              navigate({ to: "/inbox", replace: true });
             } catch (e) {
               toast.error((e as Error).message);
             }

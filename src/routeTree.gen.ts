@@ -22,6 +22,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as BringMeRouteImport } from './routes/bring-me'
 import { Route as AuthRouteImport } from './routes/auth'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
@@ -92,6 +93,11 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   id: '/thread/$threadId',
   path: '/thread/$threadId',
@@ -115,6 +121,7 @@ const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
@@ -154,6 +162,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
@@ -175,6 +184,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/auth'
     | '/bring-me'
     | '/compose'
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/unclaimed-reminder'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/auth'
     | '/bring-me'
     | '/compose'
@@ -213,6 +224,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/unclaimed-reminder'
   id:
     | '__root__'
+    | '/'
     | '/auth'
     | '/bring-me'
     | '/compose'
@@ -233,6 +245,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BringMeRoute: typeof BringMeRoute
   ComposeRoute: typeof ComposeRoute
@@ -345,6 +358,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/thread/$threadId': {
       id: '/thread/$threadId'
       path: '/thread/$threadId'
@@ -377,6 +397,7 @@ declare module '@tanstack/react-router' {
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BringMeRoute: BringMeRoute,
   ComposeRoute: ComposeRoute,

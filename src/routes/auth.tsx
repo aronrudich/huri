@@ -56,7 +56,7 @@ function AuthPage() {
 
   // Returning users with a valid session never see the sign-in form.
   useEffect(() => {
-    if (!loading && user) navigate({ to: "/", replace: true });
+    if (!loading && user) navigate({ to: "/pickup", replace: true });
   }, [user, loading, navigate]);
 
 
@@ -104,7 +104,7 @@ function AuthPage() {
       toast.success("Welcome back");
       const { data } = await supabase.auth.getUser();
       if (data.user) subscribePush(data.user.id);
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/pickup", replace: true });
     } catch (err) {
       toast.error(errorMessage(err));
     } finally {
@@ -156,7 +156,7 @@ function AuthPage() {
     toast.success("Account created");
     try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
     subscribePush(uid);
-    navigate({ to: "/", replace: true });
+    navigate({ to: "/pickup", replace: true });
 
   };
 
@@ -295,7 +295,7 @@ function AuthPage() {
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
           Tap{" "}
-          <Link to="/" className="text-primary">
+          <Link to="/pickup" className="text-primary">
             Share → Add to Home Screen
           </Link>{" "}
           after signing in to install Huri.

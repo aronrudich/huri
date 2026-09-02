@@ -137,6 +137,7 @@ export async function createPickupAndNotify(
   if (!subs?.length) return { ...empty, recipients: recipients.length };
 
   const stale: string[] = [];
+  const rejected: string[] = [];
   let sent = 0;
   let failed = 0;
   const payload = payloadFor({ ...data, sourceRole }, pickup.id);
@@ -146,13 +147,20 @@ export async function createPickupAndNotify(
       sent++;
     } catch (error: unknown) {
       const status = (error as { statusCode?: number })?.statusCode;
-      if (status === 404 || status === 410 || status === 401 || status === 403) stale.push(sub.id);
-      else {
+      if (isStalePushStatus(status)) stale.push(sub.id);
+      else if (isBadSubscriptionStatus(status)) {
+        rejected.push(sub.id);
+        console.error("pickup notification rejected subscription", pickup.id, status, (error as Error)?.message);
+      } else {
         failed++;
         console.error("pickup notification delivery failed", pickup.id, status, (error as Error)?.message);
       }
     }
   }));
+  // Only prune 400/413 rows when another device accepted the same payload —
+  // otherwise the payload/VAPID config is at fault, not the subscription.
+  if (sent > 0 && rejected.length) stale.push(...rejected);
+  else failed += rejected.length;
   if (stale.length) {
     const { error } = await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     if (error) console.error("pickup notification stale-device cleanup failed", pickup.id, error.message);

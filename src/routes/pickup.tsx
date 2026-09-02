@@ -516,7 +516,7 @@ function PickupPage() {
                   {canCancel && (
                   <button
                     onClick={async () => {
-                      if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
+                      if (!window.confirm(`Cancel this ${isParts ? "parts request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
                       const { error } = await supabase.from("pickup_requests")
                         .update({ status: "canceled", completed_at: new Date().toISOString() })
                         .eq("id", p.id);
@@ -524,7 +524,7 @@ function PickupPage() {
                       // Canceling puts the car back where it was before the pickup was submitted.
                       // Canceling a stage also clears the car's staged flag so its map spot returns to red.
                       const originalSpot = p.lot_position;
-                      if (!isParts && !isShuttle && p.ro_number) {
+                      if (!isParts && p.ro_number) {
                         const patch: { lot_position?: string; is_staged?: boolean } = {};
                         if (originalSpot && originalSpot !== "UNKNOWN") patch.lot_position = originalSpot;
                         if (isStaged) patch.is_staged = false;

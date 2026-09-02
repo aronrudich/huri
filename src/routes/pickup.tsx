@@ -114,8 +114,10 @@ function PickupPage() {
             return list.filter((p) => p.id !== oldId);
           }
           if (!row?.id) { void queryClient.invalidateQueries({ queryKey: ["pickups"] }); return list; }
-          // Completed submissions drop out of the open queue.
-          if (row.status === "completed") return list.filter((p) => p.id !== row.id);
+          // Completed or canceled submissions drop out of the open queue.
+          if (row.status !== "unclaimed" && row.status !== "claimed") {
+            return list.filter((p) => p.id !== row.id);
+          }
           const next = list.some((p) => p.id === row.id)
             ? list.map((p) => (p.id === row.id ? row : p))
             : [row, ...list];
@@ -516,7 +518,7 @@ function PickupPage() {
                     onClick={async () => {
                       if (!window.confirm(`Cancel this ${isParts ? "parts request" : isShuttle ? "shuttle request" : "pickup"}? It disappears from the list but the car stays where it is.`)) return;
                       const { error } = await supabase.from("pickup_requests")
-                        .update({ status: "completed", completed_at: new Date().toISOString() })
+                        .update({ status: "canceled", completed_at: new Date().toISOString() })
                         .eq("id", p.id);
                       if (error) return toast.error(error.message);
                       // Canceling puts the car back where it was before the pickup was submitted.

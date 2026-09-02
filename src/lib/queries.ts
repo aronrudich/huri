@@ -107,7 +107,7 @@ export const pickupsQuery = <T,>() =>
       const { data, error } = await supabase
         .from("pickup_requests")
         .select("*")
-        .neq("status", "completed")
+        .in("status", ["unclaimed", "claimed"])
         .order("created_at", { ascending: false })
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;
@@ -167,7 +167,7 @@ export const lotActivePickupsQuery = () =>
       const { data, error } = await supabase
         .from("pickup_requests")
         .select("ro_number, lot_position, kind, status, is_staged")
-        .neq("status", "completed")
+        .in("status", ["unclaimed", "claimed"])
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as ActivePickupRow[];

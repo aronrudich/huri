@@ -404,37 +404,9 @@ function PickupPage() {
                     <p className="text-base font-semibold">
                       {isParts
                         ? `Parts for ${p.advisor_name ?? "employee"}`
-                        : isShuttle
-                          ? (p.customer_name ?? "Shuttle request")
-                          : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                        : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
                     </p>
-                    {isShuttle && (
-                      <>
-                        {p.customer_phone && (
-                          <a
-                            href={`tel:${p.customer_phone}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className="text-sm font-semibold text-primary underline"
-                          >
-                            {p.customer_phone}
-                          </a>
-                        )}
-                        {p.customer_address && (
-                          <p className="text-sm text-muted-foreground">
-                            <span className="font-medium">Address:</span> {p.customer_address}
-                          </p>
-                        )}
-                        <p className="text-sm text-muted-foreground">
-                          {[p.ro_number && `RO #${p.ro_number}`, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
-                        </p>
-                        {p.car_notes && (
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            <span className="font-medium">Note:</span> {p.car_notes}
-                          </p>
-                        )}
-                      </>
-                    )}
-                    {!isParts && !isShuttle && (
+                    {!isParts && (
                       <>
                         <p className="text-sm text-muted-foreground">
                           {[displayCar?.car_model ?? p.car_model, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}

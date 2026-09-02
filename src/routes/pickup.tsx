@@ -145,11 +145,11 @@ function PickupPage() {
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
-  //   - Parts/shuttle requests → same valet/shuttle audience; anyone can claim them.
+  //   - Parts requests → same valet audience; anyone can claim them.
   useEffect(() => {
     if (!profile) return;
     const role = profile.role_name;
-    if (!isValetRole(role) && !isShuttleRole(role)) return;
+    if (!isValetRole(role)) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
     const chan = supabase.channel("valet-pickup-alert")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
@@ -158,9 +158,7 @@ function PickupPage() {
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"
           : p.kind === "parts"
-          ? "🔧 Parts request"
-          : p.kind === "shuttle"
-            ? "🚐 Shuttle request"
+            ? "🔧 Parts request"
             : p.kind === "wash"
               ? "🧼 Wash request"
               : p.kind === "park"

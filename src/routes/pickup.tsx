@@ -114,8 +114,10 @@ function PickupPage() {
             return list.filter((p) => p.id !== oldId);
           }
           if (!row?.id) { void queryClient.invalidateQueries({ queryKey: ["pickups"] }); return list; }
-          // Completed submissions drop out of the open queue.
-          if (row.status === "completed") return list.filter((p) => p.id !== row.id);
+          // Completed or canceled submissions drop out of the open queue.
+          if (row.status !== "unclaimed" && row.status !== "claimed") {
+            return list.filter((p) => p.id !== row.id);
+          }
           const next = list.some((p) => p.id === row.id)
             ? list.map((p) => (p.id === row.id ? row : p))
             : [row, ...list];

@@ -107,7 +107,7 @@ export const pickupsQuery = <T,>() =>
       const { data, error } = await supabase
         .from("pickup_requests")
         .select("*")
-        .neq("status", "completed")
+        .in("status", ["unclaimed", "claimed"])
         .order("created_at", { ascending: false })
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;

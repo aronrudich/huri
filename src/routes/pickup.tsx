@@ -458,7 +458,7 @@ function PickupPage() {
                   )}
                 </div>
 
-                {!isParts && !isShuttle && (
+                {!isParts && (
                   <div className="mb-2 rounded-xl bg-surface px-3 py-2 text-sm">
                     <p>
                       <span className="text-muted-foreground">Location:</span>{" "}

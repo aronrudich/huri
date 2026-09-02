@@ -39,7 +39,7 @@ type Pickup = {
   lot_position: string | null; car_notes: string | null;
   is_staged?: boolean | null;
   customer_name?: string | null; customer_phone?: string | null;
-  shuttle_kind?: string | null; customer_address?: string | null;
+  customer_address?: string | null;
 };
 
 type ParkedCar = {

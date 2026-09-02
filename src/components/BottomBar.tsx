@@ -41,7 +41,7 @@ export function HuriLogo() {
 
 /**
  * Role-based action menu in every authenticated header.
- * Valet-type roles get a single "New" button; Shuttle gets nothing.
+ * Valet-type roles get a single "New" button.
  */
 export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   const { profile } = useAuth();
@@ -66,7 +66,6 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     new: "Add Car to Huri",
     stage: "Stage",
     parts: "Parts",
-    shuttle: "Shuttle",
     park: "Park My Car",
     bringme: "Bring Me",
     wash: "Wash",
@@ -78,7 +77,6 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     pickup: "Bring Me A Car",
     stage: "Bring Car To CP",
     parts: "Bring Me Parts",
-    shuttle: "Pickup/Dropoff Customer",
     bringme: "Car or Parts",
     wash: "Bring Car To Wash",
     reports: "Stats & Claim Times",
@@ -91,7 +89,6 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "stage": return { to: "/pickup-new", search: { staged: true } };
       case "new": return { to: "/park" };
       case "parts": return { to: "/parts" };
-      case "shuttle": return { to: "/shuttle" };
       case "park": return { to: "/park-request" };
       case "bringme": return { to: "/bring-me" };
       case "wash": return { to: "/wash" };

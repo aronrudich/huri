@@ -4,16 +4,13 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "shuttle" | "park" | "bringme" | "wash" | "reports";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports";
 
-export const VALET_ROLES = ["Valet", "Valet & Shuttle"];
-export const SHUTTLE_ROLES = ["Shuttle", "Valet & Shuttle"];
+export const VALET_ROLES = ["Valet"];
 
 /** Every role a user can be assigned, in display order. */
 export const ROLE_OPTIONS = [
   "Valet",
-  "Shuttle",
-  "Valet & Shuttle",
   "Car Wash",
   "Advisor",
   "Technician",
@@ -97,9 +94,6 @@ export const isTechRole = (role: string | null | undefined) =>
 export const isValetRole = (role: string | null | undefined) =>
   VALET_ROLES.includes(role ?? "");
 
-export const isShuttleRole = (role: string | null | undefined) =>
-  SHUTTLE_ROLES.includes(role ?? "");
-
 /**
  * Who can stage a car (advisors, admins, and any manager/director title).
  * Admin shares the manager app layout — only approvals differ.
@@ -116,7 +110,6 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
     canViewReports(r) ? [...ids, "reports"] : ids;
   // Spectators are read-only: Reports is the only thing they can open.
   if (isSpectatorRole(r)) return ["reports"];
-  if (r === "Shuttle") return [];
   // The car wash employee doesn't request washes — they just relocate cars once washed.
   if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];

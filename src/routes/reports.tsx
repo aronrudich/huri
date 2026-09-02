@@ -37,7 +37,7 @@ const KIND_LABELS: Record<string, string> = {
   parts: "Parts",
   park: "Park requests",
   wash: "Wash",
-  shuttle: "Shuttle",
+
 };
 
 function ReportsPage() {

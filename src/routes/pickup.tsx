@@ -493,16 +493,16 @@ function PickupPage() {
                         onClick={() => claim(p)}
                         className="flex-1 rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground active:scale-[0.98] disabled:opacity-50"
                       >
-                        {isParts || isShuttle ? "On it" : "Claim"}
+                        {isParts ? "On it" : "Claim"}
                       </button>
                     )
                   ) : (
                     <p className="flex-1 text-xs text-muted-foreground">
-                      {isParts || isShuttle ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
+                      {isParts ? "Handled" : "Claimed"} by {p.claimed_by ? (profiles[p.claimed_by] ?? "valet") : "valet"}
                       {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
-                  {!isParts && !isShuttle && (
+                  {!isParts && (
                     <button
                       onClick={() => effectiveSpot && setMapSpot(effectiveSpot)}
                       disabled={!effectiveSpot || lotOf(effectiveSpot) !== "sv"}

@@ -22,8 +22,8 @@ import { hideThreadForUser, isMessageAfterCutoff, loadThreadCutoffs, loadThreadC
 export const Route = createFileRoute("/inbox")({
   head: () => ({
     meta: [
-      { title: "Huri" },
-      { name: "description", content: "Huri - Lot Management" },
+      { title: "Inbox · Huri" },
+      { name: "description", content: "Huri messages and daily lot digests." },
     ],
   }),
   component: InboxPage,

@@ -60,7 +60,9 @@ function PickupPage() {
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
-  const { data: washedRos = new Set<string>() } = useQuery({ ...carWashesQuery(), enabled: !!user });
+  const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
+  // Kept as a plain array in the cache (Sets don't survive cache persistence).
+  const washedRos = useMemo(() => new Set(washedRoList), [washedRoList]);
   const { data: profiles = {} } = useQuery({
     ...directoryQuery(),
     enabled: !!user,

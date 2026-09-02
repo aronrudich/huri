@@ -95,7 +95,10 @@ export const getReport = createServerFn({ method: "POST" })
     const { data: rows, error } = await query;
     if (error) throw error;
 
-    const list = rows ?? [];
+    // Canceled requests never count toward any stat.
+    const list = (rows ?? []).filter(
+      (r) => r.status !== "canceled" && r.status !== "cancelled",
+    );
     const claimedRows = list.filter((r) => !!r.claimed_at && !!r.claimed_by);
 
     const durations = claimedRows.map((r) => ({

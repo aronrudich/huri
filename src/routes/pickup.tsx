@@ -391,10 +391,17 @@ function PickupPage() {
                 </div>
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold">
-                      {isParts
-                        ? `Parts for ${p.advisor_name ?? "employee"}`
-                        : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                    <p className="flex items-center gap-1.5 text-base font-semibold">
+                      <span>
+                        {isParts
+                          ? `Parts for ${p.advisor_name ?? "employee"}`
+                          : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                      </span>
+                      {isWashed && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-success" aria-label="Washed">
+                          <CheckCircle2 className="h-4 w-4" /> Washed
+                        </span>
+                      )}
                     </p>
                     {!isParts && (
                       <>

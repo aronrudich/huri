@@ -32,7 +32,7 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "pr
           {hasUnread && (
             <span
               aria-label="Unread messages"
-              className="absolute right-[3px] top-[7px] h-2 w-2 rounded-full bg-unread ring-2 ring-background"
+              className="absolute right-[3px] top-[7px] h-2 w-2 rounded-full bg-destructive ring-2 ring-background"
             />
           )}
         </span>,

@@ -98,6 +98,22 @@ export const parkedCarsQuery = () =>
     },
   });
 
+/** RO #s that have a recorded wash, so lists can show the green check. */
+export const carWashesQuery = () =>
+  queryOptions({
+    queryKey: ["car-washes"],
+    staleTime: 60_000,
+    queryFn: async ({ signal }): Promise<string[]> => {
+      const { data, error } = await supabase
+        .from("car_washes")
+        .select("ro_number")
+        .abortSignal(timeoutSignal(signal));
+      if (error) throw error;
+      return (data ?? []).map((r) => (r.ro_number ?? "").trim()).filter(Boolean);
+    },
+  });
+
+
 /** Open (non-completed) pickup/parts submissions, newest first. */
 export const pickupsQuery = <T,>() =>
   queryOptions({

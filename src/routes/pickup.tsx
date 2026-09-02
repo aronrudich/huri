@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
+import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
@@ -60,6 +60,9 @@ function PickupPage() {
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
+  // Kept as a plain array in the cache (Sets don't survive cache persistence).
+  const washedRos = useMemo(() => new Set(washedRoList), [washedRoList]);
   const { data: profiles = {} } = useQuery({
     ...directoryQuery(),
     enabled: !!user,
@@ -320,6 +323,8 @@ function PickupPage() {
         )}
         {sortedPickups.map((p) => {
           const isParts = p.kind === "parts";
+          // Wash confirmations follow the RO #, so the whole list can show it.
+          const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
           const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
           // Claimed pickups must keep showing the saved spot snapshot even after
           // the live parked_cars row is deleted to free the spot in the lot list.
@@ -391,10 +396,17 @@ function PickupPage() {
                 </div>
                 <div className="mb-2 flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="text-base font-semibold">
-                      {isParts
-                        ? `Parts for ${p.advisor_name ?? "employee"}`
-                        : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                    <p className="flex items-center gap-1.5 text-base font-semibold">
+                      <span>
+                        {isParts
+                          ? `Parts for ${p.advisor_name ?? "employee"}`
+                          : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                      </span>
+                      {isWashed && (
+                        <span className="inline-flex items-center gap-1 text-xs font-semibold text-success" aria-label="Washed">
+                          <CheckCircle2 className="h-4 w-4" /> Washed
+                        </span>
+                      )}
                     </p>
                     {!isParts && (
                       <>

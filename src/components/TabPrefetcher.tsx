@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useRouter } from "@tanstack/react-router";
 
-const TAB_ROUTES = ["/", "/pickup", "/lot", "/profile"] as const;
+const TAB_ROUTES = ["/inbox", "/pickup", "/lot", "/profile"] as const;
 
 /**
  * Warms the code for the four bottom-tab screens once the app is idle, so the

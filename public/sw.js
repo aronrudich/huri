@@ -44,13 +44,19 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = (event.notification.data && event.notification.data.url) || "/";
+  const url = (event.notification.data && event.notification.data.url) || "/pickup";
+  const target = new URL(url, self.location.origin).href;
   event.waitUntil(
     (async () => {
       const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      const existing = all.find((c) => c.url.includes(url));
-      if (existing) return existing.focus();
-      return self.clients.openWindow(url);
+      // Always send the reopened window to the screen the alert is about.
+      for (const client of all) {
+        try {
+          if (client.url !== target && "navigate" in client) await client.navigate(target);
+        } catch (_) {}
+        return client.focus();
+      }
+      return self.clients.openWindow(target);
     })(),
   );
 });

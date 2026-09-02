@@ -38,7 +38,7 @@ function PartsPage() {
         sourceRole: profile?.role_name ?? null,
       } });
       toast.success("Parts request sent");
-      navigate({ to: "/", replace: true });
+      navigate({ to: "/pickup", replace: true });
     } catch (err) {
       toast.error((err as Error).message || "Failed to send request");
     } finally {
@@ -52,7 +52,7 @@ function PartsPage() {
         <HuriLogo />
         <div className="flex-1" />
         <TopActions />
-        <Link to="/" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
       <form onSubmit={submit} className="space-y-4 p-4">

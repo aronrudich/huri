@@ -2,7 +2,7 @@
   "name": "Huri",
   "short_name": "Huri",
   "description": "Lot Management",
-  "start_url": "/",
+  "start_url": "/pickup",
   "scope": "/",
   "display": "standalone",
   "background_color": "#0049AD",

@@ -84,8 +84,6 @@ function PickupPage() {
   const [q, setQ] = useState("");
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSpot, setMapSpot] = useState<string | null>(null);
-  // Shuttle submission opened for details.
-  const [detail, setDetail] = useState<Pickup | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);

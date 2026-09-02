@@ -201,6 +201,7 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
 
     let sent = 0;
     const stale: string[] = [];
+    const rejected: string[] = [];
     await Promise.all(subs.map(async (s) => {
       try {
         await sendWebPush({ endpoint: s.endpoint, p256dh: s.p256dh, auth: s.auth }, payload);
@@ -208,9 +209,11 @@ export const sendShuttleAlert = createServerFn({ method: "POST" })
       } catch (e: unknown) {
         const code = (e as { statusCode?: number })?.statusCode;
         if (isStalePushStatus(code)) stale.push(s.id);
+        else if (isBadSubscriptionStatus(code)) rejected.push(s.id);
         else console.warn("shuttle push fail", code, (e as Error)?.message);
       }
     }));
+    if (sent > 0 && rejected.length) stale.push(...rejected);
     if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
     return { sent, pruned: stale.length };
   });

@@ -84,16 +84,32 @@ export const getReport = createServerFn({ method: "POST" })
     const start = custom ? shiftDayStart(data.start!) : shiftWindowStart(data.range);
     const end = custom ? shiftDayEnd(data.end!) : null;
 
-    let query = supabase
-      .from("pickup_requests")
-      .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by")
-      .order("created_at", { ascending: false })
-      .limit(20000);
-    if (start) query = query.gte("created_at", start.toISOString());
-    if (end) query = query.lt("created_at", end.toISOString());
+    // The Data API caps any single read at 1000 rows, which silently truncated
+    // "all time" history. Page through until a short batch comes back.
+    const PAGE = 1000;
+    const MAX_ROWS = 50_000;
+    type Row = {
+      id: string; kind: string | null; is_staged: boolean | null; status: string;
+      created_at: string; claimed_at: string | null; claimed_by: string | null;
+      requested_by: string | null;
+    };
+    const rows: Row[] = [];
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+      let query = supabase
+        .from("pickup_requests")
+        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by")
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false })
+        .range(offset, offset + PAGE - 1);
+      if (start) query = query.gte("created_at", start.toISOString());
+      if (end) query = query.lt("created_at", end.toISOString());
 
-    const { data: rows, error } = await query;
-    if (error) throw error;
+      const { data: batch, error } = await query;
+      if (error) throw error;
+      rows.push(...((batch ?? []) as Row[]));
+      if (!batch || batch.length < PAGE) break;
+    }
+
 
     // Canceled requests never count toward any stat.
     const list = (rows ?? []).filter(

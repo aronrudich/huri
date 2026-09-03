@@ -158,16 +158,23 @@ export const getReport = createServerFn({ method: "POST" })
     // Every active, approved teammate — so employees with zero activity still
     // show up in both leaderboards.
     const roster = new Set<string>();
-    const { data: everyone } = await supabase
-      .from("profiles")
-      .select("id, full_name, nickname, role_name, is_active, status")
-      .eq("dealership_id", me!.dealership_id)
-      .eq("is_active", true)
-      .eq("status", "approved");
-    (everyone ?? []).forEach((p) => {
-      names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
-      roster.add(p.id);
-    });
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+      const { data: everyone, error: rosterError } = await supabase
+        .from("profiles")
+        .select("id, full_name, nickname, role_name, is_active, status")
+        .eq("dealership_id", me!.dealership_id)
+        .eq("is_active", true)
+        .eq("status", "approved")
+        .order("id", { ascending: true })
+        .range(offset, offset + PAGE - 1);
+      if (rosterError) throw rosterError;
+      (everyone ?? []).forEach((p) => {
+        names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
+        roster.add(p.id);
+      });
+      if (!everyone || everyone.length < PAGE) break;
+    }
+
 
     // Anyone with activity but not on the current roster (deactivated/left).
     const missing = [...new Set([...perEmployee.keys(), ...perSubmitter.keys()])]

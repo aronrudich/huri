@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged";
 
 export const VALET_ROLES = ["Valet"];
 

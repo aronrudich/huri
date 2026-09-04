@@ -170,6 +170,8 @@ export type Database = {
           car_model: string | null
           created_at: string
           dealership_id: string
+          flag_dismissed_at: string | null
+          flagged_at: string | null
           id: string
           is_staged: boolean
           located_at: string
@@ -185,6 +187,8 @@ export type Database = {
           car_model?: string | null
           created_at?: string
           dealership_id?: string
+          flag_dismissed_at?: string | null
+          flagged_at?: string | null
           id?: string
           is_staged?: boolean
           located_at?: string
@@ -200,6 +204,8 @@ export type Database = {
           car_model?: string | null
           created_at?: string
           dealership_id?: string
+          flag_dismissed_at?: string | null
+          flagged_at?: string | null
           id?: string
           is_staged?: boolean
           located_at?: string

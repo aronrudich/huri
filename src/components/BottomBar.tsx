@@ -85,6 +85,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     bringme: "Bring Me",
     wash: "Wash",
     reports: "Reports",
+    flagged: "Flagged Cars",
   };
 
   // Short plain-English description shown under each action label (optional).
@@ -95,6 +96,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     bringme: "Car or Parts",
     wash: "Bring Car To Wash",
     reports: "Stats & Claim Times",
+    flagged: "Parked 14+ Days",
   };
 
 

@@ -19,6 +19,7 @@ import { Route as ParkRequestRouteImport } from './routes/park-request'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as LotRouteImport } from './routes/lot'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as FlaggedRouteImport } from './routes/flagged'
 import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as BringMeRouteImport } from './routes/bring-me'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -78,6 +79,11 @@ const InboxRoute = InboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const FlaggedRoute = FlaggedRouteImport.update({
+  id: '/flagged',
+  path: '/flagged',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ComposeRoute = ComposeRouteImport.update({
   id: '/compose',
   path: '/compose',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
+  '/flagged': typeof FlaggedRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
+  '/flagged': typeof FlaggedRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
+  '/flagged': typeof FlaggedRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -188,6 +197,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bring-me'
     | '/compose'
+    | '/flagged'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bring-me'
     | '/compose'
+    | '/flagged'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/bring-me'
     | '/compose'
+    | '/flagged'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BringMeRoute: typeof BringMeRoute
   ComposeRoute: typeof ComposeRoute
+  FlaggedRoute: typeof FlaggedRoute
   InboxRoute: typeof InboxRoute
   LotRoute: typeof LotRoute
   ParkRoute: typeof ParkRoute
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/flagged': {
+      id: '/flagged'
+      path: '/flagged'
+      fullPath: '/flagged'
+      preLoaderRoute: typeof FlaggedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/compose': {
       id: '/compose'
       path: '/compose'
@@ -401,6 +421,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BringMeRoute: BringMeRoute,
   ComposeRoute: ComposeRoute,
+  FlaggedRoute: FlaggedRoute,
   InboxRoute: InboxRoute,
   LotRoute: LotRoute,
   ParkRoute: ParkRoute,

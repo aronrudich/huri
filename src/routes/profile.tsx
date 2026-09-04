@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -58,7 +58,9 @@ function ProfilePage() {
   const role = profile?.role_name ?? "";
   const isAdmin = isOwner || isAdminRole(role);
   const isApprover = isAdmin;
-  const canViewRoster = isOwner || MANAGEMENT_ROLES.includes(role) || /manager|director/i.test(role);
+  // Spectators see everything management sees, read-only (isAdmin stays false).
+  const canViewRoster =
+    isOwner || MANAGEMENT_ROLES.includes(role) || isSpectatorRole(role) || /manager|director/i.test(role);
 
 
   const fetchPending = useServerFn(listPendingApprovals);

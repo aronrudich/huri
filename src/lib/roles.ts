@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged";
 
 export const VALET_ROLES = ["Valet"];
 
@@ -46,6 +46,18 @@ export const REPORTS_ROLES = [
 
 export const canViewReports = (role: string | null | undefined) =>
   REPORTS_ROLES.includes(role ?? "");
+
+/** Roles that can open the Flagged Cars (14+ day) list. */
+export const FLAGGED_ROLES = [
+  "Admin",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Spectator",
+];
+
+export const canViewFlagged = (role: string | null | undefined) =>
+  FLAGGED_ROLES.includes(role ?? "");
 
 
 /** Roles that handle join requests and role change approvals. */
@@ -106,10 +118,14 @@ export const canStageRole = (role: string | null | undefined) => {
 /** Header actions, in the exact top-to-bottom order they should appear. */
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
-  const withReports = (ids: ActionId[]): ActionId[] =>
-    canViewReports(r) ? [...ids, "reports"] : ids;
-  // Spectators are read-only: Reports is the only thing they can open.
-  if (isSpectatorRole(r)) return ["reports"];
+  const withReports = (ids: ActionId[]): ActionId[] => {
+    const out = [...ids];
+    if (canViewReports(r)) out.push("reports");
+    if (canViewFlagged(r)) out.push("flagged");
+    return out;
+  };
+  // Spectators are read-only: they can only open the view-only screens.
+  if (isSpectatorRole(r)) return ["reports", "flagged"];
   // The car wash employee doesn't request washes — they just relocate cars once washed.
   if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];

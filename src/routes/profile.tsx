@@ -58,7 +58,9 @@ function ProfilePage() {
   const role = profile?.role_name ?? "";
   const isAdmin = isOwner || isAdminRole(role);
   const isApprover = isAdmin;
-  const canViewRoster = isOwner || MANAGEMENT_ROLES.includes(role) || /manager|director/i.test(role);
+  // Spectators see everything management sees, read-only (isAdmin stays false).
+  const canViewRoster =
+    isOwner || MANAGEMENT_ROLES.includes(role) || isSpectatorRole(role) || /manager|director/i.test(role);
 
 
   const fetchPending = useServerFn(listPendingApprovals);

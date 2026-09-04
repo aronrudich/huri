@@ -47,6 +47,18 @@ export const REPORTS_ROLES = [
 export const canViewReports = (role: string | null | undefined) =>
   REPORTS_ROLES.includes(role ?? "");
 
+/** Roles that can open the Flagged Cars (14+ day) list. */
+export const FLAGGED_ROLES = [
+  "Admin",
+  "Service Manager",
+  "Service Director",
+  "General Manager",
+  "Spectator",
+];
+
+export const canViewFlagged = (role: string | null | undefined) =>
+  FLAGGED_ROLES.includes(role ?? "");
+
 
 /** Roles that handle join requests and role change approvals. */
 export const APPROVER_ROLES = ADMIN_ROLES;

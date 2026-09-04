@@ -118,10 +118,14 @@ export const canStageRole = (role: string | null | undefined) => {
 /** Header actions, in the exact top-to-bottom order they should appear. */
 export function actionsForRole(role: string | null | undefined): ActionId[] {
   const r = role ?? "";
-  const withReports = (ids: ActionId[]): ActionId[] =>
-    canViewReports(r) ? [...ids, "reports"] : ids;
-  // Spectators are read-only: Reports is the only thing they can open.
-  if (isSpectatorRole(r)) return ["reports"];
+  const withReports = (ids: ActionId[]): ActionId[] => {
+    const out = [...ids];
+    if (canViewReports(r)) out.push("reports");
+    if (canViewFlagged(r)) out.push("flagged");
+    return out;
+  };
+  // Spectators are read-only: they can only open the view-only screens.
+  if (isSpectatorRole(r)) return ["reports", "flagged"];
   // The car wash employee doesn't request washes — they just relocate cars once washed.
   if (r === "Car Wash") return ["new"];
   if (isValetRole(r)) return ["new"];

@@ -98,6 +98,26 @@ export const parkedCarsQuery = () =>
     },
   });
 
+export type FlaggedCarRow = ParkedCarRow & { flagged_at: string | null };
+
+/** Cars flagged by the daily 5 AM check as sitting 14+ days, oldest first. */
+export const flaggedCarsQuery = () =>
+  queryOptions({
+    queryKey: ["flagged-cars"],
+    staleTime: 60_000,
+    queryFn: async ({ signal }): Promise<FlaggedCarRow[]> => {
+      const { data, error } = await supabase
+        .from("parked_cars")
+        .select("id, tag_number, ro_number, car_model, lot_position, notes, located_at, flagged_at")
+        .not("flagged_at", "is", null)
+        .is("flag_dismissed_at", null)
+        .order("located_at", { ascending: true })
+        .abortSignal(timeoutSignal(signal));
+      if (error) throw error;
+      return (data ?? []) as FlaggedCarRow[];
+    },
+  });
+
 /** RO #s that have a recorded wash, so lists can show the green check. */
 export const carWashesQuery = () =>
   queryOptions({

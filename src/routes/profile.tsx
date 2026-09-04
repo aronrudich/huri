@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),

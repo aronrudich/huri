@@ -110,6 +110,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "bringme": return { to: "/bring-me" };
       case "wash": return { to: "/wash" };
       case "reports": return { to: "/reports" };
+      case "flagged": return { to: "/flagged" };
       default: return { to: "/pickup" };
     }
   };

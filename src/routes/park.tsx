@@ -287,7 +287,6 @@ function ParkPage() {
                 ro_number: ro.trim(),
                 car_model: model.trim() || null,
                 lot_position: savedPos ?? null,
-                notes_placeholder: undefined,
                 kind: "pickup",
                 status: "completed",
                 is_staged: false,

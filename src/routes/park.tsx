@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
-import { canStageRole, isTechRole } from "@/lib/roles";
+import { canStageRole, isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
 import { format } from "date-fns";
 
@@ -274,7 +274,46 @@ function ParkPage() {
             )}
           </div>
         )}
+        {editing && existingId && !isSpectatorRole(role) && (
+          <button
+            type="button"
+            disabled={busy}
+            onClick={async () => {
+              if (!window.confirm("Mark this car as picked up by the customer? It leaves the lot list the same way a claimed pickup does.")) return;
+              if (!user) return;
+              setBusy(true);
+              const nowIso = new Date().toISOString();
+              const { error: reqError } = await supabase.from("pickup_requests").insert({
+                ro_number: ro.trim(),
+                car_model: model.trim() || null,
+                lot_position: savedPos ?? null,
+                kind: "pickup",
+                status: "completed",
+                is_staged: false,
+                requested_by: user.id,
+                claimed_by: user.id,
+                claimed_at: nowIso,
+                completed_at: nowIso,
+                source_role: role || null,
+                advisor_name: profile?.nickname || profile?.full_name || null,
+              } as never);
+              if (reqError) { setBusy(false); return toast.error(reqError.message); }
+              const { error } = await supabase
+                .from("parked_cars")
+                .update({ lot_position: "UNKNOWN", is_staged: false, flagged_at: null })
+                .eq("id", existingId);
+              setBusy(false);
+              if (error) return toast.error(error.message);
+              toast.success("Car marked as picked up");
+              navigate({ to: "/pickup", replace: true });
+            }}
+            className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
+          >
+            Car Has Been Picked Up
+          </button>
+        )}
         {editing && <CarHistory ro={ro.trim()} />}
+
       </form>
 
       {showMap && mapSpot && (

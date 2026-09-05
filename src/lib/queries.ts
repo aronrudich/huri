@@ -100,7 +100,7 @@ export const parkedCarsQuery = () =>
 
 export type FlaggedCarRow = ParkedCarRow & { flagged_at: string | null };
 
-/** Cars flagged by the daily 5 AM check as sitting 14+ days, oldest first. */
+/** Cars flagged by the daily 5 AM check as sitting 14+ days, newest first. */
 export const flaggedCarsQuery = () =>
   queryOptions({
     queryKey: ["flagged-cars"],
@@ -111,7 +111,7 @@ export const flaggedCarsQuery = () =>
         .select("id, tag_number, ro_number, car_model, lot_position, notes, located_at, flagged_at")
         .not("flagged_at", "is", null)
         .is("flag_dismissed_at", null)
-        .order("located_at", { ascending: true })
+        .order("located_at", { ascending: false })
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as FlaggedCarRow[];

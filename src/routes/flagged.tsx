@@ -76,7 +76,7 @@ function FlaggedPage() {
       </div>
 
       <p className="px-4 pb-3 text-xs text-muted-foreground">
-        Cars untouched for 14 days or longer, oldest first. Updated every morning at 5 AM.
+        Cars untouched for 14 days or longer, newest first. Updated every morning at 5 AM.
       </p>
 
       {isPending ? (

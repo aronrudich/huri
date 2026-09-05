@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
-import { canStageRole, isTechRole } from "@/lib/roles";
+import { canStageRole, isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
 import { format } from "date-fns";
 

@@ -111,9 +111,10 @@ export const getReport = createServerFn({ method: "POST" })
     }
 
 
-    // Canceled requests never count toward any stat.
+    // Canceled requests never count toward any stat. "picked_up" rows come from the
+    // "Car Has Been Picked Up" shortcut — they are bookkeeping, not real requests.
     const list = (rows ?? []).filter(
-      (r) => r.status !== "canceled" && r.status !== "cancelled",
+      (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "picked_up",
     );
     const claimedRows = list.filter((r) => !!r.claimed_at && !!r.claimed_by);
 

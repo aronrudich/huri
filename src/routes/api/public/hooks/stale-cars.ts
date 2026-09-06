@@ -52,7 +52,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
             .in("ro_number", ros.slice(i, i + 200))
             .eq("kind", "pickup")
             .eq("is_staged", false)
-            .eq("status", "completed")
+            .in("status", ["completed", "picked_up"])
             .not("source_role", "in", '("Technician","Shop Foreman")');
           if (reqErr) throw reqErr;
           (reqs ?? []).forEach((r) => {

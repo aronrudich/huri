@@ -288,7 +288,8 @@ function ParkPage() {
                 car_model: model.trim() || null,
                 lot_position: savedPos ?? null,
                 kind: "pickup",
-                status: "completed",
+                // Marked so Reports never count this shortcut as a real submission/claim.
+                status: "picked_up",
                 is_staged: false,
                 requested_by: user.id,
                 claimed_by: user.id,

@@ -107,9 +107,14 @@ function FlaggedPage() {
 }
 
 function CarRow({ car }: { car: FlaggedCarRow }) {
+  const navigate = useNavigate();
   const days = daysParked(car.located_at);
   return (
-    <div className="bg-card px-4 py-3">
+    <button
+      type="button"
+      onClick={() => navigate({ to: "/park", search: { id: car.id } })}
+      className="block w-full bg-card px-4 py-3 text-left active:bg-accent"
+    >
       <div className="flex items-baseline justify-between gap-3">
         <span className="text-sm font-semibold">
           {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}

@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.add_tech_car_on_pickup_complete() FROM PUBLIC, anon, authenticated;

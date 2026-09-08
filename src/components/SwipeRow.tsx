@@ -21,6 +21,9 @@ export function SwipeRow({ children, onDelete }: Props) {
     startX.current = e.clientX;
     startY.current = e.clientY;
     locked.current = null;
+    // A fresh press always starts clean, so a leftover flag from a touch
+    // swipe (which never produces a click) can't swallow the next real tap.
+    suppressClick.current = false;
   };
   const onMove = (e: PointerEvent<HTMLDivElement>) => {
     if (startX.current == null || startY.current == null) return;

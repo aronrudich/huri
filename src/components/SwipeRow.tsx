@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode, type PointerEvent } from "react";
+import { useRef, useState, type ReactNode, type PointerEvent, type MouseEvent } from "react";
 import { Trash2 } from "lucide-react";
 
 type Props = {
@@ -15,6 +15,7 @@ export function SwipeRow({ children, onDelete }: Props) {
   const startX = useRef<number | null>(null);
   const startY = useRef<number | null>(null);
   const locked = useRef<"h" | "v" | null>(null);
+  const suppressClick = useRef(false);
 
   const onDown = (e: PointerEvent<HTMLDivElement>) => {
     startX.current = e.clientX;
@@ -39,10 +40,23 @@ export function SwipeRow({ children, onDelete }: Props) {
       const shouldOpen = dx < -THRESHOLD;
       setOpen(shouldOpen);
       setDx(shouldOpen ? -REVEAL : 0);
+      suppressClick.current = true;
+    } else if (locked.current == null && open) {
+      // Tap while revealed: close the action and swallow the click.
+      setOpen(false);
+      setDx(0);
+      suppressClick.current = true;
     }
     startX.current = null;
     startY.current = null;
     locked.current = null;
+  };
+  const onClickCapture = (e: MouseEvent<HTMLDivElement>) => {
+    if (suppressClick.current) {
+      e.preventDefault();
+      e.stopPropagation();
+      suppressClick.current = false;
+    }
   };
 
   return (
@@ -63,6 +77,7 @@ export function SwipeRow({ children, onDelete }: Props) {
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
+        onClickCapture={onClickCapture}
         style={{ transform: `translate3d(${dx}px,0,0)`, touchAction: "pan-y" }}
         className="relative bg-background transition-transform duration-150 ease-out will-change-transform"
       >

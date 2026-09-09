@@ -14,6 +14,9 @@ import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { carPhotoIndexQuery } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */

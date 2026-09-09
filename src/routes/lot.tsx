@@ -10,6 +10,9 @@ import { spotsForLot, lotOf, normalizeSpot, spotBadge, locationLabel, type LotId
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
+import { carPhotoIndexQuery } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 
 export const Route = createFileRoute("/lot")({

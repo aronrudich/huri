@@ -61,6 +61,9 @@ function PickupPage() {
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
+  // Photos attached to any car on the list, so cards can glow when one exists.
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(pickups.map((p) => p.ro_number ?? "")));
+
   // Kept as a plain array in the cache (Sets don't survive cache persistence).
   const washedRos = useMemo(() => new Set(washedRoList), [washedRoList]);
   const { data: profiles = {} } = useQuery({

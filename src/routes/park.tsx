@@ -11,6 +11,7 @@ import { LotMap } from "@/components/LotMap";
 import { canStageRole, isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
 import { CarPhotos } from "@/components/CarPhotos";
+import { uploadCarPhoto } from "@/lib/car-photos";
 
 import { format } from "date-fns";
 

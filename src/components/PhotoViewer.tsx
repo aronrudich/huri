@@ -48,10 +48,11 @@ export function PhotoViewer({
     setIndex((i) => Math.min(photos.length - 1, Math.max(0, i + delta)));
   };
 
-  return (
+  const overlay = (
     <div
       className="fixed inset-0 z-[70] flex flex-col bg-black/95"
-      onClick={onClose}
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
+
       onTouchStart={(e) => { startX.current = e.touches[0]?.clientX ?? null; }}
       onTouchEnd={(e) => {
         const from = startX.current;

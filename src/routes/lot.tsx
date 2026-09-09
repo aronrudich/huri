@@ -10,6 +10,9 @@ import { spotsForLot, lotOf, normalizeSpot, spotBadge, locationLabel, type LotId
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
+import { carPhotoIndexQuery } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 
 export const Route = createFileRoute("/lot")({
@@ -56,6 +59,9 @@ function LotPage() {
   const cars = carsData as ParkedCar[];
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];
+  // Which cars have photos attached, so every row can glow.
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
+
 
   useEffect(() => {
     if (!user) return;
@@ -304,6 +310,10 @@ function LotPage() {
                     <p className="truncate text-xs text-warning">Note: {car.notes}</p>
                   )}
                 </div>
+                {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? (
+                  <PhotoBadge photos={photosByRo[car.ro_number.trim()]} ro={car.ro_number} />
+                ) : null}
+
               </Link>
             </li>
           ))}
@@ -336,6 +346,10 @@ function LotPage() {
                       {locationLabel(car.lot_position)}
                     </p>
                   </div>
+                  {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? (
+                    <PhotoBadge photos={photosByRo[car.ro_number.trim()]} ro={car.ro_number} />
+                  ) : null}
+
 
                 </Link>
               </li>

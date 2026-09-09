@@ -6,6 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { submitPickupRequest } from "@/lib/pickup.functions";
+import { CarPhotos } from "@/components/CarPhotos";
+import { isSpectatorRole } from "@/lib/roles";
+
 
 export const Route = createFileRoute("/parts")({
   head: () => ({ meta: [{ title: "Request Parts · Huri" }] }),
@@ -75,6 +78,10 @@ function PartsPage() {
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
           <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
         </div>
+        {/^\d{6}$/.test(ro.trim()) && (
+          <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
+        )}
+
         <button
           disabled={busy}
           className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"

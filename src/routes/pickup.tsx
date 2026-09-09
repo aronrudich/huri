@@ -14,6 +14,9 @@ import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { carPhotoIndexQuery } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 
 /** Claimed submissions leave the list 20 minutes after the claim. */
@@ -61,6 +64,9 @@ function PickupPage() {
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
+  // Photos attached to any car on the list, so cards can glow when one exists.
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(pickups.map((p) => p.ro_number ?? "")));
+
   // Kept as a plain array in the cache (Sets don't survive cache persistence).
   const washedRos = useMemo(() => new Set(washedRoList), [washedRoList]);
   const { data: profiles = {} } = useQuery({
@@ -427,6 +433,10 @@ function PickupPage() {
                       </>
                     )}
                   </div>
+                  {p.ro_number && photosByRo[p.ro_number.trim()]?.length ? (
+                    <PhotoBadge photos={photosByRo[p.ro_number.trim()]} ro={p.ro_number} />
+                  ) : null}
+
                   {isTech && (
                     <span className="shrink-0 text-xs font-bold text-destructive">Technician</span>
                   )}

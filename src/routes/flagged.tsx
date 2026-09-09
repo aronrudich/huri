@@ -13,6 +13,9 @@ import { ListSkeleton } from "@/components/ListSkeleton";
 import { canViewFlagged, isSpectatorRole } from "@/lib/roles";
 import { flaggedCarsQuery, type FlaggedCarRow } from "@/lib/queries";
 import { locationLabel } from "@/lib/lot";
+import { carPhotoIndexQuery, type CarPhoto } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 export const Route = createFileRoute("/flagged")({
   head: () => ({
@@ -48,6 +51,8 @@ function FlaggedPage() {
     ...flaggedCarsQuery(),
     enabled: !!user && allowed,
   });
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
+
 
   const dismiss = async (id: string) => {
     const { error } = await supabase
@@ -87,17 +92,21 @@ function FlaggedPage() {
         <p className="mt-10 text-center text-sm text-muted-foreground">No flagged cars right now.</p>
       ) : (
         <ul className="divide-y divide-border overflow-hidden border-y border-border bg-card">
-          {cars.map((car) => (
-            <li key={car.id}>
-              {canDismiss ? (
-                <SwipeRow onDelete={() => void dismiss(car.id)}>
-                  <CarRow car={car} />
-                </SwipeRow>
-              ) : (
-                <CarRow car={car} />
-              )}
-            </li>
-          ))}
+          {cars.map((car) => {
+            const photos = car.ro_number ? photosByRo[car.ro_number.trim()] : undefined;
+            return (
+              <li key={car.id}>
+                {canDismiss ? (
+                  <SwipeRow onDelete={() => void dismiss(car.id)}>
+                    <CarRow car={car} photos={photos} />
+                  </SwipeRow>
+                ) : (
+                  <CarRow car={car} photos={photos} />
+                )}
+              </li>
+            );
+          })}
+
         </ul>
       )}
 
@@ -106,33 +115,37 @@ function FlaggedPage() {
   );
 }
 
-function CarRow({ car }: { car: FlaggedCarRow }) {
+function CarRow({ car, photos }: { car: FlaggedCarRow; photos?: CarPhoto[] }) {
   const navigate = useNavigate();
   const days = daysParked(car.located_at);
   return (
-    <button
-      type="button"
-      onClick={() => navigate({ to: "/park", search: { id: car.id } })}
-      className="block w-full bg-card px-4 py-3 text-left active:bg-accent"
-    >
-      <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-semibold">
-          {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
-        </span>
-        <span className="text-xs font-semibold text-destructive">{days} days</span>
-      </div>
-      <div className="mt-0.5 text-xs text-muted-foreground">
-        {[
-          car.tag_number ? `Tag #${car.tag_number}` : null,
-          car.car_model,
-          locationLabel(car.lot_position),
-        ]
-          .filter(Boolean)
-          .join(" · ")}
-      </div>
-      {car.notes && <div className="mt-0.5 text-xs text-muted-foreground">{car.notes}</div>}
-    </button>
+    <div className="flex items-center gap-3 bg-card pr-3">
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/park", search: { id: car.id } })}
+        className="block min-w-0 flex-1 px-4 py-3 text-left active:bg-accent"
+      >
+        <div className="flex items-baseline justify-between gap-3">
+          <span className="text-sm font-semibold">
+            {car.ro_number ? `RO #${car.ro_number}` : "No RO #"}
+          </span>
+          <span className="text-xs font-semibold text-destructive">{days} days</span>
+        </div>
+        <div className="mt-0.5 text-xs text-muted-foreground">
+          {[
+            car.tag_number ? `Tag #${car.tag_number}` : null,
+            car.car_model,
+            locationLabel(car.lot_position),
+          ]
+            .filter(Boolean)
+            .join(" · ")}
+        </div>
+        {car.notes && <div className="mt-0.5 text-xs text-muted-foreground">{car.notes}</div>}
+      </button>
+      {photos && photos.length > 0 && <PhotoBadge photos={photos} ro={car.ro_number} />}
+    </div>
   );
+
 }
 
 function Header() {

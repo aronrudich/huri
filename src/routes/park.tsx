@@ -197,6 +197,18 @@ function ParkPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
 
+    // Attach any photos taken before the car had an RO #.
+    if (pendingPhotos.current.length && user) {
+      try {
+        for (const file of pendingPhotos.current) {
+          await uploadCarPhoto(file, normalizedRo, user.id);
+        }
+        pendingPhotos.current = [];
+      } catch {
+        toast.error("Car saved, but a photo could not be attached");
+      }
+    }
+
     toast.success(editing ? "Car updated" : "Car logged");
     navigate({ to: "/pickup", replace: true });
   };

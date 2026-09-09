@@ -58,9 +58,7 @@ function ParkPage() {
   // Photos taken before the car has an RO # / has been saved.
   const pendingPhotos = useRef<File[]>([]);
 
-  // Advisors, managers and directors can mark a finished car as staged.
   const role = profile?.role_name ?? "";
-  const canStage = canStageRole(role);
   const hideModel = isTechRole(role);
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;

@@ -7,7 +7,9 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { submitPickupRequest } from "@/lib/pickup.functions";
-import { isTechRole } from "@/lib/roles";
+import { isTechRole, isSpectatorRole } from "@/lib/roles";
+import { CarPhotos } from "@/components/CarPhotos";
+
 
 type PickupNewSearch = { staged?: boolean; ro?: string };
 

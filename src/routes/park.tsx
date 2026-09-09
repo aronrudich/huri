@@ -54,6 +54,8 @@ function ParkPage() {
   const [showMap, setShowMap] = useState(false);
   const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
   const svSpots = useMemo(() => spotsForLot("sv"), []);
+  // Photos taken before the car has an RO # / has been saved.
+  const pendingPhotos = useRef<File[]>([]);
 
   // Advisors, managers and directors can mark a finished car as staged.
   const role = profile?.role_name ?? "";

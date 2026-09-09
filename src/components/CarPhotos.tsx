@@ -1,5 +1,5 @@
-import { useRef, useState } from "react";
-import { Camera, ImagePlus } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { carPhotosQuery, markPhotosSeen, uploadCarPhoto, useSignedPhotoUrls } from "@/lib/car-photos";
@@ -7,17 +7,36 @@ import { PhotoViewer } from "@/components/PhotoViewer";
 
 /**
  * "Photos" section on the car info page — sits next to Notes. Anyone who can
- * change a car (everyone except spectators) can snap or attach photos here.
+ * change a car (everyone except spectators) can snap photos here. Photos are
+ * always taken live with the camera; there is no library option on purpose.
+ *
+ * When there is no RO # yet (logging a brand new car), photos are held in
+ * `pendingRef` and the page attaches them right after the car is saved.
  */
-export function CarPhotos({ ro, userId, canEdit }: { ro: string; userId?: string | null; canEdit: boolean }) {
+export function CarPhotos({
+  ro,
+  userId,
+  canEdit,
+  pendingRef,
+}: {
+  ro: string;
+  userId?: string | null;
+  canEdit: boolean;
+  pendingRef?: React.MutableRefObject<File[]>;
+}) {
   const target = ro.trim();
+  const hasRo = /^\d{6}$/.test(target);
   const qc = useQueryClient();
-  const { data: photos = [] } = useQuery(carPhotosQuery(target));
+  const { data: photos = [] } = useQuery(carPhotosQuery(hasRo ? target : ""));
   const { data: urls } = useSignedPhotoUrls(photos.map((p) => p.storage_path));
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<{ file: File; url: string }[]>([]);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const fileRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (pendingRef) pendingRef.current = pending.map((p) => p.file);
+  }, [pending, pendingRef]);
 
   const refresh = () => {
     void qc.invalidateQueries({ queryKey: ["car-photos"] });
@@ -26,15 +45,20 @@ export function CarPhotos({ ro, userId, canEdit }: { ro: string; userId?: string
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
-    if (!target) return toast.error("Add the RO # before attaching a photo");
+    const list = Array.from(files);
     if (!userId) return;
+    // No RO # yet: hold the photo until the car is saved.
+    if (!hasRo) {
+      setPending((prev) => [...prev, ...list.map((file) => ({ file, url: URL.createObjectURL(file) }))]);
+      return;
+    }
     setBusy(true);
     try {
-      for (const file of Array.from(files)) {
+      for (const file of list) {
         await uploadCarPhoto(file, target, userId);
       }
       refresh();
-      toast.success(files.length > 1 ? "Photos attached" : "Photo attached");
+      toast.success(list.length > 1 ? "Photos attached" : "Photo attached");
     } catch (error) {
       toast.error((error as Error).message || "Could not attach photo");
     } finally {
@@ -46,7 +70,7 @@ export function CarPhotos({ ro, userId, canEdit }: { ro: string; userId?: string
     <div>
       <label className="mb-1 block text-xs font-medium text-muted-foreground">Photos</label>
 
-      {photos.length > 0 && (
+      {(photos.length > 0 || pending.length > 0) && (
         <div className="mb-2 flex flex-wrap gap-2">
           {photos.map((p, i) => (
             <button
@@ -65,6 +89,22 @@ export function CarPhotos({ ro, userId, canEdit }: { ro: string; userId?: string
               )}
             </button>
           ))}
+          {pending.map((p, i) => (
+            <div key={p.url} className="relative h-20 w-20 overflow-hidden rounded-xl ring-2 ring-warning">
+              <img src={p.url} alt="Photo waiting to attach" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                aria-label="Remove photo"
+                onClick={() => {
+                  URL.revokeObjectURL(p.url);
+                  setPending((prev) => prev.filter((_, idx) => idx !== i));
+                }}
+                className="absolute right-0 top-0 grid h-6 w-6 place-items-center rounded-bl-lg bg-foreground/70 text-background"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -78,29 +118,13 @@ export function CarPhotos({ ro, userId, canEdit }: { ro: string; userId?: string
             className="hidden"
             onChange={(e) => { void handleFiles(e.target.files); e.target.value = ""; }}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            multiple
-            className="hidden"
-            onChange={(e) => { void handleFiles(e.target.files); e.target.value = ""; }}
-          />
           <button
             type="button"
             disabled={busy}
             onClick={() => cameraRef.current?.click()}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
           >
-            <Camera className="h-4 w-4" /> {busy ? "Uploading…" : "Take Photo"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => fileRef.current?.click()}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-background py-3 text-base font-semibold text-foreground active:bg-accent disabled:opacity-60"
-          >
-            <ImagePlus className="h-4 w-4" /> Choose Photo
+            <Camera className="h-4 w-4" /> {busy ? "Uploading…" : "Add Photo"}
           </button>
         </div>
       ) : (

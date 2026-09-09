@@ -56,6 +56,9 @@ function LotPage() {
   const cars = carsData as ParkedCar[];
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];
+  // Which cars have photos attached, so every row can glow.
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
+
 
   useEffect(() => {
     if (!user) return;

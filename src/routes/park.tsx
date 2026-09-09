@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Map as MapIcon, X, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -8,9 +8,10 @@ import { toast } from "sonner";
 import { isValidSpot, normalizeSpot, isCustomSpot, lotOf, spotsForLot, adjacentSpots, blockedSpots, locationLabel } from "@/lib/lot";
 import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
-import { canStageRole, isTechRole, isSpectatorRole } from "@/lib/roles";
+import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
 import { CarPhotos } from "@/components/CarPhotos";
+import { uploadCarPhoto } from "@/lib/car-photos";
 
 import { format } from "date-fns";
 
@@ -54,10 +55,10 @@ function ParkPage() {
   const [showMap, setShowMap] = useState(false);
   const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
   const svSpots = useMemo(() => spotsForLot("sv"), []);
+  // Photos taken before the car has an RO # / has been saved.
+  const pendingPhotos = useRef<File[]>([]);
 
-  // Advisors, managers and directors can mark a finished car as staged.
   const role = profile?.role_name ?? "";
-  const canStage = canStageRole(role);
   const hideModel = isTechRole(role);
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
@@ -119,6 +120,7 @@ function ParkPage() {
 
 
   const submit = async (e: React.FormEvent) => {
+
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
@@ -194,6 +196,18 @@ function ParkPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
 
+    // Attach any photos taken before the car had an RO #.
+    if (pendingPhotos.current.length && user) {
+      try {
+        for (const file of pendingPhotos.current) {
+          await uploadCarPhoto(file, normalizedRo, user.id);
+        }
+        pendingPhotos.current = [];
+      } catch {
+        toast.error("Car saved, but a photo could not be attached");
+      }
+    }
+
     toast.success(editing ? "Car updated" : "Car logged");
     navigate({ to: "/pickup", replace: true });
   };
@@ -226,9 +240,7 @@ function ParkPage() {
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>
-        {/^\d{6}$/.test(ro.trim()) && (
-          <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} />
-        )}
+        <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} pendingRef={pendingPhotos} />
 
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
@@ -251,33 +263,15 @@ function ParkPage() {
             Delete Car
           </button>
         )}
-        {editing && existingId && (
+        {editing && existingId && mapSpot && (
           <div className="flex gap-2 pt-1">
-            <Link
-              to="/pickup-new"
-              search={{ ro: ro.trim() || undefined }}
-              className="flex-1 rounded-xl bg-primary py-3 text-center text-base font-semibold text-primary-foreground"
+            <button
+              type="button"
+              onClick={() => setShowMap(true)}
+              className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-border bg-background py-3 text-base font-semibold text-foreground active:bg-accent"
             >
-              Pickup
-            </Link>
-            {canStage && !staged && (
-              <Link
-                to="/pickup-new"
-                search={{ staged: true, ro: ro.trim() || undefined }}
-                className="flex-1 rounded-xl bg-primary py-3 text-center text-base font-semibold text-primary-foreground"
-              >
-                Stage
-              </Link>
-            )}
-            {mapSpot && (
-              <button
-                type="button"
-                onClick={() => setShowMap(true)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-border bg-background py-3 text-base font-semibold text-foreground active:bg-accent"
-              >
-                <MapIcon className="h-4 w-4" /> Map
-              </button>
-            )}
+              <MapIcon className="h-4 w-4" /> Map
+            </button>
           </div>
         )}
         {editing && existingId && !isSpectatorRole(role) && (

@@ -346,6 +346,10 @@ function LotPage() {
                       {locationLabel(car.lot_position)}
                     </p>
                   </div>
+                  {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? (
+                    <PhotoBadge photos={photosByRo[car.ro_number.trim()]} ro={car.ro_number} />
+                  ) : null}
+
 
                 </Link>
               </li>

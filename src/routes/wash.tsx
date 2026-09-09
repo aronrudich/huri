@@ -9,6 +9,9 @@ import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { submitPickupRequest } from "@/lib/pickup.functions";
+import { CarPhotos } from "@/components/CarPhotos";
+import { isSpectatorRole } from "@/lib/roles";
+
 
 export const Route = createFileRoute("/wash")({
   head: () => ({

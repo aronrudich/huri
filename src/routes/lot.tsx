@@ -310,6 +310,10 @@ function LotPage() {
                     <p className="truncate text-xs text-warning">Note: {car.notes}</p>
                   )}
                 </div>
+                {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? (
+                  <PhotoBadge photos={photosByRo[car.ro_number.trim()]} ro={car.ro_number} />
+                ) : null}
+
               </Link>
             </li>
           ))}

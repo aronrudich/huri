@@ -51,6 +51,8 @@ function FlaggedPage() {
     ...flaggedCarsQuery(),
     enabled: !!user && allowed,
   });
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
+
 
   const dismiss = async (id: string) => {
     const { error } = await supabase

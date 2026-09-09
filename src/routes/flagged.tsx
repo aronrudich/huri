@@ -92,17 +92,21 @@ function FlaggedPage() {
         <p className="mt-10 text-center text-sm text-muted-foreground">No flagged cars right now.</p>
       ) : (
         <ul className="divide-y divide-border overflow-hidden border-y border-border bg-card">
-          {cars.map((car) => (
-            <li key={car.id}>
-              {canDismiss ? (
-                <SwipeRow onDelete={() => void dismiss(car.id)}>
-                  <CarRow car={car} />
-                </SwipeRow>
-              ) : (
-                <CarRow car={car} />
-              )}
-            </li>
-          ))}
+          {cars.map((car) => {
+            const photos = car.ro_number ? photosByRo[car.ro_number.trim()] : undefined;
+            return (
+              <li key={car.id}>
+                {canDismiss ? (
+                  <SwipeRow onDelete={() => void dismiss(car.id)}>
+                    <CarRow car={car} photos={photos} />
+                  </SwipeRow>
+                ) : (
+                  <CarRow car={car} photos={photos} />
+                )}
+              </li>
+            );
+          })}
+
         </ul>
       )}
 

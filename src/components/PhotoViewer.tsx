@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+
 import { X, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
@@ -48,10 +50,11 @@ export function PhotoViewer({
     setIndex((i) => Math.min(photos.length - 1, Math.max(0, i + delta)));
   };
 
-  return (
+  const overlay = (
     <div
       className="fixed inset-0 z-[70] flex flex-col bg-black/95"
-      onClick={onClose}
+      onClick={(e) => { e.stopPropagation(); onClose(); }}
+
       onTouchStart={(e) => { startX.current = e.touches[0]?.clientX ?? null; }}
       onTouchEnd={(e) => {
         const from = startX.current;
@@ -140,4 +143,8 @@ export function PhotoViewer({
       <div className="pb-[calc(1rem+env(safe-area-inset-bottom))]" />
     </div>
   );
+
+  // Rendered outside the row so a tap never reaches a surrounding link.
+  return typeof document === "undefined" ? overlay : createPortal(overlay, document.body);
 }
+

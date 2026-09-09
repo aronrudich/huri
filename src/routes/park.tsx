@@ -224,6 +224,10 @@ function ParkPage() {
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>
+        {/^\d{6}$/.test(ro.trim()) && (
+          <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} />
+        )}
+
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
         </button>

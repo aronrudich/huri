@@ -136,8 +136,18 @@
     .pull-refresh-indicator { transition: none; }
     .pull-refresh-indicator[data-ready="true"] .pull-refresh-icon { animation: none; }
   }
+  /* Attached car photo: a glowing ring that pulses until it has been opened. */
+  @keyframes photo-alert-glow {
+    0%, 100% { box-shadow: 0 0 0 0 var(--color-warning), 0 0 10px 2px var(--color-warning); }
+    50% { box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-warning) 35%, transparent), 0 0 20px 6px var(--color-warning); }
+  }
+  .photo-alert { animation: photo-alert-glow 1.4s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce) {
+    .photo-alert { animation: none; box-shadow: 0 0 12px 3px var(--color-warning); }
+  }
   /* Safe-area helpers for iOS PWA */
   .safe-top { padding-top: max(env(safe-area-inset-top), 0px); }
   .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 0px); }
 }
+
 

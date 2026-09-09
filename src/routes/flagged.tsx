@@ -13,6 +13,9 @@ import { ListSkeleton } from "@/components/ListSkeleton";
 import { canViewFlagged, isSpectatorRole } from "@/lib/roles";
 import { flaggedCarsQuery, type FlaggedCarRow } from "@/lib/queries";
 import { locationLabel } from "@/lib/lot";
+import { carPhotoIndexQuery, type CarPhoto } from "@/lib/car-photos";
+import { PhotoBadge } from "@/components/PhotoBadge";
+
 
 export const Route = createFileRoute("/flagged")({
   head: () => ({

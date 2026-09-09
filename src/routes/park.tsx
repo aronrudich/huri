@@ -10,6 +10,8 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { canStageRole, isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
+import { CarPhotos } from "@/components/CarPhotos";
+
 import { format } from "date-fns";
 
 type MapCar = {

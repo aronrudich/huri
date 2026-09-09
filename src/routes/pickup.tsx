@@ -433,6 +433,10 @@ function PickupPage() {
                       </>
                     )}
                   </div>
+                  {p.ro_number && photosByRo[p.ro_number.trim()]?.length ? (
+                    <PhotoBadge photos={photosByRo[p.ro_number.trim()]} ro={p.ro_number} />
+                  ) : null}
+
                   {isTech && (
                     <span className="shrink-0 text-xs font-bold text-destructive">Technician</span>
                   )}

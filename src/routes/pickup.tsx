@@ -183,8 +183,10 @@ function PickupPage() {
   }, [profile, realtimeGen]);
 
   // Auto-archive claimed pickups/parts after 20 minutes without changing their
-  // saved spot snapshot. The car's destination is applied the moment it is
-  // claimed, so nothing here touches car locations and no car is ever deleted.
+  // saved spot snapshot. The car's destination (Bay / CP / Wash / Unknown) is
+  // applied server-side when the submission leaves the list, and no car is ever
+  // deleted.
+
   useEffect(() => {
     const archiveExpired = () => {
       const now = Date.now();

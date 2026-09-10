@@ -332,14 +332,16 @@ function PickupPage() {
           // Wash confirmations follow the RO #, so the whole list can show it.
           const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
           const liveCar = !isParts && p.ro_number ? carsByRo[p.ro_number] : undefined;
-          // Claimed pickups must keep showing the saved spot snapshot even after
-          // the live parked_cars row is deleted to free the spot in the lot list.
+          // Cards always show the location recorded when the submission was made,
+          // so the card never drifts if the car is moved afterward.
           const displayCar = p.status === "claimed" ? undefined : liveCar;
-          const effectiveSpot = !isParts
-            ? p.status === "claimed"
-              ? (p.lot_position ?? "UNKNOWN")
-              : (displayCar?.lot_position ?? p.lot_position ?? "UNKNOWN")
-            : null;
+          const isTech = isTechSource(p.source_role);
+          const snapshotSpot = p.lot_position ?? "UNKNOWN";
+          // A tech pickup means the car is out in the lot, so a leftover "Bay"
+          // from its last bay visit is useless — show it as unknown instead.
+          const staleBay =
+            p.kind === "pickup" && isTech && snapshotSpot.toUpperCase() === "BAY";
+          const effectiveSpot = !isParts ? (staleBay ? "UNKNOWN" : snapshotSpot) : null;
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
@@ -347,7 +349,7 @@ function PickupPage() {
           const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
-          const isTech = isTechSource(p.source_role);
+
           const isStaged = !!p.is_staged;
           // Everyone can cancel their own submission; technicians can only cancel
           // their own so nobody kills another employee's request.

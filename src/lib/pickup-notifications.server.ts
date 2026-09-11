@@ -92,6 +92,22 @@ export async function createPickupAndNotify(
   }
 
   const sourceRole = data.sourceRole ?? caller.role_name;
+
+  // Snapshot the car's current spot when the form didn't send one (e.g. wash requests),
+  // so the pickup card can show where the car is standing at submit time.
+  let lotPosition = data.lotPosition ?? null;
+  if (!lotPosition && data.ro) {
+    const { data: car } = await supabase
+      .from("parked_cars")
+      .select("lot_position")
+      .eq("dealership_id", caller.dealership_id)
+      .eq("ro_number", data.ro)
+      .order("located_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    lotPosition = car?.lot_position ?? null;
+  }
+
   const { data: pickup, error: insertError } = await supabase
     .from("pickup_requests")
     .insert({

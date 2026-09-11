@@ -119,7 +119,7 @@ export async function createPickupAndNotify(
       car_notes: data.notes ?? null,
       requested_by: userId,
       source_role: sourceRole,
-      lot_position: data.lotPosition ?? null,
+      lot_position: lotPosition,
       is_staged: !!data.staged,
     })
     .select("id")

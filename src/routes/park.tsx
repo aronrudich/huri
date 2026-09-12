@@ -81,7 +81,7 @@ function ParkPage() {
       setExistingId(data.id);
       setRo(data.ro_number ?? "");
       setModel(data.car_model ?? "");
-      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
+      setPos(data.lot_position === "UNKNOWN" || data.lot_position === "TAKEN" ? "" : data.lot_position);
       setNotes(data.notes ?? "");
       setStaged(!!data.is_staged);
       setSavedPos(data.lot_position ?? null);
@@ -97,7 +97,7 @@ function ParkPage() {
       .then(({ data }) => {
         const by: Record<string, MapCar> = {};
         ((data as MapCar[]) ?? []).forEach((c) => {
-          if (c.lot_position && c.lot_position !== "UNKNOWN") by[c.lot_position.toUpperCase()] = c;
+          if (c.lot_position && c.lot_position !== "UNKNOWN" && c.lot_position !== "TAKEN") by[c.lot_position.toUpperCase()] = c;
         });
         setCarsBySpot(by);
       });
@@ -131,7 +131,7 @@ function ParkPage() {
     const normalizedRo = ro.trim();
     const normalizedPos = normalizeSpot(pos.trim());
     if (!normalizedPos) return toast.error("Invalid spot");
-    const isPlaceholder = normalizedPos === "BL" || normalizedPos === "CP" || normalizedPos === "UNKNOWN" || isCustomSpot(normalizedPos);
+    const isPlaceholder = normalizedPos === "BL" || normalizedPos === "CP" || normalizedPos === "UNKNOWN" || normalizedPos === "TAKEN" || isCustomSpot(normalizedPos);
     let targetId = existingId;
 
     // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.
@@ -143,7 +143,7 @@ function ParkPage() {
     if (existing && existing.id !== existingId) {
       const existingSpot = existing.lot_position?.toUpperCase();
       const bothReal =
-        existingSpot && !["BL", "CP", "UNKNOWN"].includes(existingSpot) &&
+        existingSpot && !["BL", "CP", "UNKNOWN", "TAKEN"].includes(existingSpot) &&
         !isPlaceholder && existingSpot !== normalizedPos;
       if (bothReal) {
         const carModel = existing.car_model ? ` (${existing.car_model})` : "";
@@ -301,7 +301,7 @@ function ParkPage() {
               if (reqError) { setBusy(false); return toast.error(reqError.message); }
               const { error } = await supabase
                 .from("parked_cars")
-                .update({ lot_position: "UNKNOWN", is_staged: false, flagged_at: null })
+                .update({ lot_position: "TAKEN", is_staged: false, flagged_at: null })
                 .eq("id", existingId);
               setBusy(false);
               if (error) return toast.error(error.message);

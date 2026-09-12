@@ -86,7 +86,7 @@ function PickupPage() {
   const carsByPos = useMemo(() => {
     const byPos: Record<string, ParkedCar> = {};
     allCars.forEach((c) => {
-      if (c.lot_position && c.lot_position !== "UNKNOWN") byPos[c.lot_position.toUpperCase()] = c;
+      if (c.lot_position && c.lot_position !== "UNKNOWN" && c.lot_position !== "TAKEN") byPos[c.lot_position.toUpperCase()] = c;
     });
     return byPos;
   }, [allCars]);
@@ -311,7 +311,7 @@ function PickupPage() {
                     {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : `Spot ${c.lot_position}`}
+                    {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : c.lot_position === "TAKEN" ? "Taken by Customer" : `Spot ${c.lot_position}`}
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-primary">Edit</span>
@@ -348,7 +348,7 @@ function PickupPage() {
           const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
-          const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN") || p.status !== "unclaimed");
+          const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN" && p.lot_position !== "TAKEN") || p.status !== "unclaimed");
           const isSvSpot = lotOf(effectiveSpot) === "sv";
           const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
@@ -515,7 +515,7 @@ function PickupPage() {
                       const originalSpot = p.lot_position;
                       if (!isParts && p.ro_number) {
                         const patch: { lot_position?: string; is_staged?: boolean } = {};
-                        if (originalSpot && originalSpot !== "UNKNOWN") patch.lot_position = originalSpot;
+                        if (originalSpot && originalSpot !== "UNKNOWN" && originalSpot !== "TAKEN") patch.lot_position = originalSpot;
                         if (isStaged) patch.is_staged = false;
                         if (Object.keys(patch).length) {
                           await supabase.from("parked_cars").update(patch).eq("ro_number", p.ro_number);

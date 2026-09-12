@@ -80,7 +80,7 @@ function LotPage() {
   const byPos = useMemo(() => {
     const m: Record<string, ParkedCar> = {};
     cars.forEach((c) => {
-      if (!c.lot_position || c.lot_position === "UNKNOWN") return;
+      if (!c.lot_position || c.lot_position === "UNKNOWN" || c.lot_position === "TAKEN") return;
       if (lotOf(c.lot_position) !== "sv") return;
       m[c.lot_position.toUpperCase()] = c;
     });
@@ -102,7 +102,7 @@ function LotPage() {
       // the submission to keep the stall blue until the pickup leaves the list.
       const liveSpot = normalizeSpot(live?.lot_position ?? null);
       const spot =
-        liveSpot && liveSpot !== "UNKNOWN" ? liveSpot : normalizeSpot(p.lot_position);
+        liveSpot && liveSpot !== "UNKNOWN" && liveSpot !== "TAKEN" ? liveSpot : normalizeSpot(p.lot_position);
       if (!spot || lotOf(spot) !== "sv") return;
       const occupant = byPos[spot];
       if (occupant && occupant.ro_number !== p.ro_number) return;
@@ -243,7 +243,7 @@ function LotPage() {
                         {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {c.car_model ?? "—"} · {normalizeSpot(c.lot_position) === "UNKNOWN" ? "Unknown" : c.lot_position}
+                        {c.car_model ?? "—"} · {locationLabel(c.lot_position)}
                       </span>
                     </span>
                   </button>

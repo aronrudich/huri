@@ -334,7 +334,9 @@ function InboxPage() {
                     <p className="text-xs text-muted-foreground">
                       {normalizeSpot(c.lot_position) === "UNKNOWN" || !c.lot_position
                         ? "Spot unknown"
-                        : `Spot ${normalizeSpot(c.lot_position)}`}
+                        : normalizeSpot(c.lot_position) === "TAKEN"
+                          ? "Taken by Customer"
+                          : `Spot ${normalizeSpot(c.lot_position)}`}
                     </p>
                   </div>
                 </Link>

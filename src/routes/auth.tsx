@@ -221,6 +221,19 @@ function AuthPage() {
               >
                 {busy ? "Signing in…" : "Sign In"}
               </button>
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                className="w-full py-1 text-center text-xs font-medium text-primary"
+              >
+                Forgot password?
+              </button>
+              {resetSent && (
+                <p className="text-center text-xs text-muted-foreground">
+                  Reset link sent. Check the email you signed up with, then follow the link to
+                  create a new password.
+                </p>
+              )}
             </form>
           ) : (
             <form onSubmit={handleRegister} className="space-y-3">

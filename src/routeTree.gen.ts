@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WashRouteImport } from './routes/wash'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
@@ -32,6 +33,11 @@ import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avata
 const WashRoute = WashRouteImport.update({
   id: '/wash',
   path: '/wash',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReportsRoute = ReportsRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -162,6 +169,7 @@ export interface FileRoutesByTo {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -184,6 +192,7 @@ export interface FileRoutesById {
   '/pickup-new': typeof PickupNewRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/wash': typeof WashRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -207,6 +216,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
+    | '/reset-password'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
+    | '/reset-password'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/pickup-new'
     | '/profile'
     | '/reports'
+    | '/reset-password'
     | '/wash'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -271,6 +283,7 @@ export interface RootRouteChildren {
   PickupNewRoute: typeof PickupNewRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   WashRoute: typeof WashRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
@@ -285,6 +298,13 @@ declare module '@tanstack/react-router' {
       path: '/wash'
       fullPath: '/wash'
       preLoaderRoute: typeof WashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reports': {
@@ -431,6 +451,7 @@ const rootRouteChildren: RootRouteChildren = {
   PickupNewRoute: PickupNewRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   WashRoute: WashRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,

@@ -6,7 +6,7 @@ Right now the waiting cards are grouped: customer pickups and parts requests tog
 
 New order for waiting cards (each group oldest first):
 
-1. Customer pickups (a pickup submitted by anyone who is not a technician or shop foreman, not staged)
+1. Customer pickups (a pickup submitted by anyone who is not a technician or shop foreman, not staged) the blue pickups.
 2. Technician pickups
 3. Wash requests, parts requests, and park requests
 4. Staged cars
@@ -16,7 +16,7 @@ Claimed cards stay below all waiting cards, newest claim first, exactly as today
 ## 2. "Forgot password"
 
 - A "Forgot password?" link under the password box on the sign-in screen.
-- Tapping it asks for the email and sends a reset link to that address. The screen then says to check their email.
+- Tapping it asks for the email and sends a reset link to that address. The screen then says to check their email. No, it sends the email to the email that the user signed up with in their profile. It will tell the user to check that email account. 
 - The link opens a new page in the app with one box: the new password, typed twice is not required, no rules at all — any password of any length is accepted.
 - After saving, the page shows a short confirmation telling them to close and reopen Huri and sign in with the new password. It does not sign them in.
 - If someone opens that page without a valid link, it says the link expired and offers to send a new one.

@@ -245,24 +245,25 @@ function PickupPage() {
   );
 
 
-  // Unclaimed customer pickups first, then unclaimed technician pickups, then
-  // staged cars (lowest priority of all), each oldest first.
+  // Customer pickups always come first, then technician pickups, then service
+  // requests (wash / parts / park), then staged cars. Each group oldest first.
   const sortedPickups = useMemo(() => {
     const byAge = (a: Pickup, b: Pickup) =>
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    const unclaimed = visiblePickups.filter((p) => p.status === "unclaimed");
-    const unclaimedCustomer = unclaimed
-      .filter((p) => !p.is_staged)
-      .filter((p) => p.kind === "parts" || !isTechSource(p.source_role))
-      .sort(byAge);
-    const unclaimedTech = unclaimed
-      .filter((p) => !p.is_staged && p.kind !== "parts" && isTechSource(p.source_role))
-      .sort(byAge);
-    const unclaimedStaged = unclaimed.filter((p) => !!p.is_staged).sort(byAge);
+    const SERVICE_KINDS = ["wash", "parts", "park"];
+    const priority = (p: Pickup) => {
+      if (p.is_staged) return 3;
+      if (SERVICE_KINDS.includes(p.kind ?? "")) return 2;
+      if (isTechSource(p.source_role)) return 1;
+      return 0;
+    };
+    const unclaimed = visiblePickups
+      .filter((p) => p.status === "unclaimed")
+      .sort((a, b) => priority(a) - priority(b) || byAge(a, b));
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
-    return [...unclaimedCustomer, ...unclaimedTech, ...unclaimedStaged, ...claimed];
+    return [...unclaimed, ...claimed];
   }, [visiblePickups]);
 
   return (

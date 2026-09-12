@@ -44,6 +44,25 @@ function AuthPage() {
   const [nickname, setNickname] = useState("");
   const [role, setRole] = useState("Advisor");
   const [otherRole, setOtherRole] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    const resetEmail = email.trim().toLowerCase();
+    if (!resetEmail) return toast.error("Enter your email first");
+    setBusy(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setResetSent(true);
+      toast.success("Reset link sent");
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     supabase.from("dealerships").select("id, name").order("name").then(({ data }) => {

@@ -471,6 +471,24 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_attempts: {
+        Row: {
+          attempt_key: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          attempt_key: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          attempt_key?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
       thread_hides: {
         Row: {
           dealership_id: string

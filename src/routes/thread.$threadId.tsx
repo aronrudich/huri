@@ -130,17 +130,18 @@ function ThreadPage() {
       const other = parts[1] === user.id ? parts[2] : parts[1];
       payload.recipient_id = other;
     }
-    const { data: saved, error } = await supabase
-      .from("messages")
-      .insert(payload)
-      .select("id")
-      .single();
+    const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    if (saved?.id) {
-      sendMessagePush({ data: { messageId: saved.id } })
-        .catch((e) => console.warn("msg push failed", e));
-    }
+    sendMessagePush({
+      data: {
+        threadId,
+        body: body.trim(),
+        recipientId: payload.recipient_id ?? null,
+        recipientRoleId: payload.recipient_role_id ?? null,
+        isAnonymous: false,
+      },
+    }).catch((e) => console.warn("msg push failed", e));
     setBody("");
   };
 

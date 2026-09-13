@@ -89,17 +89,18 @@ function ComposePage() {
       payload.recipient_id = selected.id;
     }
     payload.thread_id = thread_id;
-    const { data: saved, error } = await supabase
-      .from("messages")
-      .insert(payload)
-      .select("id")
-      .single();
+    const { error } = await supabase.from("messages").insert(payload);
     setBusy(false);
     if (error) return toast.error(error.message);
-    if (saved?.id) {
-      sendMessagePush({ data: { messageId: saved.id } })
-        .catch((e) => console.warn("msg push failed", e));
-    }
+    sendMessagePush({
+      data: {
+        threadId: thread_id,
+        body: body.trim(),
+        recipientId: payload.recipient_id ?? null,
+        recipientRoleId: payload.recipient_role_id ?? null,
+        isAnonymous: false,
+      },
+    }).catch((e) => console.warn("msg push failed", e));
     toast.success("Sent");
     navigate({ to: "/thread/$threadId", params: { threadId: thread_id }, replace: true });
   };

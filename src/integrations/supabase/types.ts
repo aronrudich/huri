@@ -28,7 +28,7 @@ export type Database = {
         Insert: {
           actor_id?: string | null
           created_at?: string
-          dealership_id: string
+          dealership_id?: string
           detail?: string | null
           event_type: string
           id?: string
@@ -66,7 +66,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          dealership_id: string
+          dealership_id?: string
           id?: string
           ro_number: string
           storage_path: string
@@ -102,7 +102,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          dealership_id: string
+          dealership_id?: string
           id?: string
           ro_number: string
           updated_at?: string
@@ -164,7 +164,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
-          dealership_id: string
+          dealership_id?: string
           id?: string
           read_at?: string | null
           recipient_id?: string | null
@@ -221,7 +221,7 @@ export type Database = {
         Insert: {
           car_model?: string | null
           created_at?: string
-          dealership_id: string
+          dealership_id?: string
           flag_dismissed_at?: string | null
           flagged_at?: string | null
           id?: string
@@ -298,7 +298,7 @@ export type Database = {
           customer_address?: string | null
           customer_name?: string | null
           customer_phone?: string | null
-          dealership_id: string
+          dealership_id?: string
           id?: string
           is_staged?: boolean
           kind?: string
@@ -468,24 +468,6 @@ export type Database = {
           id?: string
           is_group?: boolean
           name?: string
-        }
-        Relationships: []
-      }
-      signup_attempts: {
-        Row: {
-          attempt_key: string
-          created_at: string
-          id: string
-        }
-        Insert: {
-          attempt_key: string
-          created_at?: string
-          id?: string
-        }
-        Update: {
-          attempt_key?: string
-          created_at?: string
-          id?: string
         }
         Relationships: []
       }

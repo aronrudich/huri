@@ -111,7 +111,6 @@ export async function createPickupAndNotify(
   const { data: pickup, error: insertError } = await supabase
     .from("pickup_requests")
     .insert({
-      dealership_id: caller.dealership_id,
       kind: data.kind ?? "pickup",
       tag_number: data.tag ?? null,
       ro_number: data.ro ?? null,

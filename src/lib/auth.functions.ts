@@ -96,6 +96,9 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
      */
     const AUTO_APPROVE_SIGNUPS = false;
 
+    const { enforceSignupThrottle } = await import("./signup-throttle.server");
+    await enforceSignupThrottle(data.email);
+
     const publishableKey =
       process.env.SUPABASE_PUBLISHABLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||

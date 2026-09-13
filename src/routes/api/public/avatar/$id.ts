@@ -34,12 +34,15 @@ export const Route = createFileRoute("/api/public/avatar/$id")({
           return new Response("Not found", { status: 404 });
         }
 
-        let bytes: Uint8Array;
-        try {
-          bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
-        } catch {
-          return new Response("Not found", { status: 404 });
-        }
+        const decoded = (() => {
+          try {
+            return Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+          } catch {
+            return null;
+          }
+        })();
+        if (!decoded) return new Response("Not found", { status: 404 });
+        const bytes = decoded.slice().buffer;
         return new Response(bytes, {
           headers: {
             "Content-Type": match[1],

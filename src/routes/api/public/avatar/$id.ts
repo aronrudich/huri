@@ -27,17 +27,28 @@ export const Route = createFileRoute("/api/public/avatar/$id")({
         if (!url) return new Response("Not found", { status: 404 });
 
         // Photos are stored as `data:image/jpeg;base64,...` on the profile row.
-        const match = /^data:([^;,]+);base64,(.*)$/s.exec(url);
+        const match = /^data:(image\/(?:jpeg|png|webp|gif));base64,(.*)$/s.exec(url);
         if (!match) {
-          // Already an external URL — hand the client straight to it.
-          return new Response(null, { status: 302, headers: { Location: url } });
+          // Anything that isn't an inline image we control is not served or
+          // redirected to — an arbitrary avatar_url must never become a redirect.
+          return new Response("Not found", { status: 404 });
         }
 
-        const bytes = Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+        const decoded = (() => {
+          try {
+            return Uint8Array.from(atob(match[2]), (c) => c.charCodeAt(0));
+          } catch {
+            return null;
+          }
+        })();
+        if (!decoded) return new Response("Not found", { status: 404 });
+        const bytes = decoded.slice().buffer;
         return new Response(bytes, {
           headers: {
             "Content-Type": match[1],
-            "Cache-Control": "public, max-age=31536000, immutable",
+            // Employee photos are not public content: only the requesting
+            // browser may cache them, never a shared/CDN cache.
+            "Cache-Control": "private, max-age=31536000, immutable",
           },
         });
       },

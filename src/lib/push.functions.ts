@@ -41,13 +41,7 @@ export const sendTestPush = createServerFn({ method: "POST" })
 
 export const sendMessagePush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: {
-    threadId: string;
-    body: string;
-    recipientId?: string | null;
-    recipientRoleId?: string | null;
-    isAnonymous?: boolean;
-  }) => d)
+  .inputValidator((d: { messageId: string }) => d)
   .handler(async ({ data, context }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { sendWebPush } = await import("./push-server.server");
@@ -55,6 +49,20 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     const { data: caller } = await supabaseAdmin
       .from("profiles").select("dealership_id").eq("id", context.userId).maybeSingle();
     if (!caller?.dealership_id) return { sent: 0 };
+
+    // The recipients are derived from the stored message, never from the browser:
+    // the caller must own the message and it must belong to their dealership.
+    const { data: message } = await supabaseAdmin
+      .from("messages")
+      .select("thread_id, body, sender_id, recipient_id, recipient_role_id, dealership_id")
+      .eq("id", data.messageId)
+      .maybeSingle();
+    if (!message) return { sent: 0 };
+    if (message.sender_id !== context.userId) return { sent: 0 };
+    if (message.dealership_id !== caller.dealership_id) return { sent: 0 };
+
+    const threadId = message.thread_id;
+    const messageBody = message.body ?? "";
 
     // Helper: expand a role_id to include Shop Foreman when the role is Technician.
     const membersForRole = async (roleId: string) => {
@@ -77,20 +85,29 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     let recipientIds: string[] = [];
 
     // Per-starter group thread format: group:{roleId}:{starterId}
-    const groupMatch = data.threadId.match(/^group:([^:]+):([^:]+)$/);
+    const groupMatch = threadId.match(/^group:([^:]+):([^:]+)$/);
 
-    if (data.recipientId) {
-      recipientIds = [data.recipientId];
+    if (message.recipient_id) {
+      recipientIds = [message.recipient_id];
     } else if (groupMatch) {
       const [, roleId, starterId] = groupMatch;
       const ids = new Set<string>(await membersForRole(roleId));
       ids.add(starterId);
       ids.delete(context.userId);
       recipientIds = Array.from(ids);
-    } else if (data.recipientRoleId) {
-      const ids = await membersForRole(data.recipientRoleId);
+    } else if (message.recipient_role_id) {
+      const ids = await membersForRole(message.recipient_role_id);
       recipientIds = ids.filter((id) => id !== context.userId);
     }
+    if (!recipientIds.length) return { sent: 0 };
+
+    // Every recipient must be in the caller's own dealership.
+    const { data: allowed } = await supabaseAdmin
+      .from("profiles")
+      .select("id")
+      .in("id", recipientIds)
+      .eq("dealership_id", caller.dealership_id);
+    recipientIds = (allowed ?? []).map((p) => p.id);
     if (!recipientIds.length) return { sent: 0 };
 
 
@@ -108,13 +125,13 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       .in("user_id", recipientIds);
     if (!subs?.length) return { sent: 0 };
 
-    const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
+    const preview = messageBody.length > 140 ? messageBody.slice(0, 137) + "…" : messageBody;
     const isTech = senderRole === "Technician";
     const payload = {
       title: `${isTech ? "🚨 " : "💬 "}${senderName}`,
       body: preview,
-      url: `/thread/${data.threadId}`,
-      tag: `msg-${data.threadId}`,
+      url: `/thread/${threadId}`,
+      tag: `msg-${threadId}`,
       variant: isTech ? "tech" : "default",
     };
 

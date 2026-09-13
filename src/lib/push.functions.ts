@@ -125,13 +125,13 @@ export const sendMessagePush = createServerFn({ method: "POST" })
       .in("user_id", recipientIds);
     if (!subs?.length) return { sent: 0 };
 
-    const preview = data.body.length > 140 ? data.body.slice(0, 137) + "…" : data.body;
+    const preview = messageBody.length > 140 ? messageBody.slice(0, 137) + "…" : messageBody;
     const isTech = senderRole === "Technician";
     const payload = {
       title: `${isTech ? "🚨 " : "💬 "}${senderName}`,
       body: preview,
-      url: `/thread/${data.threadId}`,
-      tag: `msg-${data.threadId}`,
+      url: `/thread/${threadId}`,
+      tag: `msg-${threadId}`,
       variant: isTech ? "tech" : "default",
     };
 

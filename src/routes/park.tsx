@@ -24,7 +24,7 @@ type MapCar = {
   is_staged?: boolean | null;
 };
 
-type ParkSearch = { ro?: string; id?: string; spot?: string };
+type ParkSearch = { ro?: string; id?: string; spot?: string; from?: string };
 
 export const Route = createFileRoute("/park")({
   head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
@@ -32,6 +32,7 @@ export const Route = createFileRoute("/park")({
     ro: typeof s.ro === "string" ? s.ro : undefined,
     id: typeof s.id === "string" ? s.id : undefined,
     spot: typeof s.spot === "string" ? s.spot : undefined,
+    from: typeof s.from === "string" ? s.from : undefined,
   }),
   component: ParkPage,
 });
@@ -39,7 +40,10 @@ export const Route = createFileRoute("/park")({
 function ParkPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
-  const { ro: roParam, id: idParam, spot: spotParam } = Route.useSearch();
+  const { ro: roParam, id: idParam, spot: spotParam, from: fromParam } = Route.useSearch();
+  // Cars opened from the Flagged Cars list return there instead of the pickup list.
+  const fromFlagged = fromParam === "flagged";
+  const goBack = () => navigate({ to: fromFlagged ? "/flagged" : "/pickup", replace: true });
   const [ro, setRo] = useState(roParam ?? "");
   const [pos, setPos] = useState(spotParam ?? "");
   const [model, setModel] = useState("");

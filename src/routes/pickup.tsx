@@ -161,6 +161,9 @@ function PickupPage() {
     const chan = supabase.channel("valet-pickup-alert")
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
         const p = payload.new as Pickup;
+        // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
+        // rows land as picked_up/completed and must stay silent.
+        if (p.status !== "unclaimed" && p.status !== "claimed") return;
         if (!canSeeKind(role, p.kind)) return;
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"

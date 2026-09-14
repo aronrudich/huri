@@ -213,7 +213,7 @@ function ParkPage() {
     }
 
     toast.success(editing ? "Car updated" : "Car logged");
-    navigate({ to: "/pickup", replace: true });
+    goBack();
   };
 
   return (
@@ -260,7 +260,8 @@ function ParkPage() {
               setBusy(false);
               if (error) return toast.error(error.message);
               toast.success("Car deleted");
-              navigate({ to: "/lot", replace: true });
+              if (fromFlagged) navigate({ to: "/flagged", replace: true });
+              else navigate({ to: "/lot", replace: true });
             }}
             className="w-full rounded-xl border border-destructive bg-background py-3 text-base font-semibold text-destructive disabled:opacity-60"
           >
@@ -310,7 +311,7 @@ function ParkPage() {
               setBusy(false);
               if (error) return toast.error(error.message);
               toast.success("Car marked as picked up");
-              navigate({ to: "/pickup", replace: true });
+              goBack();
             }}
             className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
           >

@@ -224,7 +224,7 @@ function ParkPage() {
         {/* Staging is submitted through the pickup form; a staged car shows no
             Stage button here — canceling a stage happens in the pickup list. */}
         <TopActions hideStage={editing && staged} />
-        <Link to="/pickup" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
+        <Link to={fromFlagged ? "/flagged" : "/pickup"} className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">

@@ -121,7 +121,8 @@ export async function createPickupAndNotify(
       source_role: sourceRole,
       lot_position: lotPosition,
       is_staged: !!data.staged,
-    })
+      // dealership_id is filled by the pickups_set_dealership trigger.
+    } as never)
     .select("id")
     .single();
   if (insertError) throw insertError;

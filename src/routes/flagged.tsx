@@ -122,7 +122,7 @@ function CarRow({ car, photos }: { car: FlaggedCarRow; photos?: CarPhoto[] }) {
     <div className="flex items-center gap-3 bg-card pr-3">
       <button
         type="button"
-        onClick={() => navigate({ to: "/park", search: { id: car.id } })}
+        onClick={() => navigate({ to: "/park", search: { id: car.id, from: "flagged" } })}
         className="block min-w-0 flex-1 px-4 py-3 text-left active:bg-accent"
       >
         <div className="flex items-baseline justify-between gap-3">

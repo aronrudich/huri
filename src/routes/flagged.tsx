@@ -135,7 +135,7 @@ function CarRow({ car, photos }: { car: FlaggedCarRow; photos?: CarPhoto[] }) {
           {[
             car.tag_number ? `Tag #${car.tag_number}` : null,
             car.car_model,
-            locationLabel(car.lot_position),
+            locationLabel(car.lot_position, car.bay_tech),
           ]
             .filter(Boolean)
             .join(" · ")}

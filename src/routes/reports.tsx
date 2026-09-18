@@ -32,6 +32,8 @@ export const Route = createFileRoute("/reports")({
 });
 
 const KIND_LABELS: Record<string, string> = {
+  pickup_customer: "Customer pickups",
+  pickup_tech: "Technician pickups",
   pickup: "Pickups",
   stage: "Stage requests",
   parts: "Parts",

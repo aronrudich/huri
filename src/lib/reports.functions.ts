@@ -51,8 +51,16 @@ export type ReportData = {
 /** Claims slower than this are anomalies: counted, but never averaged. */
 const ANOMALY_MS = 20 * 60_000;
 
-const kindOf = (row: { kind: string | null; is_staged: boolean | null }) =>
-  row.is_staged ? "stage" : (row.kind || "pickup");
+/** Pickups are split by who asked: technicians vs. customer-facing staff. */
+const isTechSource = (role: string | null | undefined) =>
+  role === "Technician" || role === "Shop Foreman";
+
+const kindOf = (row: { kind: string | null; is_staged: boolean | null; source_role?: string | null }) => {
+  if (row.is_staged) return "stage";
+  const kind = row.kind || "pickup";
+  if (kind !== "pickup") return kind;
+  return isTechSource(row.source_role) ? "pickup_tech" : "pickup_customer";
+};
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

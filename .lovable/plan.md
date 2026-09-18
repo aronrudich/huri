@@ -1,40 +1,48 @@
-# Why Huri gets stuck, and how to fix it
+# Longer timer, split stats, named bays, auto-added cars, simpler history
 
-## What the video shows
+## 1. Claimed items stay on the list for 30 minutes
 
-The profile screen paints its frame (header, tab bar, "Actions") but the content underneath never arrives: the dealership name is blank and the roster reads "ROSTER (0) — No matches." A few seconds in, the status bar switches from Wi‑Fi to 5G, and only then does the real content appear (Ontario JCD, ROSTER (46)). So nothing crashed — the screen was waiting on a request that never came back or never failed.
+The wait before a claimed submission disappears goes from 20 to 30 minutes, both in the app and in the background cleanup that finishes them, so both agree.
 
-## Cause
+## 2. Stats split customer and technician pickups
 
-This is the classic "phone changed networks / dozed off mid-request" failure, and Huri currently has two places where such a request can hang forever:
+In Reports, "Pickups" becomes two separate lines everywhere it appears (by type, per claimer, per submitter):
 
-1. **Requests with no time limit.** Database reads that go through the shared cache have a 10-second ceiling and retry themselves. But several screens still load data with a direct request written inline — profile (roster, dealership name, avatar), the car page, a thread, pickup details, car history, the pending gate. Those have no time limit, no retry, and no error state: if the reply never comes, the screen just sits there empty until the app is force-quit.
-2. **Requests that go through our own server have no time limit either.** The inbox directory and the messaging recipient list are fetched that way. A dropped Wi‑Fi connection leaves that call in flight forever, and because the app treats it as "still loading", the refresh that fires when you come back to the app is folded into the dead request instead of starting a new one — so waking the phone or pulling to refresh doesn't rescue it.
+- **Customer pickups** — submitted by advisors, managers, everyone who isn't a tech
+- **Technician pickups** — submitted by Technician or Shop Foreman
 
-That matches "it happens on any and every page" — every page has at least one of these.
+Stage, Parts, Park and Wash stay as they are. Totals and claim times are unchanged, just broken out.
 
-## The fix
+## 3. Bay locations show the technician's name
 
-**1. Put a time limit and retry on every read, everywhere**
-Give every request the same ceiling the cached reads already have (about 10 seconds), including the ones that go through our server. A request that doesn't answer in time fails, and the app retries it instead of waiting forever.
+Instead of "Technician Bay", a car sitting in a bay reads **Bay — Ivan Morales**, using the technician who asked for it. When no name was captured it falls back to "Technician Bay". This shows on car pages, the lot list, search results, and pickup cards.
 
-**2. Move the leftover screens onto the shared cached loading**
-Profile (roster, dealership, avatar), the car page, thread view, car history and the pending gate get converted to the same cached, self-retrying loading the inbox and lot already use. Coming back to a screen then paints the last known data instantly and refreshes in the background.
+## 4. Cars not in Huri get added when a pickup is submitted
 
-**3. Cancel and restart stale work when the app wakes up**
-When the app comes back to the foreground or the network reconnects, abandon anything still in flight from before and start fresh, so a request stranded by a network switch can't keep the screen hostage.
+Submitting any pickup for an RO that isn't in Huri creates that car right away with location **Unknown**, carrying over the RO, model and notes. It then follows the normal rules when the submission leaves the list (tech pickup → that tech's bay, customer pickup → Taken by Customer, staged → CP, wash → Wash).
 
-**4. Show a way out instead of a blank screen**
-If a read fails or times out, the screen shows a short "Couldn't load — Retry" line rather than a silent empty state, so nobody has to guess whether to wait or restart.
+## 5. History becomes short and readable
 
-## What I'm not changing
+Each submission collapses into **one** entry instead of four or five. Example:
 
-No changes to claiming, notifications, the pickup rules, roles, permissions, wording, or the database.
+```text
+Customer pickup · Sep 17, 2:40 PM
+Requested by Maria (Advisor) · from SV 27
+Picked up by Luis (Valet) at 2:46 PM
+Note: keys in the box
+```
+
+- Claim, completion, auto-archive and reminder lines are folded into that single entry (an unfinished one reads "Still waiting" or "Claimed by Luis — not finished"; canceled ones say who canceled).
+- Location changes stay as their own one-line entries ("SV 27 → CP").
+- Kept as-is: added to Huri, deleted, notes, RO/tag/model edits.
+- Dropped: duplicate note lines that repeat a note already shown, stage/unstage pairs (folded into the stage request), reminder-sent lines, and the separate "archived" line.
+
+Old history stays readable — existing records are grouped by the same rules, nothing is deleted.
 
 ## Technical notes
 
-- Export the existing `timeoutSignal` helper from `src/lib/queries.ts` and apply it to every `supabase.from(...)` read in `src/routes/*` and `src/components/*`; wrap `getDirectory` / `getMessageRecipients` server-fn calls in a `Promise.race` timeout (server fns don't accept an abort signal) so `directoryQuery` / `messageRecipientsQuery` can fail and retry.
-- New query definitions for the leftover inline loads: `["profile-roster"]`, `["dealership", id]`, `["car", id]`, `["thread", threadId]`, `["car-events", ro]`, replacing the `useEffect` + `useState` fetches in `profile.tsx`, `park.tsx`, `thread.$threadId.tsx`, `CarHistory.tsx`, `PendingGate.tsx`. Realtime handlers keep using `setQueryData` with the existing refetch fallback.
-- In `useRealtimeRecovery` (`src/lib/realtime-recovery.ts`), call `queryClient.cancelQueries({ type: "active" })` before `invalidateQueries` so an in-flight dead request is replaced rather than deduped against.
-- Keep `retry: 2` with the existing backoff; add `retry` to mutations that read on mount only where already present. No change to `refetchOnWindowFocus` / `refetchOnReconnect`, the persisted cache in `query-persist.ts`, or the auth watchdog in `auth-context.tsx`.
-- Error UI: a small shared inline "Couldn't load — Retry" block reusing `ListSkeleton`'s placement, gated on `isError` so loading still shows skeletons.
+- `src/routes/pickup.tsx`: `CLAIM_HIDE_MS` → 30 min; migration updates `archive_stale_pickups()` interval and its log text.
+- `src/lib/reports.functions.ts`: `kindOf()` returns `pickup_customer` / `pickup_tech` based on `source_role`; `src/routes/reports.tsx` `KIND_LABELS` gains both keys.
+- Bay name: add `bay_tech text` to `parked_cars`, set by `add_tech_car_on_pickup_complete()` from `advisor_name` when moving to `BAY`; `src/lib/lot.ts` label helpers accept an optional tech name so `BAY` renders "Bay — Name"; callers in `park.tsx`, `lot.tsx`, `pickup.tsx` pass it.
+- Auto-add: in `createPickupAndNotify` (`src/lib/pickup-notifications.server.ts`), after the snapshot lookup, insert a `parked_cars` row with `lot_position 'UNKNOWN'` when no car matches the RO. Trigger `add_tech_car_on_pickup_complete` keeps its bay/CP/WASH/TAKEN moves.
+- History: migration trims `car_events_from_pickups()` (drop `completed`, `reminder`, request-note events; keep `request`, `claimed`, `canceled`) and `car_events_from_parked_cars()` (drop `unstaged`); `archive_stale_pickups()` stops writing `archived` events. `src/components/CarHistory.tsx` fetches this car's `pickup_requests` rows alongside `car_events`, renders one card per submission (requester, snapshot spot, claimer + time, outcome, note) and hides the per-submission event rows it now represents.

@@ -48,7 +48,7 @@ type Pickup = {
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
-  is_staged?: boolean | null; located_at?: string | null;
+  is_staged?: boolean | null; located_at?: string | null; bay_tech?: string | null;
 };
 
 function PickupPage() {

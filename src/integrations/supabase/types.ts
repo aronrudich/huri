@@ -202,6 +202,7 @@ export type Database = {
       }
       parked_cars: {
         Row: {
+          bay_tech: string | null
           car_model: string | null
           created_at: string
           dealership_id: string
@@ -219,6 +220,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bay_tech?: string | null
           car_model?: string | null
           created_at?: string
           dealership_id: string
@@ -236,6 +238,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bay_tech?: string | null
           car_model?: string | null
           created_at?: string
           dealership_id?: string

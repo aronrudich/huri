@@ -96,7 +96,8 @@ export async function createPickupAndNotify(
   // Snapshot the car's current spot when the form didn't send one (e.g. wash requests),
   // so the pickup card can show where the car is standing at submit time.
   let lotPosition = data.lotPosition ?? null;
-  if (!lotPosition && data.ro) {
+  let carExists = false;
+  if (data.ro) {
     const { data: car } = await supabase
       .from("parked_cars")
       .select("lot_position")
@@ -105,7 +106,24 @@ export async function createPickupAndNotify(
       .order("located_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    lotPosition = car?.lot_position ?? null;
+    carExists = !!car;
+    if (!lotPosition) lotPosition = car?.lot_position ?? null;
+  }
+
+  // A submission for an RO Huri has never seen adds the car with an unknown
+  // location, so it exists in the system from that moment on.
+  if (data.ro && !carExists) {
+    const { error: carError } = await supabase
+      .from("parked_cars")
+      .insert({
+        ro_number: data.ro,
+        tag_number: data.tag ?? null,
+        car_model: data.model ?? null,
+        notes: data.notes ?? null,
+        lot_position: "UNKNOWN",
+        parked_by: userId,
+      } as never);
+    if (carError) console.error("could not add car for new submission", data.ro, carError.message);
   }
 
   const { data: pickup, error: insertError } = await supabase

@@ -23,7 +23,7 @@ export const Route = createFileRoute("/lot")({
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
-  is_staged?: boolean | null;
+  is_staged?: boolean | null; bay_tech?: string | null;
 };
 
 type ActivePickup = {
@@ -243,7 +243,7 @@ function LotPage() {
                         {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                       </span>
                       <span className="block truncate text-xs text-muted-foreground">
-                        {c.car_model ?? "—"} · {locationLabel(c.lot_position)}
+                        {c.car_model ?? "—"} · {locationLabel(c.lot_position, c.bay_tech)}
                       </span>
                     </span>
                   </button>
@@ -343,7 +343,7 @@ function LotPage() {
                       {car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}
                     </p>
                     <p className="truncate text-xs text-muted-foreground">
-                      {locationLabel(car.lot_position)}
+                      {locationLabel(car.lot_position, car.bay_tech)}
                     </p>
                   </div>
                   {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? (

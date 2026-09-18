@@ -23,7 +23,7 @@ Submitting any pickup for an RO that isn't in Huri creates that car right away w
 
 ## 5. History becomes short and readable
 
-Each submission collapses into **one** entry instead of four or five. Example:
+Each submission collapses into **one** entry instead of four or five. Do not include notes in the history ...Example:
 
 ```text
 Customer pickup · Sep 17, 2:40 PM

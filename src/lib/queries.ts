@@ -80,7 +80,7 @@ export const rolesQuery = () =>
 export type ParkedCarRow = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
-  is_staged?: boolean | null; located_at?: string | null;
+  is_staged?: boolean | null; located_at?: string | null; bay_tech?: string | null;
 };
 
 /** Every car currently tracked in Huri. */
@@ -91,7 +91,7 @@ export const parkedCarsQuery = () =>
     queryFn: async ({ signal }): Promise<ParkedCarRow[]> => {
       const { data, error } = await supabase
         .from("parked_cars")
-        .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at")
+        .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at, bay_tech")
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as ParkedCarRow[];
@@ -108,7 +108,7 @@ export const flaggedCarsQuery = () =>
     queryFn: async ({ signal }): Promise<FlaggedCarRow[]> => {
       const { data, error } = await supabase
         .from("parked_cars")
-        .select("id, tag_number, ro_number, car_model, lot_position, notes, located_at, flagged_at")
+        .select("id, tag_number, ro_number, car_model, lot_position, notes, located_at, flagged_at, bay_tech")
         .not("flagged_at", "is", null)
         .is("flag_dismissed_at", null)
         .order("located_at", { ascending: false })

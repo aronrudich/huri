@@ -54,6 +54,8 @@ function ParkPage() {
   const [staged, setStaged] = useState(false);
   // Saved location of the loaded car, used for the SV map snapshot.
   const [savedPos, setSavedPos] = useState<string | null>(null);
+  // Which technician's bay this car went to, so "Bay" reads with a name.
+  const [bayTech, setBayTech] = useState<string | null>(null);
   // Wash record for this RO — it stays with the RO forever, wherever the car goes.
   const [washedAt, setWashedAt] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
@@ -71,7 +73,7 @@ function ParkPage() {
 
   useEffect(() => {
     const load = async () => {
-      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null };
+      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
       let data: Row | null = null;
       if (idParam) {
         const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
@@ -89,6 +91,7 @@ function ParkPage() {
       setNotes(data.notes ?? "");
       setStaged(!!data.is_staged);
       setSavedPos(data.lot_position ?? null);
+      setBayTech(data.bay_tech ?? null);
     };
     void load();
   }, [roParam, idParam]);
@@ -230,7 +233,7 @@ function ParkPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
         <LocationPicker required value={pos} onChange={setPos} />
-        {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} />}
+        {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (
           <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
             <CheckCircle2 className="h-4 w-4" /> Washed · {format(new Date(washedAt), "MMM d, yyyy")}
@@ -351,7 +354,7 @@ function ParkPage() {
 
 /** Small "who's in the way" panel for the loaded car. SV is the only lot with
  *  numbered, stacked spots, so it's the only lot with real blocking info. */
-function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: Record<string, MapCar> }) {
+function BlockingInfo({ spot, carsBySpot, bayTech }: { spot: string | null; carsBySpot: Record<string, MapCar>; bayTech?: string | null }) {
   const normalized = normalizeSpot(spot);
   const isSv = lotOf(normalized) === "sv";
   const blockedBy = isSv
@@ -367,7 +370,7 @@ function BlockingInfo({ spot, carsBySpot }: { spot: string | null; carsBySpot: R
     <div className="rounded-xl bg-surface px-3 py-2 text-sm">
       <p>
         <span className="text-muted-foreground">Location:</span>{" "}
-        <span className="font-semibold">{locationLabel(normalized)}</span>
+        <span className="font-semibold">{locationLabel(normalized, bayTech)}</span>
       </p>
       {isSv && blockedBy.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">

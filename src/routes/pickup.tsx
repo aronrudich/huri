@@ -19,8 +19,8 @@ import { PhotoBadge } from "@/components/PhotoBadge";
 
 
 
-/** Claimed submissions leave the list 20 minutes after the claim. */
-const CLAIM_HIDE_MS = 20 * 60 * 1000;
+/** Claimed submissions leave the list 30 minutes after the claim. */
+const CLAIM_HIDE_MS = 30 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 
 
@@ -48,7 +48,7 @@ type Pickup = {
 type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
-  is_staged?: boolean | null; located_at?: string | null;
+  is_staged?: boolean | null; located_at?: string | null; bay_tech?: string | null;
 };
 
 function PickupPage() {
@@ -185,7 +185,7 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile, realtimeGen]);
 
-  // Auto-archive claimed pickups/parts after 20 minutes without changing their
+  // Auto-archive claimed pickups/parts after 30 minutes without changing their
   // saved spot snapshot. The car's destination (Bay / CP / Wash / Unknown) is
   // applied server-side when the submission leaves the list, and no car is ever
   // deleted.
@@ -456,7 +456,7 @@ function PickupPage() {
                       <span className="text-muted-foreground">Location:</span>{" "}
                       <span className="font-semibold">
                         {hasCarRecord
-                          ? locationLabel(effectiveSpot)
+                          ? locationLabel(effectiveSpot, liveCar?.bay_tech)
                           : "Unknown"}
                       </span>
                     </p>

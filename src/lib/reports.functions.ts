@@ -51,8 +51,16 @@ export type ReportData = {
 /** Claims slower than this are anomalies: counted, but never averaged. */
 const ANOMALY_MS = 20 * 60_000;
 
-const kindOf = (row: { kind: string | null; is_staged: boolean | null }) =>
-  row.is_staged ? "stage" : (row.kind || "pickup");
+/** Pickups are split by who asked: technicians vs. customer-facing staff. */
+const isTechSource = (role: string | null | undefined) =>
+  role === "Technician" || role === "Shop Foreman";
+
+const kindOf = (row: { kind: string | null; is_staged: boolean | null; source_role?: string | null }) => {
+  if (row.is_staged) return "stage";
+  const kind = row.kind || "pickup";
+  if (kind !== "pickup") return kind;
+  return isTechSource(row.source_role) ? "pickup_tech" : "pickup_customer";
+};
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -91,13 +99,13 @@ export const getReport = createServerFn({ method: "POST" })
     type Row = {
       id: string; kind: string | null; is_staged: boolean | null; status: string;
       created_at: string; claimed_at: string | null; claimed_by: string | null;
-      requested_by: string | null;
+      requested_by: string | null; source_role: string | null;
     };
     const rows: Row[] = [];
     for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
       let query = supabase
         .from("pickup_requests")
-        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by")
+        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(offset, offset + PAGE - 1);

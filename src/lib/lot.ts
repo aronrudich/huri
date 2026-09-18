@@ -110,13 +110,19 @@ export function blockedSpots(raw: string | null | undefined): string[] {
   return out.filter((s) => parseSpot(s) !== null && parseSpot(s)! <= MAX_SPOT);
 }
 
-/** Human label for a location value. */
-export function locationLabel(raw: string | null | undefined): string {
+/**
+ * Human label for a location value. Bays read "Bay — <technician>" when we know
+ * whose bay the car went to, so nobody has to guess which bay it is.
+ */
+export function locationLabel(raw: string | null | undefined, bayTech?: string | null): string {
   const t = normalizeSpot(raw);
   if (!t || t === "UNKNOWN") return "Unknown";
   if (t === "CP") return "CP · Customer Parking";
   if (t === "BL") return "BL · Back Lot";
-  if (t === "BAY") return "Technician Bay";
+  if (t === "BAY") {
+    const who = (bayTech ?? "").trim();
+    return who ? `Bay — ${who}` : "Technician Bay";
+  }
   if (t === "WASH") return "Wash";
   if (t === "TAKEN") return "Taken by Customer";
   return t;

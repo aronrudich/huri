@@ -429,7 +429,7 @@ function PickupPage() {
                         </p>
                         {effectiveNotes && (
                           <p className="mt-0.5 text-sm text-muted-foreground">
-                            <span className="font-medium">Note:</span> {effectiveNotes}
+                            <span className="font-medium">Note:</span> {effectiveNotes} · {format(new Date(p.created_at), "M/d")}
                           </p>
                         )}
                       </>
@@ -437,7 +437,7 @@ function PickupPage() {
                     {isParts && (
                       <>
                         {p.ro_number && <p className="text-sm text-muted-foreground">RO #{p.ro_number}</p>}
-                        {p.car_notes && <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes}</p>}
+                        {p.car_notes && <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes} · {format(new Date(p.created_at), "M/d")}</p>}
                       </>
                     )}
                   </div>

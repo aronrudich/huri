@@ -110,9 +110,11 @@ export async function createPickupAndNotify(
     if (!lotPosition) lotPosition = car?.lot_position ?? null;
   }
 
-  // A submission for an RO Huri has never seen adds the car with an unknown
-  // location, so it exists in the system from that moment on.
-  if (data.ro && !carExists) {
+  // A *pickup* submission for an RO Huri has never seen adds the car with an
+  // unknown location, so it exists in the system from that moment on. Parts,
+  // wash and park requests never create a car — they'd leave ghost rows behind.
+  const kind = data.kind ?? "pickup";
+  if (data.ro && !carExists && kind === "pickup") {
     const { error: carError } = await supabase
       .from("parked_cars")
       .insert({
@@ -125,6 +127,7 @@ export async function createPickupAndNotify(
       } as never);
     if (carError) console.error("could not add car for new submission", data.ro, carError.message);
   }
+
 
   const { data: pickup, error: insertError } = await supabase
     .from("pickup_requests")

@@ -510,6 +510,15 @@ function PickupPage() {
                       {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
+                  {p.status === "claimed" && !!user && p.claimed_by === user.id && !isSpectator && (
+                    <button
+                      onClick={() => unclaim(p)}
+                      className="rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent"
+                    >
+                      Cancel claim
+                    </button>
+                  )}
+
                   {!isParts && (
                     <button
                       onClick={() => effectiveSpot && setMapSpot(effectiveSpot)}

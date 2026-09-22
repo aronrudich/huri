@@ -221,6 +221,22 @@ function PickupPage() {
     toast.success("Claimed");
   };
 
+  /** Give a claim back: the submission returns to the list for anyone to claim. */
+  const unclaim = async (p: Pickup) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("pickup_requests")
+      .update({ status: "unclaimed", claimed_by: null, claimed_at: null })
+      .eq("id", p.id)
+      .eq("claimed_by", user.id)
+      .select("*")
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    if (data) setPickups((cur) => cur.map((item) => (item.id === p.id ? (data as Pickup) : item)));
+    toast.message("Claim canceled");
+  };
+
+
+
 
   const matches = useMemo(() => {
     const n = q.trim().toLowerCase();

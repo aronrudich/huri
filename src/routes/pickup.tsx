@@ -221,6 +221,22 @@ function PickupPage() {
     toast.success("Claimed");
   };
 
+  /** Give a claim back: the submission returns to the list for anyone to claim. */
+  const unclaim = async (p: Pickup) => {
+    if (!user) return;
+    const { data, error } = await supabase.from("pickup_requests")
+      .update({ status: "unclaimed", claimed_by: null, claimed_at: null })
+      .eq("id", p.id)
+      .eq("claimed_by", user.id)
+      .select("*")
+      .maybeSingle();
+    if (error) return toast.error(error.message);
+    if (data) setPickups((cur) => cur.map((item) => (item.id === p.id ? (data as Pickup) : item)));
+    toast.message("Claim canceled");
+  };
+
+
+
 
   const matches = useMemo(() => {
     const n = q.trim().toLowerCase();
@@ -494,6 +510,15 @@ function PickupPage() {
                       {p.claimed_at && ` · ${format(new Date(p.claimed_at), "h:mm a")}`}
                     </p>
                   )}
+                  {p.status === "claimed" && !!user && p.claimed_by === user.id && !isSpectator && (
+                    <button
+                      onClick={() => unclaim(p)}
+                      className="rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent"
+                    >
+                      Cancel claim
+                    </button>
+                  )}
+
                   {!isParts && (
                     <button
                       onClick={() => effectiveSpot && setMapSpot(effectiveSpot)}

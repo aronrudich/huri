@@ -5,7 +5,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo } from "@/components/BottomBar";
 import { canViewReports } from "@/lib/roles";
@@ -41,6 +41,15 @@ const KIND_LABELS: Record<string, string> = {
   wash: "Wash",
 
 };
+
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
+
+function hourLabel(h: number): string {
+  if (h === 0) return "12 AM";
+  if (h < 12) return `${h} AM`;
+  if (h === 12) return "12 PM";
+  return `${h - 12} PM`;
+}
 
 function ReportsPage() {
   const navigate = useNavigate();

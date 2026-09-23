@@ -250,7 +250,7 @@ function ParkPage() {
         <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} pendingRef={pendingPhotos} />
 
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Saving…" : editing ? "Save Changes" : "Log Vehicle"}
+          {busy ? "Saving…" : editing ? "Save Changes" : "Save"}
         </button>
         {editing && existingId && (
           <button

@@ -106,6 +106,11 @@ export function pacificToday(now = new Date()): string {
   return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
 }
 
+/** Pacific hour (0–23) of an instant — used for the custom hour filter. */
+export function pacificHour(at: Date): number {
+  return laParts(at).hour;
+}
+
 /** "Aug 12" for a day key. */
 export function formatDayKey(day: string): string {
   const m = ISO_DAY.exec(day);

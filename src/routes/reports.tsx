@@ -5,7 +5,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo } from "@/components/BottomBar";
 import { canViewReports } from "@/lib/roles";
@@ -42,6 +42,15 @@ const KIND_LABELS: Record<string, string> = {
 
 };
 
+const HOURS = Array.from({ length: 24 }, (_, h) => h);
+
+function hourLabel(h: number): string {
+  if (h === 0) return "12 AM";
+  if (h < 12) return `${h} AM`;
+  if (h === 12) return "12 PM";
+  return `${h - 12} PM`;
+}
+
 function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
@@ -51,23 +60,33 @@ function ReportsPage() {
   const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
     start: null, end: null,
   });
+  const [hoursOpen, setHoursOpen] = useState(false);
+  const [hours, setHours] = useState<{ start: number | null; end: number | null }>({
+    start: null, end: null,
+  });
   const fetchReport = useServerFn(getReport);
 
   const allowed = canViewReports(profile?.role_name) || !!profile?.is_owner;
   const customReady = range !== "custom" || (!!custom.start && !!custom.end);
+  const hoursReady = hours.start !== null && hours.end !== null && hours.start < hours.end;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["report", range, custom.start, custom.end],
+    queryKey: ["report", range, custom.start, custom.end, hours.start, hours.end],
     enabled: !!user && allowed && customReady,
     staleTime: 60_000,
     queryFn: () =>
       fetchReport({
         data: range === "custom"
-          ? { range, start: custom.start!, end: custom.end! }
+          ? {
+              range,
+              start: custom.start!,
+              end: custom.end!,
+              ...(hoursReady ? { startHour: hours.start!, endHour: hours.end! } : {}),
+            }
           : { range },
       }),
   });
@@ -152,6 +171,77 @@ function ReportsPage() {
               end={custom.end}
               onChange={(start, end) => setCustom({ start, end })}
             />
+            <div className="overflow-hidden rounded-xl border border-border bg-card">
+              <button
+                type="button"
+                onClick={() => setHoursOpen((v) => !v)}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left active:bg-accent"
+              >
+                <span className="flex-1 text-sm font-semibold">Custom hours</span>
+                <span className="text-xs text-muted-foreground">
+                  {hoursReady
+                    ? `${hourLabel(hours.start!)} – ${hourLabel(hours.end!)}`
+                    : "All hours"}
+                </span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${
+                    hoursOpen ? "rotate-180" : ""
+                  }`}
+                />
+              </button>
+              {hoursOpen && (
+                <div className="space-y-2 border-t border-border px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <label className="w-10 text-xs font-semibold text-muted-foreground">From</label>
+                    <select
+                      value={hours.start ?? ""}
+                      onChange={(e) =>
+                        setHours((h) => ({
+                          ...h,
+                          start: e.target.value === "" ? null : Number(e.target.value),
+                        }))
+                      }
+                      className="flex-1 rounded-lg border border-border bg-surface px-2 py-2 text-sm font-semibold"
+                    >
+                      <option value="">Any</option>
+                      {HOURS.map((h) => (
+                        <option key={h} value={h}>{hourLabel(h)}</option>
+                      ))}
+                    </select>
+                    <label className="w-6 text-right text-xs font-semibold text-muted-foreground">To</label>
+                    <select
+                      value={hours.end ?? ""}
+                      onChange={(e) =>
+                        setHours((h) => ({
+                          ...h,
+                          end: e.target.value === "" ? null : Number(e.target.value),
+                        }))
+                      }
+                      className="flex-1 rounded-lg border border-border bg-surface px-2 py-2 text-sm font-semibold"
+                    >
+                      <option value="">Any</option>
+                      {HOURS.map((h) => (
+                        <option key={h} value={h}>{hourLabel(h)}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[11px] text-muted-foreground">
+                      Only counts submissions started between these hours (Pacific).
+                    </p>
+                    {(hours.start !== null || hours.end !== null) && (
+                      <button
+                        type="button"
+                        onClick={() => setHours({ start: null, end: null })}
+                        className="text-xs font-semibold text-primary active:opacity-60"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </section>
         )}
 

@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
 import {
-  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, type RangeKey,
+  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
 
 
@@ -64,12 +64,27 @@ const kindOf = (row: { kind: string | null; is_staged: boolean | null; source_ro
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { range: RangeKey; start?: string; end?: string }) => {
+  .inputValidator((input: {
+    range: RangeKey; start?: string; end?: string; startHour?: number; endHour?: number;
+  }) => {
     const allowed: RangeKey[] = ["day", "week", "month", "all", "custom"];
     if (!allowed.includes(input?.range)) throw new Error("Invalid range");
+    const hasHours = input.startHour !== undefined || input.endHour !== undefined;
+    const hoursValid =
+      Number.isInteger(input.startHour) && Number.isInteger(input.endHour) &&
+      (input.startHour as number) >= 0 && (input.startHour as number) <= 23 &&
+      (input.endHour as number) >= 0 && (input.endHour as number) <= 23 &&
+      (input.startHour as number) < (input.endHour as number);
     if (input.range === "custom") {
       if (!isDayKey(input.start) || !isDayKey(input.end)) throw new Error("Pick a start and end date");
       if (input.start > input.end) throw new Error("Start date must come before the end date");
+      if (hasHours) {
+        if (!hoursValid) throw new Error("Pick a valid start and end hour");
+        return {
+          range: input.range, start: input.start, end: input.end,
+          startHour: input.startHour, endHour: input.endHour,
+        };
+      }
       return { range: input.range, start: input.start, end: input.end };
     }
     return { range: input.range };
@@ -121,9 +136,20 @@ export const getReport = createServerFn({ method: "POST" })
 
     // Canceled requests never count toward any stat. "picked_up" rows come from the
     // "Car Has Been Picked Up" shortcut — they are bookkeeping, not real requests.
-    const list = (rows ?? []).filter(
+    let list = (rows ?? []).filter(
       (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "picked_up",
     );
+
+    // Optional custom hour window: keep only submissions whose Pacific hour of
+    // creation falls inside [startHour, endHour). Per-row math keeps DST correct.
+    if (data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) {
+      const from = data.startHour;
+      const to = data.endHour;
+      list = list.filter((r) => {
+        const h = pacificHour(new Date(r.created_at));
+        return h >= from && h < to;
+      });
+    }
     const claimedRows = list.filter((r) => !!r.claimed_at && !!r.claimed_by);
 
     const durations = claimedRows.map((r) => ({

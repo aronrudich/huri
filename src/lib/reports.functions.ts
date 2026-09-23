@@ -2,7 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
 import {
-  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, type RangeKey,
+  shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
 
 
@@ -64,12 +64,27 @@ const kindOf = (row: { kind: string | null; is_staged: boolean | null; source_ro
 
 export const getReport = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { range: RangeKey; start?: string; end?: string }) => {
+  .inputValidator((input: {
+    range: RangeKey; start?: string; end?: string; startHour?: number; endHour?: number;
+  }) => {
     const allowed: RangeKey[] = ["day", "week", "month", "all", "custom"];
     if (!allowed.includes(input?.range)) throw new Error("Invalid range");
+    const hasHours = input.startHour !== undefined || input.endHour !== undefined;
+    const hoursValid =
+      Number.isInteger(input.startHour) && Number.isInteger(input.endHour) &&
+      (input.startHour as number) >= 0 && (input.startHour as number) <= 23 &&
+      (input.endHour as number) >= 0 && (input.endHour as number) <= 23 &&
+      (input.startHour as number) < (input.endHour as number);
     if (input.range === "custom") {
       if (!isDayKey(input.start) || !isDayKey(input.end)) throw new Error("Pick a start and end date");
       if (input.start > input.end) throw new Error("Start date must come before the end date");
+      if (hasHours) {
+        if (!hoursValid) throw new Error("Pick a valid start and end hour");
+        return {
+          range: input.range, start: input.start, end: input.end,
+          startHour: input.startHour, endHour: input.endHour,
+        };
+      }
       return { range: input.range, start: input.start, end: input.end };
     }
     return { range: input.range };

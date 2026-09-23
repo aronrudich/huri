@@ -60,23 +60,33 @@ function ReportsPage() {
   const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
     start: null, end: null,
   });
+  const [hoursOpen, setHoursOpen] = useState(false);
+  const [hours, setHours] = useState<{ start: number | null; end: number | null }>({
+    start: null, end: null,
+  });
   const fetchReport = useServerFn(getReport);
 
   const allowed = canViewReports(profile?.role_name) || !!profile?.is_owner;
   const customReady = range !== "custom" || (!!custom.start && !!custom.end);
+  const hoursReady = hours.start !== null && hours.end !== null && hours.start < hours.end;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["report", range, custom.start, custom.end],
+    queryKey: ["report", range, custom.start, custom.end, hours.start, hours.end],
     enabled: !!user && allowed && customReady,
     staleTime: 60_000,
     queryFn: () =>
       fetchReport({
         data: range === "custom"
-          ? { range, start: custom.start!, end: custom.end! }
+          ? {
+              range,
+              start: custom.start!,
+              end: custom.end!,
+              ...(hoursReady ? { startHour: hours.start!, endHour: hours.end! } : {}),
+            }
           : { range },
       }),
   });

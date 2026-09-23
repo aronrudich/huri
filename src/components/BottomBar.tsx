@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { Inbox, Car, List, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useHasUnreadMessages } from "@/lib/use-unread";
-import { actionsForRole, type ActionId } from "@/lib/roles";
+import { actionsForRole, isTechRole, type ActionId } from "@/lib/roles";
 import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
@@ -78,7 +78,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
 
   const LABELS: Record<ActionId, string> = {
     pickup: "Pickup",
-    new: "Add Car to Huri",
+    new: isTechRole(role) ? "Update Location" : "Add Car to Huri",
     stage: "Stage",
     parts: "Parts",
     park: "Park My Car",

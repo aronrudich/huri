@@ -51,6 +51,13 @@ type ParkedCar = {
   is_staged?: boolean | null; located_at?: string | null; bay_tech?: string | null;
 };
 
+type SearchResult = {
+  id: string;
+  ro_number: string | null;
+  car_model: string | null;
+  lot_position: string;
+};
+
 function PickupPage() {
   // Bumped when the app returns from the background so channels rebuild.
   const realtimeGen = useRealtimeGeneration();
@@ -238,19 +245,6 @@ function PickupPage() {
 
 
 
-  const matches = useMemo(() => {
-    const n = q.trim().toLowerCase();
-    if (!n) return [];
-    return allCars
-      .filter((c) =>
-        c.tag_number?.toLowerCase().includes(n) ||
-        c.ro_number?.toLowerCase().includes(n) ||
-        c.car_model?.toLowerCase().includes(n) ||
-        c.lot_position?.toLowerCase().includes(n),
-      )
-      .slice(0, 8);
-  }, [q, allCars]);
-
   // Parts requests are visible and claimable by everyone in the pickup list.
   const visiblePickups = useMemo(
     () => pickups.filter((p) => {
@@ -262,6 +256,44 @@ function PickupPage() {
     }),
     [pickups, profile],
   );
+
+  const matches = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    const seenRos = new Set<string>();
+    const results: SearchResult[] = [];
+    const add = (item: SearchResult) => {
+      const roKey = item.ro_number?.trim().toLowerCase();
+      if (roKey) {
+        if (seenRos.has(roKey)) return;
+        seenRos.add(roKey);
+      }
+      results.push(item);
+    };
+
+    allCars.forEach((c) => {
+      if (
+        c.tag_number?.toLowerCase().includes(n) ||
+        c.ro_number?.toLowerCase().includes(n) ||
+        c.car_model?.toLowerCase().includes(n) ||
+        c.lot_position?.toLowerCase().includes(n)
+      ) {
+        add(c);
+      }
+    });
+
+    visiblePickups.forEach((p) => {
+      if (!p.ro_number?.toLowerCase().includes(n)) return;
+      add({
+        id: `pickup-${p.id}`,
+        ro_number: p.ro_number,
+        car_model: p.car_model,
+        lot_position: p.lot_position ?? "UNKNOWN",
+      });
+    });
+
+    return results.slice(0, 8);
+  }, [q, allCars, visiblePickups]);
 
 
   // Customer pickups always come first, then technician pickups, then service

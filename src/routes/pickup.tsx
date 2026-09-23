@@ -16,6 +16,7 @@ import { LotMap } from "@/components/LotMap";
 import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
+import { searchCars } from "@/lib/directory.functions";
 
 
 
@@ -58,6 +59,9 @@ type SearchResult = {
   lot_position: string;
 };
 
+const normalizeSearchText = (value: string | null | undefined) =>
+  (value ?? "").toLowerCase().replace(/\s+/g, "");
+
 function PickupPage() {
   // Bumped when the app returns from the background so channels rebuild.
   const realtimeGen = useRealtimeGeneration();
@@ -98,6 +102,24 @@ function PickupPage() {
     return byPos;
   }, [allCars]);
   const [q, setQ] = useState("");
+  const [liveSearch, setLiveSearch] = useState("");
+  useEffect(() => {
+    const next = q.trim();
+    const timer = setTimeout(() => setLiveSearch(next), 200);
+    return () => clearTimeout(timer);
+  }, [q]);
+  const {
+    data: liveCars = [],
+    isFetching: liveSearchPending,
+  } = useQuery({
+    queryKey: ["pickup-car-search", normalizeSearchText(liveSearch)],
+    enabled: !!user && liveSearch.length > 0,
+    staleTime: 0,
+    queryFn: async (): Promise<SearchResult[]> => {
+      const rows = await searchCars({ data: { q: liveSearch } });
+      return (rows ?? []) as SearchResult[];
+    },
+  });
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSpot, setMapSpot] = useState<string | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
@@ -258,7 +280,7 @@ function PickupPage() {
   );
 
   const matches = useMemo(() => {
-    const n = q.trim().toLowerCase();
+    const n = normalizeSearchText(q.trim());
     if (!n) return [];
     const seenRos = new Set<string>();
     const results: SearchResult[] = [];
@@ -271,19 +293,23 @@ function PickupPage() {
       results.push(item);
     };
 
+    // Current server results win over a persisted phone cache when both contain
+    // the same RO. Cached cars still make the first suggestions instantaneous.
+    liveCars.forEach(add);
+
     allCars.forEach((c) => {
       if (
-        c.tag_number?.toLowerCase().includes(n) ||
-        c.ro_number?.toLowerCase().includes(n) ||
-        c.car_model?.toLowerCase().includes(n) ||
-        c.lot_position?.toLowerCase().includes(n)
+        normalizeSearchText(c.tag_number).includes(n) ||
+        normalizeSearchText(c.ro_number).includes(n) ||
+        normalizeSearchText(c.car_model).includes(n) ||
+        normalizeSearchText(c.lot_position).includes(n)
       ) {
         add(c);
       }
     });
 
     visiblePickups.forEach((p) => {
-      if (!p.ro_number?.toLowerCase().includes(n)) return;
+      if (!normalizeSearchText(p.ro_number).includes(n)) return;
       add({
         id: `pickup-${p.id}`,
         ro_number: p.ro_number,
@@ -293,7 +319,10 @@ function PickupPage() {
     });
 
     return results.slice(0, 8);
-  }, [q, allCars, visiblePickups]);
+  }, [q, liveCars, allCars, visiblePickups]);
+
+  const waitingForLiveSearch = q.trim().length > 0 &&
+    (liveSearch !== q.trim() || liveSearchPending);
 
 
   // Customer pickups always come first, then technician pickups, then service
@@ -344,7 +373,10 @@ function PickupPage() {
       {q.trim() && (
 
         <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
-          {matches.length === 0 && (
+          {matches.length === 0 && waitingForLiveSearch && (
+            <li className="px-4 py-6 text-center text-sm text-muted-foreground">Searching…</li>
+          )}
+          {matches.length === 0 && !waitingForLiveSearch && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">No cars match "{q}"</li>
           )}
           {matches.map((c) => (

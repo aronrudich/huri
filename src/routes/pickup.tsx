@@ -104,7 +104,8 @@ function PickupPage() {
   const [q, setQ] = useState("");
   const [liveSearch, setLiveSearch] = useState("");
   useEffect(() => {
-    const next = q.trim();
+    const raw = q.trim();
+    const next = /^[\d\s]+$/.test(raw) ? raw.replace(/\s+/g, "") : raw;
     const timer = setTimeout(() => setLiveSearch(next), 200);
     return () => clearTimeout(timer);
   }, [q]);
@@ -295,7 +296,15 @@ function PickupPage() {
 
     // Current server results win over a persisted phone cache when both contain
     // the same RO. Cached cars still make the first suggestions instantaneous.
-    liveCars.forEach(add);
+    liveCars.forEach((c) => {
+      if (
+        normalizeSearchText(c.ro_number).includes(n) ||
+        normalizeSearchText(c.car_model).includes(n) ||
+        normalizeSearchText(c.lot_position).includes(n)
+      ) {
+        add(c);
+      }
+    });
 
     allCars.forEach((c) => {
       if (
@@ -321,8 +330,11 @@ function PickupPage() {
     return results.slice(0, 8);
   }, [q, liveCars, allCars, visiblePickups]);
 
+  const normalizedPendingSearch = /^[\d\s]+$/.test(q.trim())
+    ? q.trim().replace(/\s+/g, "")
+    : q.trim();
   const waitingForLiveSearch = q.trim().length > 0 &&
-    (liveSearch !== q.trim() || liveSearchPending);
+    (liveSearch !== normalizedPendingSearch || liveSearchPending);
 
 
   // Customer pickups always come first, then technician pickups, then service

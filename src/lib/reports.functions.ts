@@ -136,9 +136,20 @@ export const getReport = createServerFn({ method: "POST" })
 
     // Canceled requests never count toward any stat. "picked_up" rows come from the
     // "Car Has Been Picked Up" shortcut — they are bookkeeping, not real requests.
-    const list = (rows ?? []).filter(
+    let list = (rows ?? []).filter(
       (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "picked_up",
     );
+
+    // Optional custom hour window: keep only submissions whose Pacific hour of
+    // creation falls inside [startHour, endHour). Per-row math keeps DST correct.
+    if (data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) {
+      const from = data.startHour;
+      const to = data.endHour;
+      list = list.filter((r) => {
+        const h = pacificHour(new Date(r.created_at));
+        return h >= from && h < to;
+      });
+    }
     const claimedRows = list.filter((r) => !!r.claimed_at && !!r.claimed_by);
 
     const durations = claimedRows.map((r) => ({

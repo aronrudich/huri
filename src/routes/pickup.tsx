@@ -506,7 +506,15 @@ function PickupPage() {
                       <span>
                         {isParts
                           ? `Parts for ${p.advisor_name ?? "employee"}`
-                          : p.ro_number ? `RO #${p.ro_number}` : "Pickup request"}
+                          : p.ro_number ? (
+                            <Link
+                              to="/park"
+                              search={{ ro: p.ro_number }}
+                              className="underline decoration-primary/40 underline-offset-4 active:opacity-70"
+                            >
+                              RO #{p.ro_number}
+                            </Link>
+                          ) : "Pickup request"}
                       </span>
                       {isWashed && (
                         <span className="inline-flex items-center gap-1 text-xs font-semibold text-success" aria-label="Washed">

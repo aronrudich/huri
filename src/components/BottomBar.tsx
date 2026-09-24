@@ -78,7 +78,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
 
   const LABELS: Record<ActionId, string> = {
     pickup: "Pickup",
-    new: isTechRole(role) ? "Update Location" : "Add Car to Huri",
+    new: "Add/Edit Car",
     stage: "Stage",
     parts: "Parts",
     park: "Park My Car",

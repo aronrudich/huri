@@ -536,7 +536,17 @@ function PickupPage() {
                     )}
                     {isParts && (
                       <>
-                        {p.ro_number && <p className="text-sm text-muted-foreground">RO #{p.ro_number}</p>}
+                        {p.ro_number && (
+                          <p className="text-sm text-muted-foreground">
+                            <Link
+                              to="/park"
+                              search={{ ro: p.ro_number }}
+                              className="underline decoration-primary/40 underline-offset-4 active:opacity-70"
+                            >
+                              RO #{p.ro_number}
+                            </Link>
+                          </p>
+                        )}
                         {p.car_notes && <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes} · {format(new Date(p.created_at), "M/d")}</p>}
                       </>
                     )}

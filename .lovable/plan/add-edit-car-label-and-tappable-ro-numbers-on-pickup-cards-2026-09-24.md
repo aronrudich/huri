@@ -2,7 +2,7 @@
 
 ## What will change
 
-- The header Actions menu entry **Add Car to Huri** becomes **Add/Edit Car** (for roles that currently see it — valets, advisors, managers, etc.). Technicians keep seeing **Update Location** for the same destination.
+- The header Actions menu entry **Add Car to Huri** becomes **Add/Edit Car** (for roles that currently see it — valets, advisors, managers, etc.). Technicians keep seeing **Update Location** for the same destination. No, it's the same for everyone, including techs.
 - On every submission card in the pickup list, the **RO #** text becomes tappable: pressing it opens that car's info/location page (`/park?ro=<number>`), the same page search results already open. Parts cards show their RO line tappable too.
 
 ## Behavior details

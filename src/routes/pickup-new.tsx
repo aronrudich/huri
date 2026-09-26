@@ -46,19 +46,22 @@ function NewPickupPage() {
     if (!user) return;
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
-    // Snapshot the car's current spot + notes so valets can still find it after the spot is freed on claim.
+    // Snapshot the car's current spot so valets can still find it after the spot is freed on claim.
     const { data: car } = await supabase
       .from("parked_cars")
       .select("lot_position, car_model, notes, is_staged")
       .eq("ro_number", ro.trim())
       .maybeSingle();
     const noteText = notes.trim();
+    // Customer pickups and stages start with a clean slate: old shop notes are wiped and
+    // only a note typed on this submission travels with the request.
+    const clearsOldNotes = isStage || !hideModel;
     try {
       await submitPickup({ data: {
         ro: ro.trim(),
         advisor: advisorName || null,
         model: model.trim() || car?.car_model || null,
-        notes: noteText || car?.notes || null,
+        notes: clearsOldNotes ? (noteText || null) : (noteText || car?.notes || null),
         sourceRole,
         lotPosition: car?.lot_position ?? null,
         staged: isStage,
@@ -66,14 +69,16 @@ function NewPickupPage() {
       // Staging flags the car so its map spot shows the checkered pattern; a real
       // pickup on an already-staged car clears that flag instead.
       if (car) {
-        const patch: { is_staged?: boolean; notes?: string } = {};
+        const patch: { is_staged?: boolean; notes?: string | null } = {};
         if (isStage) patch.is_staged = true;
         else if (car.is_staged) patch.is_staged = false;
-        if (noteText) patch.notes = noteText;
+        if (clearsOldNotes) patch.notes = noteText || null;
+        else if (noteText) patch.notes = noteText;
         if (Object.keys(patch).length) {
           await supabase.from("parked_cars").update(patch).eq("ro_number", ro.trim());
         }
       }
+
       toast.success(isStage ? "Stage submitted" : "Pickup submitted");
       navigate({ to: "/pickup", replace: true });
     } catch (error) {

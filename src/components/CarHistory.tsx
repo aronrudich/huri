@@ -60,9 +60,10 @@ function requestTitle(r: RequestRow) {
 
 /**
  * Readable paper trail for one car (by RO#). Each submission is a single entry
- * covering who asked, who handled it and how it ended — plus the car's own
+ * covering who requested it, who claimed it and how it ended — plus the car's own
  * location changes. Newest first.
  */
+
 export function CarHistory({ ro }: { ro: string }) {
   const [events, setEvents] = useState<EventRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
@@ -133,19 +134,20 @@ export function CarHistory({ ro }: { ro: string }) {
       const outcome = canceled
         ? `Canceled${r.completed_at ? ` · ${when(r.completed_at)}` : ""}`
         : r.claimed_by
-          ? `Handled by ${who(r.claimed_by)}${r.claimed_at ? ` · ${when(r.claimed_at)}` : ""}`
+          ? `Claimed by ${who(r.claimed_by)}${r.claimed_at ? ` · ${when(r.claimed_at)}` : ""}`
           : r.status === "unclaimed" ? "Waiting — not claimed yet" : "Closed without a claim";
       return {
         key: `r-${r.id}`,
         at: r.created_at,
         title: requestTitle(r),
         lines: [
-          `Asked by ${who(r.requested_by)} · ${when(r.created_at)}`,
+          `Requested by ${who(r.requested_by)} · ${when(r.created_at)}`,
           outcome,
           r.car_notes ? `Note: ${r.car_notes}` : null,
         ].filter(Boolean) as string[],
       };
     }),
+
   ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
 
   return (

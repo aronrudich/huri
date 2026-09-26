@@ -5,7 +5,9 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+
 import { HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { submitPickupRequest } from "@/lib/pickup.functions";
@@ -46,16 +48,22 @@ function WashRequestPage() {
     if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
+    const noteText = notes.trim();
     try {
       await submitPickup({ data: {
         ro: ro.trim(),
         advisor: requesterName || null,
-        notes: notes.trim() || null,
+        notes: noteText || null,
         sourceRole,
         kind: "wash",
       } });
+      // Wash requests start clean: old shop notes are wiped, only a note typed here sticks.
+      await supabase.from("parked_cars")
+        .update({ notes: noteText || null })
+        .eq("ro_number", ro.trim());
       toast.success("Wash request sent");
       navigate({ to: "/pickup", replace: true });
+
     } catch (error) {
       toast.error((error as Error).message || "Failed to send request");
     } finally {

@@ -1,6 +1,6 @@
 # Roadmap
 
-- [x] Email set up for notify.huri.team (managed sending, no queue needed)
-- [x] Auth email templates sending from support@huri.team, Huri-blue branding
-- [x] Leaked-password blocking off — any password accepted again
-- [ ] USER ACTION: finish DNS records for notify.huri.team (shown in Cloud → Emails) so emails start sending
+- [ ] Fix history attribution: automated/background moves must not be stamped with a stale `parked_by` user (Jared bug on RO 190246)
+- [ ] History wording: "Requested by" instead of "Asked by", "Claimed by" instead of "Handled by"
+- [ ] Customer pickup submissions clear the car's old notes; only a note typed at submission time is kept
+- [ ] Same note-clearing behavior for stage and wash submissions

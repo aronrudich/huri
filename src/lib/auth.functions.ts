@@ -12,7 +12,8 @@ const confirmedSignupSchema = emailPasswordSchema.extend({
   fullName: z.string().trim().min(1).max(120),
   nickname: z.string().trim().max(120).optional(),
   roleName: z.string().trim().min(1).max(120),
-  dealershipId: z.string().uuid(),
+  /** Permanent company code handed out by management (e.g. JCD29854). */
+  companyCode: z.string().trim().min(4).max(16).regex(/^[A-Za-z0-9]+$/),
 });
 
 
@@ -113,6 +114,20 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     const fullName = data.fullName.trim();
     const nickname = data.nickname?.trim() || null;
     const requestedRole = data.roleName.trim();
+
+    // The company code is the only way in. A wrong code reveals nothing about
+    // which companies exist on Huri.
+    const companyCode = data.companyCode.trim().toUpperCase();
+    const { data: company } = await adminClient
+      .from("dealerships")
+      .select("id, company_code")
+      .ilike("company_code", companyCode)
+      .maybeSingle();
+    if (!company?.id) {
+      throw new Error("Invalid company code. Check with your manager.");
+    }
+    const dealershipId = company.id;
+
     // This endpoint is unauthenticated, and the sanitize_profile_insert trigger does
     // not fire for service-role writes, so privileged roles are blocked here: the
     // request is recorded as pending_role_name for an approver to grant.
@@ -152,7 +167,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           status: AUTO_APPROVE_SIGNUPS ? "approved" : "pending",
           deactivated_at: null,
           deactivated_by: null,
-          dealership_id: data.dealershipId,
+          dealership_id: dealershipId,
 
         },
         { onConflict: "id" },

@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -52,6 +52,7 @@ function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
   const [dealershipName, setDealershipName] = useState<string>("");
+  const [companyCode, setCompanyCode] = useState<string>("");
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
   const isOwner = !!profile?.is_owner;
@@ -115,9 +116,13 @@ function ProfilePage() {
 
 
   useEffect(() => {
-    if (!profile?.dealership_id) { setDealershipName(""); return; }
-    supabase.from("dealerships").select("name").eq("id", profile.dealership_id).maybeSingle()
-      .then(({ data }) => setDealershipName((data as { name?: string } | null)?.name ?? ""));
+    if (!profile?.dealership_id) { setDealershipName(""); setCompanyCode(""); return; }
+    supabase.from("dealerships").select("name, company_code").eq("id", profile.dealership_id).maybeSingle()
+      .then(({ data }) => {
+        const row = data as { name?: string; company_code?: string } | null;
+        setDealershipName(row?.name ?? "");
+        setCompanyCode(row?.company_code ?? "");
+      });
   }, [profile?.dealership_id]);
 
 
@@ -252,6 +257,28 @@ function ProfilePage() {
             </button>
           </div>
           {dealershipName && <Row label="Dealership" value={dealershipName} />}
+          {companyCode && (isOwner || isUpperManagementRole(role)) && (
+            <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Company Code</p>
+                <p className="font-mono text-sm font-bold tracking-[0.18em]">{companyCode}</p>
+                <p className="text-[11px] text-muted-foreground">New employees enter this when signing up.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(companyCode);
+                    toast.success("Company code copied");
+                  } catch {
+                    toast.message(companyCode);
+                  }
+                }}
+                className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
+              >
+                Copy
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setRoleReqOpen(true)}
             className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-sm font-medium text-primary active:bg-accent"

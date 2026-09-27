@@ -1,13 +1,13 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { assertAdmin, assertOwner, notifyAdmins, targetInDealership } from "@/lib/admin.server";
+import { assertAdmin, assertManagement, assertOwner, notifyAdmins, targetInDealership } from "@/lib/admin.server";
 
 // Approvals list (admins in the same dealership)
 export const listPendingApprovals = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: pendingAccounts } = await supabaseAdmin
       .from("profiles")
@@ -31,7 +31,7 @@ export const approveAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("profiles")
@@ -44,7 +44,7 @@ export const denyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
@@ -80,7 +80,7 @@ export const approveRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: prof } = await supabaseAdmin
@@ -100,7 +100,7 @@ export const denyRoleChange = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.from("profiles")
@@ -114,7 +114,7 @@ export const setEmployeeRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid(), newRole: z.string().trim().min(1).max(120) }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertAdmin(context.userId);
+    const { dealershipId } = await assertManagement(context.userId);
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: roleRow } = await supabaseAdmin

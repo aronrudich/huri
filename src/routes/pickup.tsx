@@ -17,11 +17,13 @@ import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/li
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
+import { dealershipSettingsQuery } from "@/lib/settings";
 
 
 
 /** Claimed submissions leave the list 30 minutes after the claim. */
-const CLAIM_HIDE_MS = 30 * 60 * 1000;
+/** Fallback used until the company's own claim-hide setting loads. */
+const DEFAULT_CLAIM_HIDE_MS = 30 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 
 
@@ -70,6 +72,9 @@ function PickupPage() {
   // Spectators can watch the queue but never claim or cancel anything.
   const isSpectator = isSpectatorRole(profile?.role_name);
   const queryClient = useQueryClient();
+  // Each company sets how long a claimed submission stays on the list.
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const claimHideMs = settings ? settings.claim_hide_minutes * 60_000 : DEFAULT_CLAIM_HIDE_MS;
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
@@ -215,7 +220,8 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile, realtimeGen]);
 
-  // Auto-archive claimed pickups/parts after 30 minutes without changing their
+  // Auto-archive claimed pickups/parts after the company's configured number of
+  // minutes without changing their
   // saved spot snapshot. The car's destination (Bay / CP / Wash / Unknown) is
   // applied server-side when the submission leaves the list, and no car is ever
   // deleted.
@@ -224,7 +230,7 @@ function PickupPage() {
     const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
-        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
+        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= claimHideMs) {
           supabase
             .from("pickup_requests")
             .update({ status: "completed", completed_at: new Date().toISOString() })
@@ -238,7 +244,7 @@ function PickupPage() {
       archiveExpired();
     }, 30000);
     return () => clearInterval(t);
-  }, [pickups]);
+  }, [pickups, claimHideMs]);
 
 
 
@@ -273,11 +279,11 @@ function PickupPage() {
     () => pickups.filter((p) => {
       if (!canSeeKind(profile?.role_name, p.kind)) return false;
       if (p.status === "claimed" && p.claimed_at) {
-        return Date.now() - new Date(p.claimed_at).getTime() < CLAIM_HIDE_MS;
+        return Date.now() - new Date(p.claimed_at).getTime() < claimHideMs;
       }
       return true;
     }),
-    [pickups, profile],
+    [pickups, profile, claimHideMs],
   );
 
   const matches = useMemo(() => {

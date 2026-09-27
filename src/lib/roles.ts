@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged" | "settings";
 
 export const VALET_ROLES = ["Valet"];
 
@@ -60,12 +60,6 @@ export const canViewFlagged = (role: string | null | undefined) =>
   FLAGGED_ROLES.includes(role ?? "");
 
 
-/** Roles that handle join requests and role change approvals. */
-export const APPROVER_ROLES = ADMIN_ROLES;
-
-export const isApproverRole = (role: string | null | undefined) =>
-  APPROVER_ROLES.includes(role ?? "");
-
 /** Roles that can see the employee roster. */
 export const MANAGEMENT_ROLES = [
   "Admin",
@@ -77,6 +71,23 @@ export const MANAGEMENT_ROLES = [
   "General Manager",
   "Director",
 ];
+
+/**
+ * Upper management: they can see the company code, approve new employees and
+ * role changes, and edit their company's settings. Mirrors
+ * private.is_upper_management() in the database.
+ */
+export const UPPER_MANAGEMENT_ROLES = MANAGEMENT_ROLES;
+
+export const isUpperManagementRole = (role: string | null | undefined) =>
+  UPPER_MANAGEMENT_ROLES.includes(role ?? "");
+
+/** Roles that handle join requests and role change approvals. */
+export const APPROVER_ROLES = UPPER_MANAGEMENT_ROLES;
+
+export const isApproverRole = (role: string | null | undefined) =>
+  APPROVER_ROLES.includes(role ?? "");
+
 
 /**
  * Roles allowed to cancel anyone's submission. Technicians can only cancel
@@ -115,8 +126,19 @@ export const canStageRole = (role: string | null | undefined) => {
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 
+/** Company-level switches that hide optional departments from the menu. */
+export type ActionModules = {
+  enable_wash?: boolean;
+  enable_parts?: boolean;
+  enable_staging?: boolean;
+  isOwner?: boolean;
+};
+
 /** Header actions, in the exact top-to-bottom order they should appear. */
-export function actionsForRole(role: string | null | undefined): ActionId[] {
+export function actionsForRole(
+  role: string | null | undefined,
+  modules?: ActionModules,
+): ActionId[] {
   const r = role ?? "";
   const withReports = (ids: ActionId[]): ActionId[] => {
     const out = [...ids];
@@ -124,15 +146,28 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
     if (canViewFlagged(r)) out.push("flagged");
     return out;
   };
-  // Spectators are read-only: they can only open the view-only screens.
-  if (isSpectatorRole(r)) return ["reports", "flagged"];
-  // The car wash employee doesn't request washes — they just relocate cars once washed.
-  if (r === "Car Wash") return ["new"];
-  if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
-  if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
-  return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);
+  const base = (): ActionId[] => {
+    // Spectators are read-only: they can only open the view-only screens.
+    if (isSpectatorRole(r)) return ["reports", "flagged"];
+    // The car wash employee doesn't request washes — they just relocate cars once washed.
+    if (r === "Car Wash") return ["new"];
+    if (isValetRole(r)) return ["new"];
+    if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
+    if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
+    return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);
+  };
 
+  const off = (flag: boolean | undefined) => flag === false;
+  let items = base().filter((id) => {
+    if (id === "wash" && off(modules?.enable_wash)) return false;
+    if (id === "parts" && off(modules?.enable_parts)) return false;
+    if (id === "stage" && off(modules?.enable_staging)) return false;
+    return true;
+  });
+
+  // Only upper management (and the owner) can open company settings.
+  if (modules?.isOwner || isUpperManagementRole(r)) items = [...items, "settings"];
+  return items;
 }
 
 /**

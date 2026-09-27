@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-/** One follow-up push per submission, 5 minutes after it was created. */
-const REMIND_AFTER_MS = 5 * 60 * 1000;
+/** Used only if a company has no reminder setting saved. */
+const DEFAULT_REMIND_MINUTES = 5;
 
 const audienceFor = (kind: string | null) => {
   // Parts follows the same audience as every other pickup-list submission.
@@ -22,17 +22,28 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { sendWebPush } = await import("@/lib/push-server.server");
 
-        const cutoff = new Date(Date.now() - REMIND_AFTER_MS).toISOString();
+        // Each company decides how many minutes pass before the reminder goes
+        // out; 0 turns reminders off for that company entirely.
+        const { data: companies } = await supabaseAdmin
+          .from("dealerships")
+          .select("id, reminder_minutes");
+        const minutesFor = new Map<string, number>(
+          (companies ?? []).map((c) => [c.id, c.reminder_minutes ?? DEFAULT_REMIND_MINUTES]),
+        );
+
         const { data: pending, error } = await supabaseAdmin
           .from("pickup_requests")
           .select("id, dealership_id, kind, ro_number, advisor_name, customer_name, car_notes, is_staged, created_at")
           .eq("status", "unclaimed")
-          .is("reminded_at", null)
-          .lte("created_at", cutoff);
+          .is("reminded_at", null);
         if (error) throw error;
 
+        const now = Date.now();
         let sent = 0;
         for (const p of pending ?? []) {
+          const minutes = minutesFor.get(p.dealership_id) ?? DEFAULT_REMIND_MINUTES;
+          if (minutes <= 0) continue;
+          if (now - new Date(p.created_at).getTime() < minutes * 60_000) continue;
           const { data: recipients } = await supabaseAdmin
             .from("profiles")
             .select("id")
@@ -54,7 +65,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
               p.car_notes,
             ].filter(Boolean).join(" · ") || "Open Huri";
             const payload = {
-              title: "⏰ Still unclaimed — 5 minutes",
+              title: `⏰ Still unclaimed — ${minutes} minutes`,
               body,
               url: "/pickup",
               tag: `reminder-${p.id}`,

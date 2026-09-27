@@ -1,6 +1,11 @@
-import { isAdminRole } from "@/lib/roles";
+import { isAdminRole, isUpperManagementRole } from "@/lib/roles";
 
-export type CallerCtx = { dealershipId: string; isOwner: boolean; isAdmin: boolean };
+export type CallerCtx = {
+  dealershipId: string;
+  isOwner: boolean;
+  isAdmin: boolean;
+  isManagement: boolean;
+};
 
 export async function callerContext(userId: string): Promise<CallerCtx> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -10,18 +15,22 @@ export async function callerContext(userId: string): Promise<CallerCtx> {
     .eq("id", userId)
     .maybeSingle();
   const isOwner = !!data?.is_owner;
-  const isAdmin =
-    isOwner ||
-    (!!data &&
-      data.is_active === true &&
-      data.status === "approved" &&
-      isAdminRole(data.role_name));
-  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin };
+  const active = !!data && data.is_active === true && data.status === "approved";
+  const isAdmin = isOwner || (active && isAdminRole(data!.role_name));
+  const isManagement = isAdmin || (active && isUpperManagementRole(data!.role_name));
+  return { dealershipId: data?.dealership_id ?? "", isOwner, isAdmin, isManagement };
 }
 
 export async function assertAdmin(userId: string): Promise<CallerCtx> {
   const ctx = await callerContext(userId);
   if (!ctx.isAdmin) throw new Error("Admins only.");
+  return ctx;
+}
+
+/** Any management title (plus the owner) — used for approvals and settings. */
+export async function assertManagement(userId: string): Promise<CallerCtx> {
+  const ctx = await callerContext(userId);
+  if (!ctx.isManagement) throw new Error("Management only.");
   return ctx;
 }
 
@@ -53,7 +62,7 @@ export async function notifyAdmins(dealershipId: string, title: string, body: st
     .eq("is_active", true)
     .eq("status", "approved");
   const adminIds = (admins ?? [])
-    .filter((profile) => profile.is_owner || isAdminRole(profile.role_name))
+    .filter((profile) => profile.is_owner || isAdminRole(profile.role_name) || isUpperManagementRole(profile.role_name))
     .map((profile) => profile.id);
   if (!adminIds.length) return;
   const { data: subscriptions } = await supabaseAdmin

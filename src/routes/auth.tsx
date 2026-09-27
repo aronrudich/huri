@@ -26,22 +26,19 @@ const isNetworkFailure = (message?: string) => /failed to fetch|network request 
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
 
-type Dealership = { id: string; name: string };
-
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
   const roles = DEFAULT_ROLES;
-  const [dealerships, setDealerships] = useState<Dealership[]>([]);
-  const [dealershipId, setDealershipId] = useState<string>("");
 
   // form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
+  const [companyCode, setCompanyCode] = useState("");
   const [role, setRole] = useState("Advisor");
   const [otherRole, setOtherRole] = useState("");
   const [resetSent, setResetSent] = useState(false);
@@ -64,14 +61,6 @@ function AuthPage() {
     }
   };
 
-  useEffect(() => {
-    supabase.from("dealerships").select("id, name").order("name").then(({ data }) => {
-      if (data && data.length) {
-        setDealerships(data as Dealership[]);
-        setDealershipId((prev) => prev || data[0].id);
-      }
-    });
-  }, []);
 
   // Returning users with a valid session never see the sign-in form.
   useEffect(() => {
@@ -140,7 +129,10 @@ function AuthPage() {
     if (!password) return toast.error("Password is required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
-    if (!dealershipId) return toast.error("Please pick your dealership");
+    const cleanCode = companyCode.trim().toUpperCase();
+    if (!/^[A-Z0-9]{4,16}$/.test(cleanCode)) {
+      return toast.error("Enter your company code (letters and numbers only)");
+    }
 
     setBusy(true);
     try {
@@ -151,7 +143,7 @@ function AuthPage() {
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
-          dealershipId,
+          companyCode: cleanCode,
         },
       });
 
@@ -283,18 +275,23 @@ function AuthPage() {
               />
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Dealership</label>
-                <select
-                  value={dealershipId}
-                  onChange={(e) => setDealershipId(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
-                >
-                  {dealerships.length === 0 && <option value="">Loading…</option>}
-                  {dealerships.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Company Code</label>
+                <input
+                  value={companyCode}
+                  onChange={(e) => setCompanyCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  required
+                  maxLength={16}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="ABC12345"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base tracking-[0.2em] outline-none focus:border-primary"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Ask your manager for your company's code.
+                </p>
               </div>
+
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>
@@ -325,7 +322,7 @@ function AuthPage() {
                 {busy ? "Creating…" : "Create Account"}
               </button>
               <p className="text-center text-xs text-muted-foreground">
-                No email or SMS verification required — you're in right away.
+                A manager at your company approves your account before you can use Huri.
               </p>
 
             </form>

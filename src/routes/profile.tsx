@@ -116,9 +116,13 @@ function ProfilePage() {
 
 
   useEffect(() => {
-    if (!profile?.dealership_id) { setDealershipName(""); return; }
-    supabase.from("dealerships").select("name").eq("id", profile.dealership_id).maybeSingle()
-      .then(({ data }) => setDealershipName((data as { name?: string } | null)?.name ?? ""));
+    if (!profile?.dealership_id) { setDealershipName(""); setCompanyCode(""); return; }
+    supabase.from("dealerships").select("name, company_code").eq("id", profile.dealership_id).maybeSingle()
+      .then(({ data }) => {
+        const row = data as { name?: string; company_code?: string } | null;
+        setDealershipName(row?.name ?? "");
+        setCompanyCode(row?.company_code ?? "");
+      });
   }, [profile?.dealership_id]);
 
 

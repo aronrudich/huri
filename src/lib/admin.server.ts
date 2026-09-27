@@ -62,7 +62,7 @@ export async function notifyAdmins(dealershipId: string, title: string, body: st
     .eq("is_active", true)
     .eq("status", "approved");
   const adminIds = (admins ?? [])
-    .filter((profile) => profile.is_owner || isAdminRole(profile.role_name))
+    .filter((profile) => profile.is_owner || isAdminRole(profile.role_name) || isUpperManagementRole(profile.role_name))
     .map((profile) => profile.id);
   if (!adminIds.length) return;
   const { data: subscriptions } = await supabaseAdmin

@@ -17,6 +17,7 @@ import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/li
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
+import { dealershipSettingsQuery } from "@/lib/settings";
 
 
 

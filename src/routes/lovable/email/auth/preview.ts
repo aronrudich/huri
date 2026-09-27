@@ -8,7 +8,11 @@ import { RecoveryEmail } from '@/lib/email-templates/recovery'
 import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<Record<string, never>>> = {
+// Each template takes its own prop shape; the preview route passes whatever the
+// email webhook payload provides, so props stay intentionally untyped here.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
+
   signup: SignupEmail,
   invite: InviteEmail,
   magiclink: MagicLinkEmail,

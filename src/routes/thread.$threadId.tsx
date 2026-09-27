@@ -118,11 +118,18 @@ function ThreadPage() {
   const send = async () => {
     if (!body.trim() || !user) return;
     setBusy(true);
-    const payload: any = {
+    const payload: {
+      thread_id: string;
+      body: string;
+      sender_id: string;
+      recipient_role_id?: string | null;
+      recipient_id?: string | null;
+    } = {
       thread_id: threadId,
       body: body.trim(),
       sender_id: user.id,
     };
+
     if (isGroup) payload.recipient_role_id = groupRoleId;
     else {
       // dm:uuid1:uuid2  → other id
@@ -130,7 +137,7 @@ function ThreadPage() {
       const other = parts[1] === user.id ? parts[2] : parts[1];
       payload.recipient_id = other;
     }
-    const { error } = await supabase.from("messages").insert(payload);
+    const { error } = await supabase.from("messages").insert(payload as never);
     setBusy(false);
     if (error) return toast.error(error.message);
     sendMessagePush({

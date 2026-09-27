@@ -75,11 +75,19 @@ function ComposePage() {
     if (!selected || !body.trim() || !user) return;
     setBusy(true);
     let thread_id: string;
-    const payload: any = {
+    // dealership_id is filled in by the messages_set_dealership trigger.
+    const payload: {
+      body: string;
+      sender_id: string;
+      thread_id?: string;
+      recipient_role_id?: string;
+      recipient_id?: string;
+    } = {
       body: body.trim(),
-      
       sender_id: user.id,
     };
+
+
     if (selected.kind === "group") {
       thread_id = `group:${selected.id}:${user.id}`;
       payload.recipient_role_id = selected.id;
@@ -89,7 +97,7 @@ function ComposePage() {
       payload.recipient_id = selected.id;
     }
     payload.thread_id = thread_id;
-    const { error } = await supabase.from("messages").insert(payload);
+    const { error } = await supabase.from("messages").insert(payload as never);
     setBusy(false);
     if (error) return toast.error(error.message);
     sendMessagePush({

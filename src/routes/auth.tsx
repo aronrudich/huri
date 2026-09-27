@@ -81,7 +81,7 @@ function AuthPage() {
 
   const signInWithEmail = async (loginEmail: string) => {
     let error: { message: string } | null = null;
-    const useServerFallback = async () => {
+    const tryServerFallback = async () => {
       const session = await loginWithPasswordFallback({ data: { email: loginEmail, password } });
       const restored = await supabase.auth.setSession({
         access_token: session.access_token,
@@ -93,13 +93,14 @@ function AuthPage() {
       const direct = await supabase.auth.signInWithPassword({ email: loginEmail, password });
       error = direct.error;
       if (isNetworkFailure(error?.message)) {
-        await useServerFallback();
+        await tryServerFallback();
         return;
       }
     } catch {
-      await useServerFallback();
+      await tryServerFallback();
       return;
     }
+
     if (isEmailNotConfirmed(error?.message)) {
       try {
         await confirmEmailForValidCredentials({ data: { email: loginEmail, password } });
@@ -173,7 +174,13 @@ function AuthPage() {
 
     setBusy(false);
     toast.success("Account created");
-    try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
+    try {
+      await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } });
+    } catch (notifyError) {
+      // The owner notice is best-effort: sign-up already succeeded.
+      console.warn("[auth] owner signup notice failed", notifyError);
+    }
+
     subscribePush(uid);
     navigate({ to: "/pickup", replace: true });
 

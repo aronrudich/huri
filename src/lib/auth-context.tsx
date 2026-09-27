@@ -123,9 +123,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // loading screen (seen on desktop browsers with an old token). Give it a
     // few seconds, then drop the local session so the sign-in screen shows.
     let settled = false;
-    let watchdog: ReturnType<typeof setTimeout>;
-    const finish = () => { if (!settled) { settled = true; clearTimeout(watchdog); setLoading(false); } };
-    watchdog = setTimeout(() => {
+    function finish() {
+      if (settled) return;
+      settled = true;
+      clearTimeout(watchdog);
+      setLoading(false);
+    }
+    const watchdog = setTimeout(() => {
+
       if (settled) return;
       clearPersistedQueryCache();
       void supabase.auth.signOut({ scope: "local" }).catch(() => {});

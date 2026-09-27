@@ -12,7 +12,8 @@ const confirmedSignupSchema = emailPasswordSchema.extend({
   fullName: z.string().trim().min(1).max(120),
   nickname: z.string().trim().max(120).optional(),
   roleName: z.string().trim().min(1).max(120),
-  dealershipId: z.string().uuid(),
+  /** Permanent company code handed out by management (e.g. JCD29854). */
+  companyCode: z.string().trim().min(4).max(16).regex(/^[A-Za-z0-9]+$/),
 });
 
 

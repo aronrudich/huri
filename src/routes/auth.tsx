@@ -61,14 +61,6 @@ function AuthPage() {
     }
   };
 
-  useEffect(() => {
-    supabase.from("dealerships").select("id, name").order("name").then(({ data }) => {
-      if (data && data.length) {
-        setDealerships(data as Dealership[]);
-        setDealershipId((prev) => prev || data[0].id);
-      }
-    });
-  }, []);
 
   // Returning users with a valid session never see the sign-in form.
   useEffect(() => {

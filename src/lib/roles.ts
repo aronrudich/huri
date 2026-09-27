@@ -126,8 +126,19 @@ export const canStageRole = (role: string | null | undefined) => {
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 
+/** Company-level switches that hide optional departments from the menu. */
+export type ActionModules = {
+  enable_wash?: boolean;
+  enable_parts?: boolean;
+  enable_staging?: boolean;
+  isOwner?: boolean;
+};
+
 /** Header actions, in the exact top-to-bottom order they should appear. */
-export function actionsForRole(role: string | null | undefined): ActionId[] {
+export function actionsForRole(
+  role: string | null | undefined,
+  modules?: ActionModules,
+): ActionId[] {
   const r = role ?? "";
   const withReports = (ids: ActionId[]): ActionId[] => {
     const out = [...ids];
@@ -135,15 +146,28 @@ export function actionsForRole(role: string | null | undefined): ActionId[] {
     if (canViewFlagged(r)) out.push("flagged");
     return out;
   };
-  // Spectators are read-only: they can only open the view-only screens.
-  if (isSpectatorRole(r)) return ["reports", "flagged"];
-  // The car wash employee doesn't request washes — they just relocate cars once washed.
-  if (r === "Car Wash") return ["new"];
-  if (isValetRole(r)) return ["new"];
-  if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
-  if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
-  return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);
+  const base = (): ActionId[] => {
+    // Spectators are read-only: they can only open the view-only screens.
+    if (isSpectatorRole(r)) return ["reports", "flagged"];
+    // The car wash employee doesn't request washes — they just relocate cars once washed.
+    if (r === "Car Wash") return ["new"];
+    if (isValetRole(r)) return ["new"];
+    if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
+    if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
+    return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);
+  };
 
+  const off = (flag: boolean | undefined) => flag === false;
+  let items = base().filter((id) => {
+    if (id === "wash" && off(modules?.enable_wash)) return false;
+    if (id === "parts" && off(modules?.enable_parts)) return false;
+    if (id === "stage" && off(modules?.enable_staging)) return false;
+    return true;
+  });
+
+  // Only upper management (and the owner) can open company settings.
+  if (modules?.isOwner || isUpperManagementRole(r)) items = [...items, "settings"];
+  return items;
 }
 
 /**

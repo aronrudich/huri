@@ -75,15 +75,18 @@ function ComposePage() {
     if (!selected || !body.trim() || !user) return;
     setBusy(true);
     let thread_id: string;
+    // dealership_id is filled in by the messages_set_dealership trigger.
     const payload: {
       body: string;
       sender_id: string;
+      thread_id?: string;
       recipient_role_id?: string;
       recipient_id?: string;
     } = {
       body: body.trim(),
       sender_id: user.id,
     };
+
 
     if (selected.kind === "group") {
       thread_id = `group:${selected.id}:${user.id}`;

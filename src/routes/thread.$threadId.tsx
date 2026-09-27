@@ -137,7 +137,7 @@ function ThreadPage() {
       const other = parts[1] === user.id ? parts[2] : parts[1];
       payload.recipient_id = other;
     }
-    const { error } = await supabase.from("messages").insert(payload);
+    const { error } = await supabase.from("messages").insert(payload as never);
     setBusy(false);
     if (error) return toast.error(error.message);
     sendMessagePush({

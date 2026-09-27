@@ -97,7 +97,7 @@ function ComposePage() {
       payload.recipient_id = selected.id;
     }
     payload.thread_id = thread_id;
-    const { error } = await supabase.from("messages").insert(payload);
+    const { error } = await supabase.from("messages").insert(payload as never);
     setBusy(false);
     if (error) return toast.error(error.message);
     sendMessagePush({

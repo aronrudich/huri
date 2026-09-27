@@ -257,6 +257,28 @@ function ProfilePage() {
             </button>
           </div>
           {dealershipName && <Row label="Dealership" value={dealershipName} />}
+          {companyCode && (isOwner || isManagementRole(role)) && (
+            <div className="flex items-center gap-3 border-t border-border px-4 py-3">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs text-muted-foreground">Company Code</p>
+                <p className="font-mono text-sm font-bold tracking-[0.18em]">{companyCode}</p>
+                <p className="text-[11px] text-muted-foreground">New employees enter this when signing up.</p>
+              </div>
+              <button
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(companyCode);
+                    toast.success("Company code copied");
+                  } catch {
+                    toast.message(companyCode);
+                  }
+                }}
+                className="rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
+              >
+                Copy
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setRoleReqOpen(true)}
             className="flex w-full items-center gap-3 border-t border-border px-4 py-3 text-sm font-medium text-primary active:bg-accent"

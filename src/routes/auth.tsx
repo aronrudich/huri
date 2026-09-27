@@ -129,7 +129,10 @@ function AuthPage() {
     if (!password) return toast.error("Password is required");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
-    if (!dealershipId) return toast.error("Please pick your dealership");
+    const cleanCode = companyCode.trim().toUpperCase();
+    if (!/^[A-Z0-9]{4,16}$/.test(cleanCode)) {
+      return toast.error("Enter your company code (letters and numbers only)");
+    }
 
     setBusy(true);
     try {
@@ -140,7 +143,7 @@ function AuthPage() {
           fullName: fullName.trim(),
           nickname: nickname.trim(),
           roleName: finalRole,
-          dealershipId,
+          companyCode: cleanCode,
         },
       });
 

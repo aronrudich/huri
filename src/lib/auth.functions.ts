@@ -167,7 +167,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           status: AUTO_APPROVE_SIGNUPS ? "approved" : "pending",
           deactivated_at: null,
           deactivated_by: null,
-          dealership_id: data.dealershipId,
+          dealership_id: dealershipId,
 
         },
         { onConflict: "id" },

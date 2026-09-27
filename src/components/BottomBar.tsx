@@ -3,7 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import { Inbox, Car, List, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useHasUnreadMessages } from "@/lib/use-unread";
+import { useQuery } from "@tanstack/react-query";
 import { actionsForRole, type ActionId } from "@/lib/roles";
+import { dealershipSettingsQuery } from "@/lib/settings";
 import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
 
 export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {

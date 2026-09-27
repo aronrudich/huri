@@ -71,6 +71,9 @@ function PickupPage() {
   // Spectators can watch the queue but never claim or cancel anything.
   const isSpectator = isSpectatorRole(profile?.role_name);
   const queryClient = useQueryClient();
+  // Each company sets how long a claimed submission stays on the list.
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const claimHideMs = settings ? settings.claim_hide_minutes * 60_000 : DEFAULT_CLAIM_HIDE_MS;
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });

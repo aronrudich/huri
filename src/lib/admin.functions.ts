@@ -140,7 +140,7 @@ export const removeEmployee = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d) => z.object({ userId: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    const { dealershipId } = await assertManagement(context.userId);
+    const { dealershipId } = await assertAdmin(context.userId);
     if (data.userId === context.userId) throw new Error("You can't remove yourself.");
     await targetInDealership(data.userId, dealershipId);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

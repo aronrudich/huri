@@ -21,7 +21,8 @@ import { searchCars } from "@/lib/directory.functions";
 
 
 /** Claimed submissions leave the list 30 minutes after the claim. */
-const CLAIM_HIDE_MS = 30 * 60 * 1000;
+/** Fallback used until the company's own claim-hide setting loads. */
+const DEFAULT_CLAIM_HIDE_MS = 30 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 
 
@@ -215,7 +216,8 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile, realtimeGen]);
 
-  // Auto-archive claimed pickups/parts after 30 minutes without changing their
+  // Auto-archive claimed pickups/parts after the company's configured number of
+  // minutes without changing their
   // saved spot snapshot. The car's destination (Bay / CP / Wash / Unknown) is
   // applied server-side when the submission leaves the list, and no car is ever
   // deleted.
@@ -224,7 +226,7 @@ function PickupPage() {
     const archiveExpired = () => {
       const now = Date.now();
       pickups.forEach((p) => {
-        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= CLAIM_HIDE_MS) {
+        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= claimHideMs) {
           supabase
             .from("pickup_requests")
             .update({ status: "completed", completed_at: new Date().toISOString() })
@@ -238,7 +240,7 @@ function PickupPage() {
       archiveExpired();
     }, 30000);
     return () => clearInterval(t);
-  }, [pickups]);
+  }, [pickups, claimHideMs]);
 
 
 
@@ -273,11 +275,11 @@ function PickupPage() {
     () => pickups.filter((p) => {
       if (!canSeeKind(profile?.role_name, p.kind)) return false;
       if (p.status === "claimed" && p.claimed_at) {
-        return Date.now() - new Date(p.claimed_at).getTime() < CLAIM_HIDE_MS;
+        return Date.now() - new Date(p.claimed_at).getTime() < claimHideMs;
       }
       return true;
     }),
-    [pickups, profile],
+    [pickups, profile, claimHideMs],
   );
 
   const matches = useMemo(() => {

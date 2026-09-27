@@ -73,7 +73,13 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     return () => document.removeEventListener("pointerdown", close);
   }, [open]);
 
-  const items: ActionId[] = actionsForRole(role).filter((id) => !(id === "stage" && hideStage));
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const items: ActionId[] = actionsForRole(role, {
+    enable_wash: settings?.enable_wash,
+    enable_parts: settings?.enable_parts,
+    enable_staging: settings?.enable_staging,
+    isOwner: profile?.is_owner,
+  }).filter((id) => !(id === "stage" && hideStage));
   if (items.length === 0) return null;
 
   const LABELS: Record<ActionId, string> = {
@@ -86,6 +92,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     wash: "Wash",
     reports: "Reports",
     flagged: "Flagged Cars",
+    settings: "Company Settings",
   };
 
   // Short plain-English description shown under each action label (optional).
@@ -96,7 +103,8 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     bringme: "Car or Parts",
     wash: "Bring Car To Wash",
     reports: "Stats & Claim Times",
-    flagged: "Parked 14+ Days",
+    flagged: `Parked ${settings?.flagged_days ?? 14}+ Days`,
+    settings: "Timing & Departments",
   };
 
 
@@ -111,9 +119,11 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "wash": return { to: "/wash" };
       case "reports": return { to: "/reports" };
       case "flagged": return { to: "/flagged" };
+      case "settings": return { to: "/settings" };
       default: return { to: "/pickup" };
     }
   };
+
 
   // Single-action roles (valets) skip the dropdown entirely.
   if (items.length === 1) {

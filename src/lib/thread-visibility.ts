@@ -39,7 +39,7 @@ export function saveThreadCutoffs(cutoffs: ThreadCutoffs) {
 
 export async function loadThreadCutoffsForUser(userId: string): Promise<ThreadCutoffs> {
   const local = loadThreadCutoffs();
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from("thread_hides")
     .select("thread_id, hidden_at")
     .eq("user_id", userId);
@@ -59,9 +59,10 @@ export async function loadThreadCutoffsForUser(userId: string): Promise<ThreadCu
 export async function hideThreadForUser(userId: string, threadId: string, hiddenAt: string) {
   const next = mergeThreadCutoffs(loadThreadCutoffs(), { [threadId]: hiddenAt });
   saveThreadCutoffs(next);
-  const { error } = await (supabase as any)
+  const { error } = await supabase
     .from("thread_hides")
-    .upsert({ user_id: userId, thread_id: threadId, hidden_at: hiddenAt }, { onConflict: "user_id,thread_id" });
+    .upsert({ user_id: userId, thread_id: threadId, hidden_at: hiddenAt } as never, { onConflict: "user_id,thread_id" });
+
   if (error) throw error;
 }
 

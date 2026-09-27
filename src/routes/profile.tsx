@@ -52,6 +52,7 @@ function ProfilePage() {
   const [editOpen, setEditOpen] = useState(false);
   const [roleReqOpen, setRoleReqOpen] = useState(false);
   const [dealershipName, setDealershipName] = useState<string>("");
+  const [companyCode, setCompanyCode] = useState<string>("");
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
 
   const isOwner = !!profile?.is_owner;

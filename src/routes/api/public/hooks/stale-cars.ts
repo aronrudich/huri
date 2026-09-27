@@ -28,20 +28,29 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
         }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-        const cutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString();
+        // Each company sets its own number of untouched days. We query with the
+        // widest window, then apply every company's own number row by row.
+        const { data: companies } = await supabaseAdmin
+          .from("dealerships")
+          .select("id, flagged_days");
+        const daysFor = new Map<string, number>(
+          (companies ?? []).map((c) => [c.id, c.flagged_days ?? 14]),
+        );
+        const widestDays = Math.max(14, ...[...daysFor.values()]);
+        const cutoff = new Date(now.getTime() - widestDays * 24 * 60 * 60 * 1000).toISOString();
 
         // Every location counts — nothing is excluded from the Flagged Cars list.
         // Cars a manager swiped off the list stay off until they move again.
         const { data: candidates, error } = await supabaseAdmin
           .from("parked_cars")
-          .select("id, ro_number, located_at")
+          .select("id, ro_number, located_at, dealership_id")
           .is("flagged_at", null)
           .is("flag_dismissed_at", null)
           .lte("located_at", cutoff);
         if (error) throw error;
 
         // A blue (customer) pickup that was claimed and cleared means the customer
-        // drove the car home — those cars never belong on the 14-day list. Red
+        // drove the car home — those cars never belong on the flagged list. Red
         // technician pickups stay eligible; the car is still on the property.
         const ros = [...new Set((candidates ?? []).map((c) => c.ro_number).filter(Boolean) as string[])];
         const pickedUp = new Map<string, number>();
@@ -64,6 +73,9 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
 
         const ids = (candidates ?? [])
           .filter((c) => {
+            const days = daysFor.get(c.dealership_id) ?? 14;
+            const age = now.getTime() - new Date(c.located_at ?? 0).getTime();
+            if (age < days * 24 * 60 * 60 * 1000) return false;
             const at = pickedUp.get((c.ro_number ?? "").trim());
             if (!at) return true;
             return at < new Date(c.located_at ?? 0).getTime();

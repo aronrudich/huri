@@ -118,11 +118,18 @@ function ThreadPage() {
   const send = async () => {
     if (!body.trim() || !user) return;
     setBusy(true);
-    const payload: any = {
+    const payload: {
+      thread_id: string;
+      body: string;
+      sender_id: string;
+      recipient_role_id?: string | null;
+      recipient_id?: string | null;
+    } = {
       thread_id: threadId,
       body: body.trim(),
       sender_id: user.id,
     };
+
     if (isGroup) payload.recipient_role_id = groupRoleId;
     else {
       // dm:uuid1:uuid2  → other id

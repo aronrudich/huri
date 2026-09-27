@@ -60,12 +60,6 @@ export const canViewFlagged = (role: string | null | undefined) =>
   FLAGGED_ROLES.includes(role ?? "");
 
 
-/** Roles that handle join requests and role change approvals. */
-export const APPROVER_ROLES = ADMIN_ROLES;
-
-export const isApproverRole = (role: string | null | undefined) =>
-  APPROVER_ROLES.includes(role ?? "");
-
 /** Roles that can see the employee roster. */
 export const MANAGEMENT_ROLES = [
   "Admin",
@@ -77,6 +71,23 @@ export const MANAGEMENT_ROLES = [
   "General Manager",
   "Director",
 ];
+
+/**
+ * Upper management: they can see the company code, approve new employees and
+ * role changes, and edit their company's settings. Mirrors
+ * private.is_upper_management() in the database.
+ */
+export const UPPER_MANAGEMENT_ROLES = MANAGEMENT_ROLES;
+
+export const isUpperManagementRole = (role: string | null | undefined) =>
+  UPPER_MANAGEMENT_ROLES.includes(role ?? "");
+
+/** Roles that handle join requests and role change approvals. */
+export const APPROVER_ROLES = UPPER_MANAGEMENT_ROLES;
+
+export const isApproverRole = (role: string | null | undefined) =>
+  APPROVER_ROLES.includes(role ?? "");
+
 
 /**
  * Roles allowed to cancel anyone's submission. Technicians can only cancel

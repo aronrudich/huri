@@ -275,18 +275,23 @@ function AuthPage() {
               />
 
               <div>
-                <label className="mb-1 block text-xs font-medium text-muted-foreground">Dealership</label>
-                <select
-                  value={dealershipId}
-                  onChange={(e) => setDealershipId(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
-                >
-                  {dealerships.length === 0 && <option value="">Loading…</option>}
-                  {dealerships.map((d) => (
-                    <option key={d.id} value={d.id}>{d.name}</option>
-                  ))}
-                </select>
+                <label className="mb-1 block text-xs font-medium text-muted-foreground">Company Code</label>
+                <input
+                  value={companyCode}
+                  onChange={(e) => setCompanyCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))}
+                  required
+                  maxLength={16}
+                  autoCapitalize="characters"
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="ABC12345"
+                  className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base tracking-[0.2em] outline-none focus:border-primary"
+                />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Ask your manager for your company's code.
+                </p>
               </div>
+
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Role</label>

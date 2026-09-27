@@ -25,7 +25,7 @@ import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [{ title: "Profile · Huri" }] }),
@@ -257,7 +257,7 @@ function ProfilePage() {
             </button>
           </div>
           {dealershipName && <Row label="Dealership" value={dealershipName} />}
-          {companyCode && (isOwner || isManagementRole(role)) && (
+          {companyCode && (isOwner || isUpperManagementRole(role)) && (
             <div className="flex items-center gap-3 border-t border-border px-4 py-3">
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-muted-foreground">Company Code</p>

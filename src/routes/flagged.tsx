@@ -15,6 +15,7 @@ import { flaggedCarsQuery, type FlaggedCarRow } from "@/lib/queries";
 import { locationLabel } from "@/lib/lot";
 import { carPhotoIndexQuery, type CarPhoto } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
+import { dealershipSettingsQuery } from "@/lib/settings";
 
 
 export const Route = createFileRoute("/flagged")({

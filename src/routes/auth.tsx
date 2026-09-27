@@ -26,22 +26,19 @@ const isNetworkFailure = (message?: string) => /failed to fetch|network request 
 const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : "Something went wrong";
 
-type Dealership = { id: string; name: string };
-
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [busy, setBusy] = useState(false);
   const roles = DEFAULT_ROLES;
-  const [dealerships, setDealerships] = useState<Dealership[]>([]);
-  const [dealershipId, setDealershipId] = useState<string>("");
 
   // form fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [nickname, setNickname] = useState("");
+  const [companyCode, setCompanyCode] = useState("");
   const [role, setRole] = useState("Advisor");
   const [otherRole, setOtherRole] = useState("");
   const [resetSent, setResetSent] = useState(false);

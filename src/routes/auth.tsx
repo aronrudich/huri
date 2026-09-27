@@ -174,7 +174,13 @@ function AuthPage() {
 
     setBusy(false);
     toast.success("Account created");
-    try { await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } }); } catch {}
+    try {
+      await notifyOwnerOfPendingSignup({ data: { fullName: fullName.trim(), role: finalRole } });
+    } catch (notifyError) {
+      // The owner notice is best-effort: sign-up already succeeded.
+      console.warn("[auth] owner signup notice failed", notifyError);
+    }
+
     subscribePush(uid);
     navigate({ to: "/pickup", replace: true });
 

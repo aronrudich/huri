@@ -130,22 +130,49 @@ export type Database = {
       }
       dealerships: {
         Row: {
+          claim_hide_minutes: number
+          company_code: string
           created_at: string
+          enable_parts: boolean
+          enable_staging: boolean
+          enable_wash: boolean
+          flagged_days: number
           id: string
           name: string
+          reminder_minutes: number
           slug: string
+          timezone: string
+          updated_at: string
         }
         Insert: {
+          claim_hide_minutes?: number
+          company_code: string
           created_at?: string
+          enable_parts?: boolean
+          enable_staging?: boolean
+          enable_wash?: boolean
+          flagged_days?: number
           id?: string
           name: string
+          reminder_minutes?: number
           slug: string
+          timezone?: string
+          updated_at?: string
         }
         Update: {
+          claim_hide_minutes?: number
+          company_code?: string
           created_at?: string
+          enable_parts?: boolean
+          enable_staging?: boolean
+          enable_wash?: boolean
+          flagged_days?: number
           id?: string
           name?: string
+          reminder_minutes?: number
           slug?: string
+          timezone?: string
+          updated_at?: string
         }
         Relationships: []
       }

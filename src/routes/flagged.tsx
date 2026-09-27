@@ -52,6 +52,8 @@ function FlaggedPage() {
     enabled: !!user && allowed,
   });
   const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const flaggedDays = settings?.flagged_days ?? 14;
 
 
   const dismiss = async (id: string) => {
@@ -81,7 +83,7 @@ function FlaggedPage() {
       </div>
 
       <p className="px-4 pb-3 text-xs text-muted-foreground">
-        Cars untouched for 14 days or longer, newest first. Updated every morning at 5 AM.
+        Cars untouched for {flaggedDays} days or longer, newest first. Updated every morning at 5 AM.
       </p>
 
       {isPending ? (

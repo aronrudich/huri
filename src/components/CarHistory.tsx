@@ -53,7 +53,6 @@ function requestTitle(r: RequestRow) {
     case "parts": return "Parts request";
     case "wash": return "Wash request";
     case "park": return "Park request";
-    case "shuttle": return "Shuttle request";
     default: return isTech(r.source_role) ? "Technician pickup" : "Customer pickup";
   }
 }

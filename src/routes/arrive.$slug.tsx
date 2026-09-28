@@ -11,9 +11,10 @@ import { getArrivalInfo, submitArrival } from "@/lib/arrive.functions";
  * they'll show up, and the car lands on the valets' pickup list right away.
  */
 export const Route = createFileRoute("/arrive/$slug")({
-  // TanStack parses a numeric ?ro=190246 as a number, so coerce it back to text.
-  validateSearch: z.object({ ro: z.coerce.string().trim().max(32).optional() }),
-  loaderDeps: ({ search }) => ({ ro: search.ro }),
+  // A numeric ?ro=190246 arrives as a number, so accept either and keep the
+  // link exactly as the advisor sent it.
+  validateSearch: z.object({ ro: z.union([z.string(), z.number()]).optional() }),
+  loaderDeps: ({ search }) => ({ ro: search.ro === undefined ? undefined : String(search.ro) }),
   loader: async ({ params, deps }) => {
     try {
       return await getArrivalInfo({ data: { slug: params.slug, ro: deps.ro } });
@@ -107,7 +108,8 @@ function Wheel<T extends string | number>({
 
 function ArrivePage() {
   const info = Route.useLoaderData();
-  const { ro } = Route.useSearch();
+  const search = Route.useSearch();
+  const ro = search.ro === undefined ? undefined : String(search.ro);
   const { slug } = Route.useParams();
 
   // Default to about 20 minutes from now, or whatever the customer picked before.

@@ -302,6 +302,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_address: string | null
+          customer_eta: string | null
           customer_name: string | null
           customer_phone: string | null
           dealership_id: string
@@ -326,6 +327,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_address?: string | null
+          customer_eta?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           dealership_id: string
@@ -350,6 +352,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_address?: string | null
+          customer_eta?: string | null
           customer_name?: string | null
           customer_phone?: string | null
           dealership_id?: string
@@ -568,6 +571,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_address: string | null
+          customer_eta: string | null
           customer_name: string | null
           customer_phone: string | null
           dealership_id: string

@@ -14,6 +14,7 @@ import {
   TIMEZONE_OPTIONS,
   type DealershipSettings,
 } from "@/lib/settings";
+import { customerArrivalTemplate } from "@/lib/arrive-link";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -82,6 +83,17 @@ function SettingsPage() {
       toast.success("Company code copied");
     } catch {
       toast.message(settings.company_code);
+    }
+  };
+
+  const copyTemplate = async () => {
+    if (!settings?.slug) return;
+    const template = customerArrivalTemplate(settings.slug);
+    try {
+      await navigator.clipboard.writeText(template);
+      toast.success("Customer link copied");
+    } catch {
+      toast.message(template);
     }
   };
 
@@ -157,6 +169,26 @@ function SettingsPage() {
               </div>
               <button
                 onClick={copyCode}
+                className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy
+              </button>
+            </div>
+            <div className="flex items-center gap-3 border-t border-border px-4 py-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  Customer arrival link
+                </p>
+                <p className="mt-1 break-all font-mono text-xs font-semibold">
+                  {customerArrivalTemplate(settings.slug)}
+                </p>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Paste this once into your "Vehicle Ready" text template. The RO # fills in
+                  automatically and customers never see your company code.
+                </p>
+              </div>
+              <button
+                onClick={copyTemplate}
                 className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary"
               >
                 <Copy className="h-3.5 w-3.5" /> Copy

@@ -27,6 +27,7 @@ import { Route as BringMeRouteImport } from './routes/bring-me'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
@@ -123,6 +124,11 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ArriveSlugRoute = ArriveSlugRouteImport.update({
+  id: '/arrive/$slug',
+  path: '/arrive/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
+  '/arrive/$slug': typeof ArriveSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
+  '/arrive/$slug': typeof ArriveSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
+  '/arrive/$slug': typeof ArriveSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -246,6 +255,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/wash'
+    | '/arrive/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -271,6 +281,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/wash'
+    | '/arrive/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -296,6 +307,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/settings'
     | '/wash'
+    | '/arrive/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
   WashRoute: typeof WashRoute
+  ArriveSlugRoute: typeof ArriveSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
@@ -458,6 +471,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/arrive/$slug': {
+      id: '/arrive/$slug'
+      path: '/arrive/$slug'
+      fullPath: '/arrive/$slug'
+      preLoaderRoute: typeof ArriveSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
       path: '/lovable/email/auth/webhook'
@@ -514,6 +534,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
   WashRoute: WashRoute,
+  ArriveSlugRoute: ArriveSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,

@@ -46,6 +46,8 @@ type Pickup = {
   is_staged?: boolean | null;
   customer_name?: string | null; customer_phone?: string | null;
   customer_address?: string | null;
+  /** Set when the customer picked their own arrival time from the text link. */
+  customer_eta?: string | null;
 };
 
 type ParkedCar = {
@@ -246,6 +248,13 @@ function PickupPage() {
     return () => clearInterval(t);
   }, [pickups, claimHideMs]);
 
+  // Keeps the "in 18m" countdown on customer arrival cards honest.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNowTick(Date.now()), 30000);
+    return () => clearInterval(t);
+  }, []);
+
 
 
   const claim = async (p: Pickup) => {
@@ -350,6 +359,8 @@ function PickupPage() {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     const SERVICE_KINDS = ["wash", "parts", "park"];
     const priority = (p: Pickup) => {
+      // A customer already on their way outranks everything else on the lot.
+      if (p.customer_eta) return -1;
       if (p.is_staged) return 3;
       if (SERVICE_KINDS.includes(p.kind ?? "")) return 2;
       if (isTechSource(p.source_role)) return 1;
@@ -460,33 +471,48 @@ function PickupPage() {
           const canCancel = !isSpectator && ((!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name));
           // Every card looks the same; only this small pill is colored so the
           // list stays uniform and the type still reads at a glance.
-          const pillLabel = isStaged
-            ? "Staged"
-            : isParts
-              ? "Parts"
-              : p.kind === "wash"
-                ? "🧼 Wash"
-                : p.kind === "park"
-                  ? "Park request"
-                  : isTech
-                    ? "Technician pickup"
-                    : "Pickup";
-          const pillClass = isStaged
-            ? "bg-foreground text-background"
-            : isParts
-              ? "bg-warning text-warning-foreground"
-              : p.kind === "wash"
-                ? "bg-wash text-wash-foreground"
-                : p.kind === "park"
-                  ? "bg-success text-success-foreground"
-                  : isTech
-                    ? "bg-destructive text-destructive-foreground"
-                    : "bg-primary text-primary-foreground";
+          // The customer set this time themselves from the link their advisor
+          // texted them, so the card leads with it and counts down live.
+          const customerEta = p.customer_eta ? new Date(p.customer_eta) : null;
+          const etaMinutes = customerEta
+            ? Math.round((customerEta.getTime() - nowTick) / 60000)
+            : null;
+          const etaCountdown = etaMinutes === null
+            ? ""
+            : etaMinutes > 0 ? ` · in ${etaMinutes}m` : " · here now";
+          const pillLabel = customerEta
+            ? `🔵 Customer arriving ${format(customerEta, "h:mm a")}${etaCountdown}`
+            : isStaged
+              ? "Staged"
+              : isParts
+                ? "Parts"
+                : p.kind === "wash"
+                  ? "🧼 Wash"
+                  : p.kind === "park"
+                    ? "Park request"
+                    : isTech
+                      ? "Technician pickup"
+                      : "Pickup";
+          const pillClass = customerEta
+            ? "bg-primary text-primary-foreground"
+            : isStaged
+              ? "bg-foreground text-background"
+              : isParts
+                ? "bg-warning text-warning-foreground"
+                : p.kind === "wash"
+                  ? "bg-wash text-wash-foreground"
+                  : p.kind === "park"
+                    ? "bg-success text-success-foreground"
+                    : isTech
+                      ? "bg-destructive text-destructive-foreground"
+                      : "bg-primary text-primary-foreground";
 
           return (
             <li
               key={p.id}
-              className="overflow-hidden rounded-2xl border border-border bg-background"
+              className={`overflow-hidden rounded-2xl border bg-background ${
+                customerEta ? "border-primary ring-2 ring-primary/30" : "border-border"
+              }`}
             >
 
               <div className="px-4 py-3">

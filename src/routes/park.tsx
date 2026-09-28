@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Map as MapIcon, X, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -10,6 +10,9 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
+import { useQuery } from "@tanstack/react-query";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
 import { uploadCarPhoto } from "@/lib/car-photos";
 
@@ -65,6 +68,7 @@ function ParkPage() {
   const pendingPhotos = useRef<File[]>([]);
 
   const role = profile?.role_name ?? "";
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const hideModel = isTechRole(role);
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
@@ -248,6 +252,27 @@ function ParkPage() {
           />
         </div>
         <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} pendingRef={pendingPhotos} />
+
+        {/* Advisors text this to the customer so they can set their own arrival
+            time; the car then jumps to the top of the valets' pickup list. */}
+        {settings?.slug && /^\d{6}$/.test(ro.trim()) && (
+          <button
+            type="button"
+            onClick={async () => {
+              const link = customerArrivalLink(settings.slug, ro.trim());
+              try {
+                await navigator.clipboard.writeText(link);
+                toast.success("Customer link copied");
+              } catch {
+                toast.message(link);
+              }
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-background py-3 text-sm font-semibold text-primary"
+          >
+            <Copy className="h-4 w-4" /> Copy Customer ETA Link
+          </button>
+        )}
+
 
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Save"}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { Share, X } from "lucide-react";
 
 /**
@@ -10,6 +11,8 @@ const KEY = "huri.ios-install-hint.dismissed";
 
 export function IOSInstallHint() {
   const [show, setShow] = useState(false);
+  // The customer arrival screen is not the app — never prompt an install there.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -23,7 +26,7 @@ export function IOSInstallHint() {
     }
   }, []);
 
-  if (!show) return null;
+  if (!show || pathname.startsWith("/arrive")) return null;
   const dismiss = () => { localStorage.setItem(KEY, "1"); setShow(false); };
 
   return (

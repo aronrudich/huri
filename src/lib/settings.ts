@@ -9,6 +9,8 @@ export type DealershipSettings = {
   id: string;
   name: string;
   company_code: string;
+  /** Public handle used in the customer arrival link — safe to share. */
+  slug: string;
   flagged_days: number;
   reminder_minutes: number;
   claim_hide_minutes: number;
@@ -29,7 +31,7 @@ export const SETTINGS_DEFAULTS = {
 } as const;
 
 const SETTINGS_COLUMNS =
-  "id, name, company_code, flagged_days, reminder_minutes, claim_hide_minutes, timezone, enable_wash, enable_parts, enable_staging";
+  "id, name, company_code, slug, flagged_days, reminder_minutes, claim_hide_minutes, timezone, enable_wash, enable_parts, enable_staging";
 
 /** The signed-in employee's own company settings (RLS hides every other company). */
 export const dealershipSettingsQuery = (dealershipId?: string | null) =>

@@ -253,27 +253,6 @@ function ParkPage() {
         </div>
         <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(role)} pendingRef={pendingPhotos} />
 
-        {/* Advisors text this to the customer so they can set their own arrival
-            time; the car then jumps to the top of the valets' pickup list. */}
-        {settings?.slug && /^\d{6}$/.test(ro.trim()) && (
-          <button
-            type="button"
-            onClick={async () => {
-              const link = customerArrivalLink(settings.slug, ro.trim());
-              try {
-                await navigator.clipboard.writeText(link);
-                toast.success("Customer link copied");
-              } catch {
-                toast.message(link);
-              }
-            }}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-background py-3 text-sm font-semibold text-primary"
-          >
-            <Copy className="h-4 w-4" /> Copy Customer ETA Link
-          </button>
-        )}
-
-
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving…" : editing ? "Save Changes" : "Save"}
         </button>
@@ -344,6 +323,25 @@ function ParkPage() {
             className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
           >
             Car Has Been Picked Up
+          </button>
+        )}
+        {/* Advisors text this to the customer so they can set their own arrival
+            time; the car then jumps to the top of the valets' pickup list. */}
+        {settings?.slug && /^\d{6}$/.test(ro.trim()) && (
+          <button
+            type="button"
+            onClick={async () => {
+              const link = customerArrivalLink(settings.slug, ro.trim());
+              try {
+                await navigator.clipboard.writeText(link);
+                toast.success("Customer link copied");
+              } catch {
+                toast.message(link);
+              }
+            }}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-input bg-background py-3 text-sm font-semibold text-primary"
+          >
+            <Copy className="h-4 w-4" /> Copy Customer ETA Link
           </button>
         )}
         {editing && <CarHistory ro={ro.trim()} />}

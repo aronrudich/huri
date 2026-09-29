@@ -201,6 +201,8 @@ function PickupPage() {
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.
         if (p.status !== "unclaimed" && p.status !== "claimed") return;
+        // Upcoming customer arrivals ding later, when they open 20 minutes out.
+        if (p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > Date.now()) return;
         if (!canSeeKind(role, p.kind)) return;
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"

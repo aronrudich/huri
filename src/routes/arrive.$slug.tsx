@@ -45,7 +45,7 @@ const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 const MERIDIEMS = ["AM", "PM"] as const;
 const ITEM_HEIGHT = 44;
 
-/** One column of the time drum. */
+/** One column of the time drum, with its own finger-follow, momentum and snap. */
 function Wheel<T extends string | number>({
   values, value, onChange, label, format,
 }: {
@@ -55,73 +55,135 @@ function Wheel<T extends string | number>({
   label: string;
   format?: (value: T) => string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const settle = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touching = useRef(false);
-  const moving = useRef(false);
-  const index = values.indexOf(value);
+  const max = (values.length - 1) * ITEM_HEIGHT;
+  const [offset, setOffset] = useState(() => Math.max(0, values.indexOf(value)) * ITEM_HEIGHT);
+  const pos = useRef(offset);
+  const raf = useRef<number | null>(null);
+  const drag = useRef<{ y: number; start: number; moved: boolean; samples: { t: number; y: number }[] } | null>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
-  // Park the wheel on the selected row, but never while a finger or glide is moving it.
+  const set = (p: number) => { pos.current = p; setOffset(p); };
+  const stop = () => { if (raf.current) cancelAnimationFrame(raf.current); raf.current = null; };
+  const busy = () => drag.current !== null || raf.current !== null;
+
+  // Follow outside changes only while the wheel is at rest.
   useEffect(() => {
-    const el = ref.current;
-    if (!el || touching.current || moving.current) return;
+    if (busy()) return;
     const target = Math.max(0, values.indexOf(value)) * ITEM_HEIGHT;
-    if (Math.abs(el.scrollTop - target) > 2) el.scrollTop = target;
+    if (Math.abs(pos.current - target) > 1) set(target);
   }, [value, values]);
 
+  useEffect(() => stop, []);
+
   const commit = () => {
-    const el = ref.current;
-    if (!el || touching.current) return;
-    moving.current = false;
-    const next = values[Math.min(values.length - 1, Math.max(0, Math.round(el.scrollTop / ITEM_HEIGHT)))];
-    if (next !== undefined && next !== value) onChange(next);
+    const next = values[Math.round(pos.current / ITEM_HEIGHT)];
+    if (next !== undefined && next !== valueRef.current) onChangeRef.current(next);
   };
 
-  // Only save once the wheel has fully stopped.
-  const onScroll = () => {
-    moving.current = true;
-    if (settle.current) clearTimeout(settle.current);
-    settle.current = setTimeout(commit, 160);
+  const snapTo = (target: number) => {
+    stop();
+    const from = pos.current;
+    const t0 = performance.now();
+    const dur = Math.min(420, 180 + Math.abs(target - from) * 1.2);
+    const step = (now: number) => {
+      const k = Math.min(1, (now - t0) / dur);
+      const e = 1 - Math.pow(1 - k, 3);
+      set(from + (target - from) * e);
+      if (k < 1) raf.current = requestAnimationFrame(step);
+      else { raf.current = null; commit(); }
+    };
+    raf.current = requestAnimationFrame(step);
   };
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const end = () => { if (settle.current) clearTimeout(settle.current); commit(); };
-    el.addEventListener("scrollend", end);
-    return () => el.removeEventListener("scrollend", end);
-  });
+  const nearest = (p: number) => Math.min(max, Math.max(0, Math.round(p / ITEM_HEIGHT) * ITEM_HEIGHT));
 
-  const tapTo = (i: number) => {
-    ref.current?.scrollTo({ top: i * ITEM_HEIGHT, behavior: "smooth" });
+  const glide = (velocity: number) => {
+    stop();
+    let v = velocity; // px per ms
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = Math.min(32, now - last);
+      last = now;
+      let p = pos.current + v * dt;
+      v *= Math.pow(0.955, dt / 16.67);
+      if (p < 0 || p > max) { p = Math.min(max, Math.max(0, p)); v = 0; }
+      set(p);
+      if (Math.abs(v) > 0.05) raf.current = requestAnimationFrame(step);
+      else { raf.current = null; snapTo(nearest(p)); }
+    };
+    raf.current = requestAnimationFrame(step);
   };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    stop();
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = { y: e.clientY, start: pos.current, moved: false, samples: [{ t: performance.now(), y: e.clientY }] };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    const d = drag.current;
+    if (!d) return;
+    const dy = e.clientY - d.y;
+    if (Math.abs(dy) > 4) d.moved = true;
+    let p = d.start - dy;
+    if (p < 0) p = p / 3;
+    if (p > max) p = max + (p - max) / 3;
+    set(p);
+    const now = performance.now();
+    d.samples.push({ t: now, y: e.clientY });
+    while (d.samples.length > 2 && now - d.samples[0].t > 100) d.samples.shift();
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    const d = drag.current;
+    drag.current = null;
+    if (!d) return;
+    if (!d.moved) {
+      // Tap: glide the tapped row into the middle.
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const rowsFromCenter = Math.round((e.clientY - rect.top - rect.height / 2) / ITEM_HEIGHT);
+      snapTo(nearest(pos.current + rowsFromCenter * ITEM_HEIGHT));
+      return;
+    }
+    const first = d.samples[0];
+    const lastS = d.samples[d.samples.length - 1];
+    const dt = lastS.t - first.t;
+    const v = dt > 0 && performance.now() - lastS.t < 80 ? -(lastS.y - first.y) / dt : 0;
+    if (pos.current < 0 || pos.current > max || Math.abs(v) < 0.2) snapTo(nearest(pos.current));
+    else glide(Math.max(-4, Math.min(4, v)));
+  };
+
+  const center = offset / ITEM_HEIGHT;
 
   return (
     <div
-      ref={ref}
-      onScroll={onScroll}
-      onTouchStart={() => { touching.current = true; }}
-      onTouchEnd={() => { touching.current = false; onScroll(); }}
-      onTouchCancel={() => { touching.current = false; onScroll(); }}
       role="listbox"
       aria-label={label}
-      className="h-[132px] flex-1 touch-pan-y snap-y snap-mandatory overflow-y-auto overscroll-contain [-ms-overflow-style:none] [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden"
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
+      className="relative h-[132px] flex-1 cursor-grab touch-none select-none overflow-hidden"
     >
-      <div style={{ paddingTop: ITEM_HEIGHT, paddingBottom: ITEM_HEIGHT }}>
-        {values.map((item, i) => (
-          <button
-            key={String(item)}
-            type="button"
-            role="option"
-            aria-selected={i === index}
-            onClick={() => tapTo(i)}
-            className={`flex h-11 w-full snap-center items-center justify-center text-2xl tabular-nums transition-colors ${
-              i === index ? "font-semibold text-foreground" : "text-muted-foreground/50"
-            }`}
-          >
-            {format ? format(item) : item}
-          </button>
-        ))}
+      <div style={{ transform: `translate3d(0, ${ITEM_HEIGHT - offset}px, 0)`, willChange: "transform" }}>
+        {values.map((item, i) => {
+          const dist = Math.abs(i - center);
+          const selected = Math.round(center) === i;
+          return (
+            <div
+              key={String(item)}
+              role="option"
+              aria-selected={selected}
+              style={{ opacity: Math.max(0.25, 1 - dist * 0.45) }}
+              className={`flex h-11 w-full items-center justify-center text-2xl tabular-nums ${
+                selected ? "font-semibold text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {format ? format(item) : item}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

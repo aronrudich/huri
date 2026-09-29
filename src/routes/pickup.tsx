@@ -540,7 +540,7 @@ function PickupPage() {
             <li
               className={`overflow-hidden rounded-2xl border bg-background ${
                 customerEta
-                  ? upcoming ? "border-arrival/20 opacity-60 [&_.font-semibold]:font-normal" : "border-arrival ring-2 ring-arrival/30"
+                  ? upcoming ? "border-arrival/10 opacity-20 [&_.font-semibold]:font-normal" : "border-arrival ring-2 ring-arrival/30"
                   : "border-border"
               }`}
             >

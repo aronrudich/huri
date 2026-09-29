@@ -306,6 +306,7 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           dealership_id: string
+          eta_notified_at: string | null
           id: string
           is_staged: boolean
           kind: string
@@ -331,6 +332,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           dealership_id: string
+          eta_notified_at?: string | null
           id?: string
           is_staged?: boolean
           kind?: string
@@ -356,6 +358,7 @@ export type Database = {
           customer_name?: string | null
           customer_phone?: string | null
           dealership_id?: string
+          eta_notified_at?: string | null
           id?: string
           is_staged?: boolean
           kind?: string
@@ -575,6 +578,7 @@ export type Database = {
           customer_name: string | null
           customer_phone: string | null
           dealership_id: string
+          eta_notified_at: string | null
           id: string
           is_staged: boolean
           kind: string

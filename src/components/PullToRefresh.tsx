@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "@tanstack/react-router";
 import { LoaderCircle } from "lucide-react";
 import { reconnectRealtime } from "@/lib/realtime-recovery";
 
@@ -15,7 +14,6 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const refreshingRef = useRef(false);
   const [refreshing, setRefreshing] = useState(false);
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   useEffect(() => {
     const scroller = scrollerRef.current;
@@ -46,7 +44,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       setDistance(Math.min(MAX_DISTANCE, rawDistance * 0.48));
     };
 
-    const finishPull = async () => {
+    const finishPull = () => {
       startYRef.current = null;
       if (distanceRef.current < TRIGGER_DISTANCE || refreshingRef.current) {
         setDistance(0);
@@ -57,18 +55,13 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       setRefreshing(true);
       setDistance(52);
       reconnectRealtime();
-      try {
-        await Promise.all([
-          queryClient.invalidateQueries({ type: "active", refetchType: "active" }),
-          router.invalidate(),
-        ]);
-      } finally {
-        window.setTimeout(() => {
-          refreshingRef.current = false;
-          setRefreshing(false);
-          setDistance(0);
-        }, 250);
-      }
+      // Refresh quietly in the background; the spinner never waits on it.
+      void queryClient.invalidateQueries({ type: "active", refetchType: "active" });
+      window.setTimeout(() => {
+        refreshingRef.current = false;
+        setRefreshing(false);
+        setDistance(0);
+      }, 800);
     };
 
     const cancelPull = () => {
@@ -87,7 +80,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       scroller.removeEventListener("touchend", finishPull);
       scroller.removeEventListener("touchcancel", cancelPull);
     };
-  }, [queryClient, router]);
+  }, [queryClient]);
 
   return (
     <div ref={scrollerRef} className="app-scroll">

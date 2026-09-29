@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
@@ -201,6 +201,8 @@ function PickupPage() {
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.
         if (p.status !== "unclaimed" && p.status !== "claimed") return;
+        // Upcoming customer arrivals ding later, when they open 20 minutes out.
+        if (p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > Date.now()) return;
         if (!canSeeKind(role, p.kind)) return;
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"
@@ -254,6 +256,9 @@ function PickupPage() {
     const t = setInterval(() => setNowTick(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
+  /** A customer arrival that doesn't open for claiming until 20 minutes before the ETA. */
+  const isUpcoming = (p: Pickup) =>
+    p.status === "unclaimed" && !!p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > nowTick;
 
 
 
@@ -359,8 +364,9 @@ function PickupPage() {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     const SERVICE_KINDS = ["wash", "parts", "park"];
     const priority = (p: Pickup) => {
-      // A customer already on their way outranks everything else on the lot.
-      if (p.customer_eta) return -1;
+      // A customer already on their way outranks everything else on the lot;
+      // arrivals still more than 20 minutes out wait at the very bottom.
+      if (p.customer_eta) return isUpcoming(p) ? 9 : -1;
       if (p.is_staged) return 3;
       if (SERVICE_KINDS.includes(p.kind ?? "")) return 2;
       if (isTechSource(p.source_role)) return 1;
@@ -368,12 +374,16 @@ function PickupPage() {
     };
     const unclaimed = visiblePickups
       .filter((p) => p.status === "unclaimed")
-      .sort((a, b) => priority(a) - priority(b) || byAge(a, b));
+      .sort((a, b) => priority(a) - priority(b)
+        || (a.customer_eta && b.customer_eta ? new Date(a.customer_eta).getTime() - new Date(b.customer_eta).getTime() : 0)
+        || byAge(a, b));
+    const upcoming = unclaimed.filter(isUpcoming);
+    const ready = unclaimed.filter((p) => !isUpcoming(p));
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
-    return [...unclaimed, ...claimed];
-  }, [visiblePickups]);
+    return [...ready, ...claimed, ...upcoming];
+  }, [visiblePickups, nowTick]);
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -442,7 +452,9 @@ function PickupPage() {
             No active pickups.
           </li>
         )}
-        {sortedPickups.map((p) => {
+        {sortedPickups.map((p, idx) => {
+          const upcoming = isUpcoming(p);
+          const firstUpcoming = upcoming && (idx === 0 || !isUpcoming(sortedPickups[idx - 1]));
           const isParts = p.kind === "parts";
           // Wash confirmations follow the RO #, so the whole list can show it.
           const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
@@ -480,8 +492,19 @@ function PickupPage() {
           const etaCountdown = etaMinutes === null
             ? ""
             : etaMinutes > 0 ? ` · in ${etaMinutes}m` : " · here now";
+          const etaDay = customerEta && format(customerEta, "yyyy-MM-dd") !== format(nowTick, "yyyy-MM-dd")
+            ? (format(customerEta, "yyyy-MM-dd") === format(nowTick + 86_400_000, "yyyy-MM-dd") ? "Tomorrow " : `${format(customerEta, "EEE, MMM d")} `)
+            : "";
+          const opensIn = customerEta && upcoming
+            ? (() => {
+                const mins = Math.ceil((customerEta.getTime() - 20 * 60_000 - nowTick) / 60000);
+                const h = Math.floor(mins / 60);
+                const d = Math.floor(h / 24);
+                return d >= 1 ? `${d}d ${h % 24}h` : h > 0 ? `${h}h ${mins % 60}m` : `${mins}m`;
+              })()
+            : "";
           const pillLabel = customerEta
-            ? `🔵 Customer arriving ${format(customerEta, "h:mm a")}${etaCountdown}`
+            ? `Customer arriving ${etaDay}${format(customerEta, "h:mm a")}${upcoming && etaDay ? "" : etaCountdown}`
             : isStaged
               ? "Staged"
               : isParts
@@ -494,7 +517,7 @@ function PickupPage() {
                       ? "Technician pickup"
                       : "Pickup";
           const pillClass = customerEta
-            ? "bg-primary text-primary-foreground"
+            ? upcoming ? "bg-arrival/15 text-arrival" : "bg-arrival text-arrival-foreground"
             : isStaged
               ? "bg-foreground text-background"
               : isParts
@@ -508,10 +531,17 @@ function PickupPage() {
                       : "bg-primary text-primary-foreground";
 
           return (
+            <Fragment key={p.id}>
+            {firstUpcoming && (
+              <li className="px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Upcoming Arrivals
+              </li>
+            )}
             <li
-              key={p.id}
               className={`overflow-hidden rounded-2xl border bg-background ${
-                customerEta ? "border-primary ring-2 ring-primary/30" : "border-border"
+                customerEta
+                  ? upcoming ? "border-arrival/20 opacity-60 [&_.font-semibold]:font-normal" : "border-arrival ring-2 ring-arrival/30"
+                  : "border-border"
               }`}
             >
 
@@ -622,6 +652,13 @@ function PickupPage() {
                   {p.status === "unclaimed" ? (
                     isSpectator ? (
                       <p className="flex-1 text-xs text-muted-foreground">Unclaimed</p>
+                    ) : upcoming ? (
+                      <button
+                        disabled
+                        className="flex-1 rounded-xl bg-muted py-3 text-sm text-muted-foreground"
+                      >
+                        Activates in {opensIn}
+                      </button>
                     ) : (
                       <button
                         onClick={() => claim(p)}
@@ -688,6 +725,7 @@ function PickupPage() {
                 </div>
               </div>
             </li>
+            </Fragment>
           );
         })}
       </ul>

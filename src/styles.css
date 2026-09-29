@@ -32,6 +32,8 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-wash: var(--wash);
   --color-wash-foreground: var(--wash-foreground);
+  --color-arrival: var(--arrival);
+  --color-arrival-foreground: var(--arrival-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -65,6 +67,8 @@
   --warning-foreground: oklch(0.2 0.05 60);
   --wash: oklch(0.66 0.13 195);                     /* iOS systemTeal */
   --wash-foreground: oklch(1 0 0);
+  --arrival: oklch(0.6 0.11 200);                  /* teal blue: customer arrivals */
+  --arrival-foreground: oklch(1 0 0);
   --border: oklch(0.91 0.005 247);
   --input: oklch(0.91 0.005 247);
   --ring: oklch(0.62 0.19 257);
@@ -94,6 +98,8 @@
   --warning-foreground: oklch(0.1 0.02 60);
   --wash: oklch(0.72 0.13 195);
   --wash-foreground: oklch(0 0 0);
+  --arrival: oklch(0.7 0.11 200);
+  --arrival-foreground: oklch(0 0 0);
   --border: oklch(0.25 0.005 260);
   --input: oklch(0.25 0.005 260);
   --ring: oklch(0.7 0.18 257);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { LoaderCircle } from "lucide-react";
 import { reconnectRealtime } from "@/lib/realtime-recovery";
@@ -7,6 +8,10 @@ const TRIGGER_DISTANCE = 64;
 const MAX_DISTANCE = 88;
 
 export function PullToRefresh({ children }: { children: ReactNode }) {
+  // Standalone customer pages (the arrival screen) must never pull-to-refresh:
+  // hard flicks on the time drums would drag the whole page down.
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const disabled = pathname.startsWith("/arrive");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLDivElement | null>(null);
   const startYRef = useRef<number | null>(null);
@@ -16,6 +21,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (disabled) return;
     const scroller = scrollerRef.current;
     const indicator = indicatorRef.current;
     if (!scroller || !indicator) return;
@@ -80,7 +86,9 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       scroller.removeEventListener("touchend", finishPull);
       scroller.removeEventListener("touchcancel", cancelPull);
     };
-  }, [queryClient]);
+  }, [queryClient, disabled]);
+
+  if (disabled) return <div className="app-scroll">{children}</div>;
 
   return (
     <div ref={scrollerRef} className="app-scroll">

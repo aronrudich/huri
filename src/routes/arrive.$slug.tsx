@@ -267,7 +267,7 @@ function ArrivePage() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-surface px-6 pb-16 pt-14 safe-top safe-bottom">
+    <div className="flex min-h-screen flex-col items-center bg-surface px-6 pb-16 pt-14 safe-top safe-bottom overscroll-none select-none">
       <img src={huriLogo.url} alt="Huri" className="h-14 w-auto" />
 
       {done ? (

@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
@@ -723,6 +723,7 @@ function PickupPage() {
                 </div>
               </div>
             </li>
+            </Fragment>
           );
         })}
       </ul>

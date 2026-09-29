@@ -21,33 +21,20 @@ export function timezoneOffsetMs(timeZone: string, at: Date): number {
   return asUtc - at.getTime();
 }
 
-/**
- * Turns a customer's "3:45 PM" into a real moment on the company's clock.
- * A time that already passed (more than 5 minutes ago) means tomorrow.
- */
-export function resolveEta(timeZone: string, hour12: number, minute: number, meridiem: "AM" | "PM"): Date {
-  const now = new Date();
-  const offset = timezoneOffsetMs(timeZone, now);
-  const local = new Date(now.getTime() + offset);
+/** Today's date on the company's clock, as YYYY-MM-DD. */
+export function companyToday(timeZone: string): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+}
+
+/** Turns a customer's chosen day + "3:45 PM" into a real moment on the company's clock. */
+export function resolveEta(timeZone: string, date: string, hour12: number, minute: number, meridiem: "AM" | "PM"): Date {
+  const [y, m, d] = date.split("-").map(Number);
   let hour = hour12 % 12;
   if (meridiem === "PM") hour += 12;
-
-  const build = (dayShift: number) => {
-    const guess = Date.UTC(
-      local.getUTCFullYear(),
-      local.getUTCMonth(),
-      local.getUTCDate() + dayShift,
-      hour,
-      minute,
-    );
-    // Re-read the offset at the target moment so DST changes stay correct.
-    const target = new Date(guess - offset);
-    return new Date(guess - timezoneOffsetMs(timeZone, target));
-  };
-
-  const today = build(0);
-  if (today.getTime() > now.getTime() - 5 * 60_000) return today;
-  return build(1);
+  const guess = Date.UTC(y, m - 1, d, hour, minute);
+  const first = timezoneOffsetMs(timeZone, new Date(guess));
+  // Re-read the offset at the target moment so DST changes stay correct.
+  return new Date(guess - timezoneOffsetMs(timeZone, new Date(guess - first)));
 }
 
 type AdminClient = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];

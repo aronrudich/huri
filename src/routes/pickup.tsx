@@ -381,7 +381,7 @@ function PickupPage() {
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
     return [...ready, ...claimed, ...upcoming];
-  }, [visiblePickups]);
+  }, [visiblePickups, nowTick]);
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
@@ -450,7 +450,9 @@ function PickupPage() {
             No active pickups.
           </li>
         )}
-        {sortedPickups.map((p) => {
+        {sortedPickups.map((p, idx) => {
+          const upcoming = isUpcoming(p);
+          const firstUpcoming = upcoming && (idx === 0 || !isUpcoming(sortedPickups[idx - 1]));
           const isParts = p.kind === "parts";
           // Wash confirmations follow the RO #, so the whole list can show it.
           const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
@@ -488,8 +490,19 @@ function PickupPage() {
           const etaCountdown = etaMinutes === null
             ? ""
             : etaMinutes > 0 ? ` · in ${etaMinutes}m` : " · here now";
+          const etaDay = customerEta && format(customerEta, "yyyy-MM-dd") !== format(nowTick, "yyyy-MM-dd")
+            ? (format(customerEta, "yyyy-MM-dd") === format(nowTick + 86_400_000, "yyyy-MM-dd") ? "Tomorrow " : `${format(customerEta, "EEE, MMM d")} `)
+            : "";
+          const opensIn = customerEta && upcoming
+            ? (() => {
+                const mins = Math.ceil((customerEta.getTime() - 20 * 60_000 - nowTick) / 60000);
+                const h = Math.floor(mins / 60);
+                const d = Math.floor(h / 24);
+                return d >= 1 ? `${d}d ${h % 24}h` : h > 0 ? `${h}h ${mins % 60}m` : `${mins}m`;
+              })()
+            : "";
           const pillLabel = customerEta
-            ? `🔵 Customer arriving ${format(customerEta, "h:mm a")}${etaCountdown}`
+            ? `Customer arriving ${etaDay}${format(customerEta, "h:mm a")}${upcoming && etaDay ? "" : etaCountdown}`
             : isStaged
               ? "Staged"
               : isParts
@@ -502,7 +515,7 @@ function PickupPage() {
                       ? "Technician pickup"
                       : "Pickup";
           const pillClass = customerEta
-            ? "bg-primary text-primary-foreground"
+            ? upcoming ? "bg-arrival/15 text-arrival" : "bg-arrival text-arrival-foreground"
             : isStaged
               ? "bg-foreground text-background"
               : isParts
@@ -516,10 +529,17 @@ function PickupPage() {
                       : "bg-primary text-primary-foreground";
 
           return (
+            <Fragment key={p.id}>
+            {firstUpcoming && (
+              <li className="px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Upcoming Arrivals
+              </li>
+            )}
             <li
-              key={p.id}
               className={`overflow-hidden rounded-2xl border bg-background ${
-                customerEta ? "border-primary ring-2 ring-primary/30" : "border-border"
+                customerEta
+                  ? upcoming ? "border-arrival/20 opacity-60 [&_.font-semibold]:font-normal" : "border-arrival ring-2 ring-arrival/30"
+                  : "border-border"
               }`}
             >
 
@@ -630,6 +650,13 @@ function PickupPage() {
                   {p.status === "unclaimed" ? (
                     isSpectator ? (
                       <p className="flex-1 text-xs text-muted-foreground">Unclaimed</p>
+                    ) : upcoming ? (
+                      <button
+                        disabled
+                        className="flex-1 rounded-xl bg-muted py-3 text-sm text-muted-foreground"
+                      >
+                        Activates in {opensIn}
+                      </button>
                     ) : (
                       <button
                         onClick={() => claim(p)}

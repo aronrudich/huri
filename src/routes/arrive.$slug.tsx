@@ -256,7 +256,7 @@ function ArrivePage() {
 
   if (!info) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center">
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center overscroll-none select-none">
         <img src={huriLogo.url} alt="Huri" className="h-14 w-auto" />
         <h1 className="mt-8 text-xl font-semibold">This link is no longer active</h1>
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">

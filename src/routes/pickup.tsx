@@ -254,6 +254,9 @@ function PickupPage() {
     const t = setInterval(() => setNowTick(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
+  /** A customer arrival that doesn't open for claiming until 20 minutes before the ETA. */
+  const isUpcoming = (p: Pickup) =>
+    p.status === "unclaimed" && !!p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > nowTick;
 
 
 
@@ -359,8 +362,9 @@ function PickupPage() {
       new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     const SERVICE_KINDS = ["wash", "parts", "park"];
     const priority = (p: Pickup) => {
-      // A customer already on their way outranks everything else on the lot.
-      if (p.customer_eta) return -1;
+      // A customer already on their way outranks everything else on the lot;
+      // arrivals still more than 20 minutes out wait at the very bottom.
+      if (p.customer_eta) return isUpcoming(p) ? 9 : -1;
       if (p.is_staged) return 3;
       if (SERVICE_KINDS.includes(p.kind ?? "")) return 2;
       if (isTechSource(p.source_role)) return 1;
@@ -368,11 +372,15 @@ function PickupPage() {
     };
     const unclaimed = visiblePickups
       .filter((p) => p.status === "unclaimed")
-      .sort((a, b) => priority(a) - priority(b) || byAge(a, b));
+      .sort((a, b) => priority(a) - priority(b)
+        || (a.customer_eta && b.customer_eta ? new Date(a.customer_eta).getTime() - new Date(b.customer_eta).getTime() : 0)
+        || byAge(a, b));
+    const upcoming = unclaimed.filter(isUpcoming);
+    const ready = unclaimed.filter((p) => !isUpcoming(p));
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
-    return [...unclaimed, ...claimed];
+    return [...ready, ...claimed, ...upcoming];
   }, [visiblePickups]);
 
   return (

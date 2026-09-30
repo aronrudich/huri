@@ -9,105 +9,35 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as BringMeRouteImport } from './routes/bring-me'
-import { Route as ComposeRouteImport } from './routes/compose'
-import { Route as FlaggedRouteImport } from './routes/flagged'
-import { Route as InboxRouteImport } from './routes/inbox'
-import { Route as LotRouteImport } from './routes/lot'
-import { Route as ParkRouteImport } from './routes/park'
-import { Route as ParkRequestRouteImport } from './routes/park-request'
-import { Route as PartsRouteImport } from './routes/parts'
-import { Route as PickupRouteImport } from './routes/pickup'
-import { Route as PickupNewRouteImport } from './routes/pickup-new'
-import { Route as ProfileRouteImport } from './routes/profile'
-import { Route as ReportsRouteImport } from './routes/reports'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as WashRouteImport } from './routes/wash'
-import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
-import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
+import { Route as SettingsRouteImport } from './routes/settings'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ReportsRouteImport } from './routes/reports'
+import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PickupNewRouteImport } from './routes/pickup-new'
+import { Route as PickupRouteImport } from './routes/pickup'
+import { Route as PartsRouteImport } from './routes/parts'
+import { Route as ParkRequestRouteImport } from './routes/park-request'
+import { Route as ParkRouteImport } from './routes/park'
+import { Route as LotRouteImport } from './routes/lot'
+import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as FlaggedRouteImport } from './routes/flagged'
+import { Route as ComposeRouteImport } from './routes/compose'
+import { Route as BringMeRouteImport } from './routes/bring-me'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
-import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
-import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
-import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
-import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
+import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
+import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
+import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BringMeRoute = BringMeRouteImport.update({
-  id: '/bring-me',
-  path: '/bring-me',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ComposeRoute = ComposeRouteImport.update({
-  id: '/compose',
-  path: '/compose',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FlaggedRoute = FlaggedRouteImport.update({
-  id: '/flagged',
-  path: '/flagged',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const InboxRoute = InboxRouteImport.update({
-  id: '/inbox',
-  path: '/inbox',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LotRoute = LotRouteImport.update({
-  id: '/lot',
-  path: '/lot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParkRoute = ParkRouteImport.update({
-  id: '/park',
-  path: '/park',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ParkRequestRoute = ParkRequestRouteImport.update({
-  id: '/park-request',
-  path: '/park-request',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PartsRoute = PartsRouteImport.update({
-  id: '/parts',
-  path: '/parts',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PickupRoute = PickupRouteImport.update({
-  id: '/pickup',
-  path: '/pickup',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PickupNewRoute = PickupNewRouteImport.update({
-  id: '/pickup-new',
-  path: '/pickup-new',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ProfileRoute = ProfileRouteImport.update({
-  id: '/profile',
-  path: '/profile',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
+const WashRoute = WashRouteImport.update({
+  id: '/wash',
+  path: '/wash',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SettingsRoute = SettingsRouteImport.update({
@@ -115,19 +45,79 @@ const SettingsRoute = SettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => rootRouteImport,
 } as any)
-const WashRoute = WashRouteImport.update({
-  id: '/wash',
-  path: '/wash',
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ArriveSlugRoute = ArriveSlugRouteImport.update({
-  id: '/arrive/$slug',
-  path: '/arrive/$slug',
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LlegarSlugRoute = LlegarSlugRouteImport.update({
-  id: '/llegar/$slug',
-  path: '/llegar/$slug',
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PickupNewRoute = PickupNewRouteImport.update({
+  id: '/pickup-new',
+  path: '/pickup-new',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PickupRoute = PickupRouteImport.update({
+  id: '/pickup',
+  path: '/pickup',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PartsRoute = PartsRouteImport.update({
+  id: '/parts',
+  path: '/parts',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkRequestRoute = ParkRequestRouteImport.update({
+  id: '/park-request',
+  path: '/park-request',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParkRoute = ParkRouteImport.update({
+  id: '/park',
+  path: '/park',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LotRoute = LotRouteImport.update({
+  id: '/lot',
+  path: '/lot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FlaggedRoute = FlaggedRouteImport.update({
+  id: '/flagged',
+  path: '/flagged',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ComposeRoute = ComposeRouteImport.update({
+  id: '/compose',
+  path: '/compose',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BringMeRoute = BringMeRouteImport.update({
+  id: '/bring-me',
+  path: '/bring-me',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
@@ -135,14 +125,24 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
-  id: '/api/public/avatar/$id',
-  path: '/api/public/avatar/$id',
+const LlegarSlugRoute = LlegarSlugRouteImport.update({
+  id: '/llegar/$slug',
+  path: '/llegar/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
-  id: '/api/public/hooks/stale-cars',
-  path: '/api/public/hooks/stale-cars',
+const ArriveSlugRoute = ArriveSlugRouteImport.update({
+  id: '/arrive/$slug',
+  path: '/arrive/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksUnclaimedReminderRoute =
@@ -151,14 +151,14 @@ const ApiPublicHooksUnclaimedReminderRoute =
     path: '/api/public/hooks/unclaimed-reminder',
     getParentRoute: () => rootRouteImport,
   } as any)
-const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
-  id: '/lovable/email/auth/preview',
-  path: '/lovable/email/auth/preview',
+const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
+  id: '/api/public/hooks/stale-cars',
+  path: '/api/public/hooks/stale-cars',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
-  id: '/lovable/email/auth/webhook',
-  path: '/lovable/email/auth/webhook',
+const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
+  id: '/api/public/avatar/$id',
+  path: '/api/public/avatar/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -358,109 +358,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/bring-me': {
-      id: '/bring-me'
-      path: '/bring-me'
-      fullPath: '/bring-me'
-      preLoaderRoute: typeof BringMeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/compose': {
-      id: '/compose'
-      path: '/compose'
-      fullPath: '/compose'
-      preLoaderRoute: typeof ComposeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/flagged': {
-      id: '/flagged'
-      path: '/flagged'
-      fullPath: '/flagged'
-      preLoaderRoute: typeof FlaggedRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/inbox': {
-      id: '/inbox'
-      path: '/inbox'
-      fullPath: '/inbox'
-      preLoaderRoute: typeof InboxRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/lot': {
-      id: '/lot'
-      path: '/lot'
-      fullPath: '/lot'
-      preLoaderRoute: typeof LotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/park': {
-      id: '/park'
-      path: '/park'
-      fullPath: '/park'
-      preLoaderRoute: typeof ParkRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/park-request': {
-      id: '/park-request'
-      path: '/park-request'
-      fullPath: '/park-request'
-      preLoaderRoute: typeof ParkRequestRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/parts': {
-      id: '/parts'
-      path: '/parts'
-      fullPath: '/parts'
-      preLoaderRoute: typeof PartsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pickup': {
-      id: '/pickup'
-      path: '/pickup'
-      fullPath: '/pickup'
-      preLoaderRoute: typeof PickupRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pickup-new': {
-      id: '/pickup-new'
-      path: '/pickup-new'
-      fullPath: '/pickup-new'
-      preLoaderRoute: typeof PickupNewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/profile': {
-      id: '/profile'
-      path: '/profile'
-      fullPath: '/profile'
-      preLoaderRoute: typeof ProfileRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
+    '/wash': {
+      id: '/wash'
+      path: '/wash'
+      fullPath: '/wash'
+      preLoaderRoute: typeof WashRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -470,25 +372,109 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/wash': {
-      id: '/wash'
-      path: '/wash'
-      fullPath: '/wash'
-      preLoaderRoute: typeof WashRouteImport
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/arrive/$slug': {
-      id: '/arrive/$slug'
-      path: '/arrive/$slug'
-      fullPath: '/arrive/$slug'
-      preLoaderRoute: typeof ArriveSlugRouteImport
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/llegar/$slug': {
-      id: '/llegar/$slug'
-      path: '/llegar/$slug'
-      fullPath: '/llegar/$slug'
-      preLoaderRoute: typeof LlegarSlugRouteImport
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pickup-new': {
+      id: '/pickup-new'
+      path: '/pickup-new'
+      fullPath: '/pickup-new'
+      preLoaderRoute: typeof PickupNewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pickup': {
+      id: '/pickup'
+      path: '/pickup'
+      fullPath: '/pickup'
+      preLoaderRoute: typeof PickupRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parts': {
+      id: '/parts'
+      path: '/parts'
+      fullPath: '/parts'
+      preLoaderRoute: typeof PartsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/park-request': {
+      id: '/park-request'
+      path: '/park-request'
+      fullPath: '/park-request'
+      preLoaderRoute: typeof ParkRequestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/park': {
+      id: '/park'
+      path: '/park'
+      fullPath: '/park'
+      preLoaderRoute: typeof ParkRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lot': {
+      id: '/lot'
+      path: '/lot'
+      fullPath: '/lot'
+      preLoaderRoute: typeof LotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/flagged': {
+      id: '/flagged'
+      path: '/flagged'
+      fullPath: '/flagged'
+      preLoaderRoute: typeof FlaggedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/compose': {
+      id: '/compose'
+      path: '/compose'
+      fullPath: '/compose'
+      preLoaderRoute: typeof ComposeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bring-me': {
+      id: '/bring-me'
+      path: '/bring-me'
+      fullPath: '/bring-me'
+      preLoaderRoute: typeof BringMeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/thread/$threadId': {
@@ -498,25 +484,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/avatar/$id': {
-      id: '/api/public/avatar/$id'
-      path: '/api/public/avatar/$id'
-      fullPath: '/api/public/avatar/$id'
-      preLoaderRoute: typeof ApiPublicAvatarIdRouteImport
+    '/llegar/$slug': {
+      id: '/llegar/$slug'
+      path: '/llegar/$slug'
+      fullPath: '/llegar/$slug'
+      preLoaderRoute: typeof LlegarSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/stale-cars': {
-      id: '/api/public/hooks/stale-cars'
-      path: '/api/public/hooks/stale-cars'
-      fullPath: '/api/public/hooks/stale-cars'
-      preLoaderRoute: typeof ApiPublicHooksStaleCarsRouteImport
+    '/arrive/$slug': {
+      id: '/arrive/$slug'
+      path: '/arrive/$slug'
+      fullPath: '/arrive/$slug'
+      preLoaderRoute: typeof ArriveSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/unclaimed-reminder': {
-      id: '/api/public/hooks/unclaimed-reminder'
-      path: '/api/public/hooks/unclaimed-reminder'
-      fullPath: '/api/public/hooks/unclaimed-reminder'
-      preLoaderRoute: typeof ApiPublicHooksUnclaimedReminderRouteImport
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/auth/preview': {
@@ -526,11 +512,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lovable/email/auth/webhook': {
-      id: '/lovable/email/auth/webhook'
-      path: '/lovable/email/auth/webhook'
-      fullPath: '/lovable/email/auth/webhook'
-      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+    '/api/public/hooks/unclaimed-reminder': {
+      id: '/api/public/hooks/unclaimed-reminder'
+      path: '/api/public/hooks/unclaimed-reminder'
+      fullPath: '/api/public/hooks/unclaimed-reminder'
+      preLoaderRoute: typeof ApiPublicHooksUnclaimedReminderRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/stale-cars': {
+      id: '/api/public/hooks/stale-cars'
+      path: '/api/public/hooks/stale-cars'
+      fullPath: '/api/public/hooks/stale-cars'
+      preLoaderRoute: typeof ApiPublicHooksStaleCarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/avatar/$id': {
+      id: '/api/public/avatar/$id'
+      path: '/api/public/avatar/$id'
+      fullPath: '/api/public/avatar/$id'
+      preLoaderRoute: typeof ApiPublicAvatarIdRouteImport
       parentRoute: typeof rootRouteImport
     }
   }

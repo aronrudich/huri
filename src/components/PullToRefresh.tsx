@@ -11,7 +11,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
   // Standalone customer pages (the arrival screen) must never pull-to-refresh:
   // hard flicks on the time drums would drag the whole page down.
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const disabled = pathname.startsWith("/arrive");
+  const disabled = pathname.startsWith("/arrive") || pathname.startsWith("/llegar");
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const indicatorRef = useRef<HTMLDivElement | null>(null);
   const startYRef = useRef<number | null>(null);

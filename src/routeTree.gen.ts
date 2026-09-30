@@ -27,6 +27,7 @@ import { Route as BringMeRouteImport } from './routes/bring-me'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
 import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
@@ -124,6 +125,11 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LlegarSlugRoute = LlegarSlugRouteImport.update({
+  id: '/llegar/$slug',
+  path: '/llegar/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArriveSlugRoute = ArriveSlugRouteImport.update({
   id: '/arrive/$slug',
   path: '/arrive/$slug',
@@ -175,6 +181,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -228,6 +236,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -256,6 +265,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wash'
     | '/arrive/$slug'
+    | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wash'
     | '/arrive/$slug'
+    | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -308,6 +319,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/wash'
     | '/arrive/$slug'
+    | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/stale-cars'
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   WashRoute: typeof WashRoute
   ArriveSlugRoute: typeof ArriveSlugRoute
+  LlegarSlugRoute: typeof LlegarSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
@@ -471,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/llegar/$slug': {
+      id: '/llegar/$slug'
+      path: '/llegar/$slug'
+      fullPath: '/llegar/$slug'
+      preLoaderRoute: typeof LlegarSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/arrive/$slug': {
       id: '/arrive/$slug'
       path: '/arrive/$slug'
@@ -535,6 +555,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   WashRoute: WashRoute,
   ArriveSlugRoute: ArriveSlugRoute,
+  LlegarSlugRoute: LlegarSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,

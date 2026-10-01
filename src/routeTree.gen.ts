@@ -33,6 +33,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
+import { Route as ApiPublicHooksMilestoneRouteImport } from './routes/api/public/hooks/milestone'
 import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 
 const WashRoute = WashRouteImport.update({
@@ -156,6 +157,11 @@ const ApiPublicHooksStaleCarsRoute = ApiPublicHooksStaleCarsRouteImport.update({
   path: '/api/public/hooks/stale-cars',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksMilestoneRoute = ApiPublicHooksMilestoneRouteImport.update({
+  id: '/api/public/hooks/milestone',
+  path: '/api/public/hooks/milestone',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
   id: '/api/public/avatar/$id',
   path: '/api/public/avatar/$id',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
+  '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
+  '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -239,6 +247,7 @@ export interface FileRoutesById {
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
+  '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -268,6 +277,7 @@ export interface FileRouteTypes {
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
+    | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
+    | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
+    | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
@@ -350,6 +362,7 @@ export interface RootRouteChildren {
   LlegarSlugRoute: typeof LlegarSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
+  ApiPublicHooksMilestoneRoute: typeof ApiPublicHooksMilestoneRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
   ApiPublicHooksUnclaimedReminderRoute: typeof ApiPublicHooksUnclaimedReminderRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -526,6 +539,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksStaleCarsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/milestone': {
+      id: '/api/public/hooks/milestone'
+      path: '/api/public/hooks/milestone'
+      fullPath: '/api/public/hooks/milestone'
+      preLoaderRoute: typeof ApiPublicHooksMilestoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/avatar/$id': {
       id: '/api/public/avatar/$id'
       path: '/api/public/avatar/$id'
@@ -558,6 +578,7 @@ const rootRouteChildren: RootRouteChildren = {
   LlegarSlugRoute: LlegarSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
+  ApiPublicHooksMilestoneRoute: ApiPublicHooksMilestoneRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,
   ApiPublicHooksUnclaimedReminderRoute: ApiPublicHooksUnclaimedReminderRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,

@@ -34,6 +34,8 @@
   --color-wash-foreground: var(--wash-foreground);
   --color-arrival: var(--arrival);
   --color-arrival-foreground: var(--arrival-foreground);
+  --color-celebrate: var(--celebrate);
+  --color-celebrate-foreground: var(--celebrate-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -69,6 +71,8 @@
   --wash-foreground: oklch(1 0 0);
   --arrival: oklch(0.6 0.11 200);                  /* teal blue: customer arrivals */
   --arrival-foreground: oklch(1 0 0);
+  --celebrate: oklch(0.78 0.16 80);
+  --celebrate-foreground: oklch(0.2 0.03 80);
   --border: oklch(0.91 0.005 247);
   --input: oklch(0.91 0.005 247);
   --ring: oklch(0.62 0.19 257);
@@ -100,6 +104,8 @@
   --wash-foreground: oklch(0 0 0);
   --arrival: oklch(0.7 0.11 200);
   --arrival-foreground: oklch(0 0 0);
+  --celebrate: oklch(0.82 0.15 85);
+  --celebrate-foreground: oklch(0.18 0.03 80);
   --border: oklch(0.25 0.005 260);
   --input: oklch(0.25 0.005 260);
   --ring: oklch(0.7 0.18 257);

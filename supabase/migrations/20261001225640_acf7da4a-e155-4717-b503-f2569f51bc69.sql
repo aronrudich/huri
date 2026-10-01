@@ -1,0 +1,36 @@
+CREATE OR REPLACE FUNCTION public.alex_1000_claims_milestone()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE
+  v_alex constant uuid := '2bce037a-f670-47d0-a06f-8d1460bd7022';
+  v_count int;
+  v_inserted int;
+  v_body constant text := '[[celebrate]]WOW! Alex has officially hit 1000 claims! He sure knows how to Huri up! Thank you Alex!';
+BEGIN
+  IF NEW.claimed_by IS DISTINCT FROM v_alex THEN RETURN NEW; END IF;
+  IF TG_OP = 'UPDATE' AND OLD.claimed_by IS NOT DISTINCT FROM v_alex THEN RETURN NEW; END IF;
+  IF EXISTS (SELECT 1 FROM public.milestone_fired WHERE key = 'alex-1000') THEN RETURN NEW; END IF;
+
+  SELECT count(*) INTO v_count FROM public.pickup_requests
+  WHERE claimed_by = v_alex AND status NOT IN ('canceled', 'cancelled');
+  IF v_count < 1000 THEN RETURN NEW; END IF;
+
+  INSERT INTO public.milestone_fired (key) VALUES ('alex-1000') ON CONFLICT DO NOTHING;
+  GET DIAGNOSTICS v_inserted = ROW_COUNT;
+  IF v_inserted = 0 THEN RETURN NEW; END IF;
+
+  INSERT INTO public.messages (thread_id, sender_id, recipient_id, body, dealership_id)
+  SELECT 'huri:milestone-alex-1000:' || p.id, NULL, p.id, v_body, p.dealership_id
+  FROM public.profiles p
+  WHERE p.dealership_id = NEW.dealership_id AND p.is_active AND p.status = 'approved'
+    AND (p.role_name IN ('Valet', 'Shop Foreman', 'Service Manager', 'Admin') OR p.id = v_alex);
+
+  BEGIN
+    PERFORM net.http_post(
+      url := 'https://project--7a2bc1d9-d11a-4987-b046-aa093d085a42.lovable.app/api/public/hooks/milestone',
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'ZOFCqIPORj_e70a9Y_uf5bBHHiZxnQvNkWxWD85BSD8'),
+      body := '{}'::jsonb);
+  EXCEPTION WHEN OTHERS THEN NULL;
+  END;
+  RETURN NEW;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.alex_1000_claims_milestone() FROM PUBLIC, anon, authenticated;

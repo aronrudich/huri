@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, User } from "lucide-react";
+import { ArrowLeft, Send, Trash2, Trophy, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
@@ -206,7 +206,21 @@ function ThreadPage() {
         {visibleMsgs.map((m) => {
           const mine = m.sender_id === user?.id;
           const sender = m.sender_id ? profiles[m.sender_id] : undefined;
-          const senderLabel = sender?.name || "Unknown";
+          const senderLabel = sender?.name || (m.sender_id ? "Unknown" : "Huri");
+          if (m.body.startsWith("[[celebrate]]")) {
+            return (
+              <li key={m.id} className="flex justify-center py-2">
+                <div className="w-full max-w-sm overflow-hidden rounded-3xl border-2 border-celebrate bg-gradient-to-br from-celebrate/25 via-celebrate/10 to-background p-5 text-center shadow-lg shadow-celebrate/20">
+                  <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-celebrate text-celebrate-foreground shadow-md">
+                    <Trophy className="h-8 w-8" />
+                  </div>
+                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-celebrate">1,000 Claims</p>
+                  <p className="mt-2 text-lg font-bold leading-snug text-foreground">{m.body.slice(13)}</p>
+                  <p className="mt-3 text-[11px] text-muted-foreground">Huri · {format(new Date(m.created_at), "p")}</p>
+                </div>
+              </li>
+            );
+          }
           return (
             <li key={m.id} className={`flex items-end gap-2 ${mine ? "justify-end" : "justify-start"}`}>
               {!mine && (

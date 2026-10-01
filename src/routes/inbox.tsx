@@ -205,7 +205,7 @@ function InboxPage() {
       map.set(m.thread_id, {
         thread_id: m.thread_id,
         title,
-        preview: m.body,
+        preview: m.body.startsWith("[[celebrate]]") ? `🏆 ${m.body.slice(13)}` : m.body,
         at: m.created_at,
         isGroup,
         avatarUrl,

@@ -227,6 +227,21 @@ export type Database = {
           },
         ]
       }
+      milestone_fired: {
+        Row: {
+          fired_at: string
+          key: string
+        }
+        Insert: {
+          fired_at?: string
+          key: string
+        }
+        Update: {
+          fired_at?: string
+          key?: string
+        }
+        Relationships: []
+      }
       parked_cars: {
         Row: {
           bay_tech: string | null

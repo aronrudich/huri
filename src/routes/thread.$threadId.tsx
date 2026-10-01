@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Send, Trash2, Trophy, User } from "lucide-react";
+import { ArrowLeft, Send, Sparkles, Trash2, Trophy, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
@@ -209,14 +209,20 @@ function ThreadPage() {
           const senderLabel = sender?.name || (m.sender_id ? "Unknown" : "Huri");
           if (m.body.startsWith("[[celebrate]]")) {
             return (
-              <li key={m.id} className="flex justify-center py-2">
-                <div className="w-full max-w-sm overflow-hidden rounded-3xl border-2 border-celebrate bg-gradient-to-br from-celebrate/25 via-celebrate/10 to-background p-5 text-center shadow-lg shadow-celebrate/20">
-                  <div className="mx-auto mb-3 grid h-16 w-16 place-items-center rounded-full bg-celebrate text-celebrate-foreground shadow-md">
-                    <Trophy className="h-8 w-8" />
+              <li key={m.id} className="flex justify-center py-3">
+                <div className="celebration-enter relative w-full max-w-sm overflow-hidden rounded-3xl border-2 border-celebrate/70 bg-gradient-to-br from-celebrate/30 via-background to-celebrate/15 px-5 py-7 text-center shadow-xl shadow-celebrate/25 ring-1 ring-celebrate/20">
+                  <Sparkles aria-hidden="true" className="absolute left-5 top-6 h-5 w-5 rotate-[-12deg] text-celebrate/80" />
+                  <Sparkles aria-hidden="true" className="absolute right-6 top-11 h-4 w-4 rotate-12 text-celebrate/70" />
+                  <span aria-hidden="true" className="absolute left-10 top-20 h-2 w-2 rotate-45 bg-celebrate/60" />
+                  <span aria-hidden="true" className="absolute right-10 top-24 h-2 w-2 rounded-full bg-celebrate/50" />
+                  <div className="relative mx-auto mb-4 grid h-20 w-20 place-items-center rounded-full border-4 border-background bg-celebrate text-celebrate-foreground shadow-lg shadow-celebrate/40 ring-2 ring-celebrate/40">
+                    <Trophy className="h-10 w-10" strokeWidth={2.25} />
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-celebrate">1,000 Claims</p>
-                  <p className="mt-2 text-lg font-bold leading-snug text-foreground">{m.body.slice(13)}</p>
-                  <p className="mt-3 text-[11px] text-muted-foreground">Huri · {format(new Date(m.created_at), "p")}</p>
+                  <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-celebrate">A Huri Milestone</p>
+                  <p className="mt-1 text-3xl font-black leading-none text-foreground">1,000 CLAIMS</p>
+                  <div className="mx-auto my-4 h-px w-20 bg-celebrate/60" />
+                  <p className="text-lg font-bold leading-snug text-foreground">{m.body.slice(13)}</p>
+                  <p className="mt-4 text-xs font-semibold text-muted-foreground">Huri · {format(new Date(m.created_at), "p")}</p>
                 </div>
               </li>
             );

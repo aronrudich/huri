@@ -25,7 +25,7 @@ export const Route = createFileRoute("/api/public/hooks/milestone")({
           .select("user_id, endpoint, p256dh, auth")
           .in("user_id", [...threadFor.keys()]);
 
-        const body = "WOW! Alex has officially hit 1000 claims! He sure knows to Huri the f*ck up! Thank you Alex!";
+        const body = "WOW! Alex has officially hit 1000 claims! He sure knows how to Huri the f*ck up! Thank you Alex!";
         let sent = 0;
         await Promise.all(
           (subs ?? []).map(async (s) => {

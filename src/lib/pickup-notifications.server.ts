@@ -121,7 +121,7 @@ export async function createPickupAndNotify(
         ro_number: data.ro,
         tag_number: data.tag ?? null,
         car_model: data.model ?? null,
-        notes: data.notes ?? null,
+        notes: null,
         lot_position: "UNKNOWN",
         parked_by: userId,
       } as never);

@@ -255,6 +255,7 @@ export type Database = {
           located_at: string
           lot_position: string
           notes: string | null
+          notes_updated_at: string | null
           parked_by: string | null
           ro_number: string | null
           stale_alerted_at: string | null
@@ -273,6 +274,7 @@ export type Database = {
           located_at?: string
           lot_position?: string
           notes?: string | null
+          notes_updated_at?: string | null
           parked_by?: string | null
           ro_number?: string | null
           stale_alerted_at?: string | null
@@ -291,6 +293,7 @@ export type Database = {
           located_at?: string
           lot_position?: string
           notes?: string | null
+          notes_updated_at?: string | null
           parked_by?: string | null
           ro_number?: string | null
           stale_alerted_at?: string | null

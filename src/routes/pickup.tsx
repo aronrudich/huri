@@ -54,6 +54,7 @@ type ParkedCar = {
   id: string; tag_number: string | null; ro_number: string | null;
   car_model: string | null; lot_position: string; notes: string | null;
   is_staged?: boolean | null; located_at?: string | null; bay_tech?: string | null;
+  notes_updated_at?: string | null;
 };
 
 type SearchResult = {
@@ -609,7 +610,11 @@ function PickupPage() {
                             </Link>
                           </p>
                         )}
-                        {p.car_notes && <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes} · {format(new Date(p.created_at), "M/d")}</p>}
+                        {p.car_notes ? (
+                          <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {p.car_notes} · {format(new Date(p.created_at), "M/d")}</p>
+                        ) : displayCar?.notes ? (
+                          <p className="mt-0.5 text-sm text-muted-foreground"><span className="font-medium">Note:</span> {displayCar.notes}{displayCar.notes_updated_at ? ` · ${format(new Date(displayCar.notes_updated_at), "M/d")}` : ""}</p>
+                        ) : null}
                       </>
                     )}
                   </div>

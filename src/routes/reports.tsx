@@ -55,7 +55,7 @@ function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [range, setRange] = useState<RangeKey>("day");
-  const [view, setView] = useState<"claiming" | "submitting">("claiming");
+  const [view, setView] = useState<"claiming" | "submitting" | "points">("claiming");
   const [openSubmitter, setOpenSubmitter] = useState<string | null>(null);
   const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
     start: null, end: null,
@@ -127,7 +127,7 @@ function ReportsPage() {
           ))}
         </div>
         <div className="mt-2 flex gap-1 rounded-xl bg-muted p-1">
-          {([["claiming", "Claiming"], ["submitting", "Submitting"]] as const).map(([key, label]) => (
+          {([["claiming", "Claiming"], ["submitting", "Submitting"], ["points", "Valet points"]] as const).map(([key, label]) => (
             <button
               key={key}
               type="button"
@@ -256,7 +256,44 @@ function ReportsPage() {
 
         ) : data ? (
           <>
-            {view === "claiming" ? (
+            {view === "points" ? (() => {
+              const ranked = [...(data.employees ?? [])].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
+              const active = ranked.filter((e) => e.points > 0);
+              const top = active[0];
+              const total = data.totalPoints ?? 0;
+              return (
+                <>
+                  <section className="grid grid-cols-2 gap-3">
+                    <Stat label="Total points" value={total.toFixed(1)} />
+                    <Stat label="Active valets" value={String(active.length)} />
+                    <Stat label="Top earner" value={top ? `${top.name} · ${top.points.toFixed(1)}` : "—"} />
+                    <Stat label="Avg points / valet" value={active.length ? (total / active.length).toFixed(1) : "—"} />
+                  </section>
+                  <section>
+                    <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">Valet points</h2>
+                    {active.length === 0 ? (
+                      <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">No points in this window yet.</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {active.map((e, i) => (
+                          <li key={e.id} className="flex items-center gap-3 rounded-xl border border-border bg-card p-3">
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold">{e.name}</p>
+                              <p className="truncate text-xs text-muted-foreground">{e.role || "—"} · {e.claims} claims</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-base font-bold leading-tight">{e.points.toFixed(1)}</p>
+                              <p className="text-[11px] leading-tight text-muted-foreground">points</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </section>
+                </>
+              );
+            })() : view === "claiming" ? (
               <>
             <section className="grid grid-cols-2 gap-3">
               <Stat label="Submissions" value={String(data.total)} />

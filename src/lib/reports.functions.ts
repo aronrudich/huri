@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
+import { normalizeSpot, adjacentSpots, lotOf } from "@/lib/lot";
 import {
   shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
@@ -15,6 +16,7 @@ export type EmployeeStat = {
   fastestMs: number | null;
   anomalies: number;
   byKind: Record<string, number>;
+  points: number;
 };
 
 export type SubmitterStat = {
@@ -46,6 +48,7 @@ export type ReportData = {
   submitters: SubmitterStat[];
   submittedTotal: number;
   submitterCount: number;
+  totalPoints: number;
 };
 
 /** Claims slower than this are anomalies: counted, but never averaged. */
@@ -115,12 +118,13 @@ export const getReport = createServerFn({ method: "POST" })
       id: string; kind: string | null; is_staged: boolean | null; status: string;
       created_at: string; claimed_at: string | null; claimed_by: string | null;
       requested_by: string | null; source_role: string | null;
+      lot_position: string | null; ro_number: string | null; dealership_id: string;
     };
     const rows: Row[] = [];
     for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
       let query = supabase
         .from("pickup_requests")
-        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role")
+        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, lot_position, ro_number, dealership_id")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(offset, offset + PAGE - 1);
@@ -160,6 +164,79 @@ export const getReport = createServerFn({ method: "POST" })
 
     const avg = (values: number[]) =>
       values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
+
+    // ---- valet points (weights stay server-side, never shown) ---------------
+    type Ev = { dealership_id: string; ro_number: string | null; event_type: string; detail: string | null; actor_id: string | null; created_at: string };
+    const events: Ev[] = [];
+    for (let offset = 0; offset < 200_000; offset += PAGE) {
+      let q = supabase
+        .from("car_events")
+        .select("dealership_id, ro_number, event_type, detail, actor_id, created_at")
+        .in("event_type", ["logged", "moved", "deleted"])
+        .order("created_at", { ascending: true })
+        .order("id", { ascending: true })
+        .range(offset, offset + PAGE - 1);
+      if (end) q = q.lt("created_at", end.toISOString());
+      const { data: batch, error } = await q;
+      if (error) throw error;
+      events.push(...((batch ?? []) as Ev[]));
+      if (!batch || batch.length < PAGE) break;
+    }
+    const destOf = (e: Ev): string | null => {
+      if (e.event_type === "deleted") return null;
+      const d = e.detail ?? "";
+      let m = d.match(/Added to Huri at (.+)$/) || d.match(/→\s*(.+)$/) || d.match(/ to (.+)$/);
+      return m ? normalizeSpot(m[1]) : null;
+    };
+    // Replay location history; at each claim, count occupied blocker spots.
+    const claimsByTime = durations
+      .map((d) => d.row)
+      .filter((r) => kindOf(r) !== "parts" && kindOf(r) !== "park" && kindOf(r) !== "wash")
+      .sort((a, b) => a.claimed_at!.localeCompare(b.claimed_at!));
+    const blockersFor = new Map<string, number>();
+    const carAt = new Map<string, string>(); // dealership|ro -> spot
+    const spotCount = new Map<string, number>(); // dealership|spot -> cars
+    const bump = (k: string, n: number) => spotCount.set(k, (spotCount.get(k) ?? 0) + n);
+    let ei = 0;
+    for (const r of claimsByTime) {
+      while (ei < events.length && events[ei].created_at <= r.claimed_at!) {
+        const e = events[ei++];
+        if (!e.ro_number) continue;
+        const key = `${e.dealership_id}|${e.ro_number}`;
+        const prev = carAt.get(key);
+        if (prev) { bump(`${e.dealership_id}|${prev}`, -1); carAt.delete(key); }
+        const next = destOf(e);
+        if (next) { carAt.set(key, next); bump(`${e.dealership_id}|${next}`, 1); }
+      }
+      const spot = normalizeSpot(r.lot_position);
+      if (spot && lotOf(spot) === "sv") {
+        blockersFor.set(r.id, adjacentSpots(spot).filter((s) => (spotCount.get(`${r.dealership_id}|${s}`) ?? 0) > 0).length);
+      }
+    }
+    const pointsFor = (r: Row): number => {
+      const k = kindOf(r);
+      if (k === "parts") return 1.1;
+      if (k === "park") return 0.7;
+      if (k === "wash") return 0.7;
+      const lot = lotOf(r.lot_position);
+      if (lot === "sv") return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
+      if (lot === "bl") return 1.2;
+      if (lot === "cp") return k === "stage" ? 1.2 : 1.0;
+      return 1.2;
+    };
+    const pointsByEmployee = new Map<string, number>();
+    const addPts = (id: string, n: number) => pointsByEmployee.set(id, (pointsByEmployee.get(id) ?? 0) + n);
+    durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row)));
+    // Manual add/edit of car locations (automatic moves carry no actor).
+    const inHours = (iso: string) =>
+      !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||
+      (pacificHour(new Date(iso)) >= data.startHour && pacificHour(new Date(iso)) < data.endHour!);
+    events.forEach((e) => {
+      if (e.event_type === "deleted" || !e.actor_id) return;
+      if (start && e.created_at < start.toISOString()) return;
+      if (!inHours(e.created_at)) return;
+      addPts(e.actor_id, 0.3);
+    });
 
     // ---- per employee -------------------------------------------------------
     const perEmployee = new Map<string, {
@@ -213,7 +290,8 @@ export const getReport = createServerFn({ method: "POST" })
 
     // Anyone with activity but not on the current roster (deactivated/left).
     const missing = [...new Set([...perEmployee.keys(), ...perSubmitter.keys()])]
-      .filter((id) => !names.has(id));
+      .concat([...pointsByEmployee.keys()])
+      .filter((id, i, a) => !names.has(id) && a.indexOf(id) === i);
     if (missing.length) {
       const { data: people } = await supabase
         .from("profiles")
@@ -225,7 +303,7 @@ export const getReport = createServerFn({ method: "POST" })
     }
 
     const submitterIds = [...new Set([...roster, ...perSubmitter.keys()])];
-    const claimerIds = [...new Set([...roster, ...perEmployee.keys()])];
+    const claimerIds = [...new Set([...roster, ...perEmployee.keys(), ...pointsByEmployee.keys()])];
 
     const submitters: SubmitterStat[] = submitterIds.map((id) => {
       const entry = perSubmitter.get(id);
@@ -251,6 +329,7 @@ export const getReport = createServerFn({ method: "POST" })
         fastestMs: entry && entry.clean.length ? Math.min(...entry.clean) : null,
         anomalies: entry?.anomalies ?? 0,
         byKind: entry?.byKind ?? {},
+        points: Math.round((pointsByEmployee.get(id) ?? 0) * 10) / 10,
       };
     }).sort((a, b) => b.claims - a.claims || a.name.localeCompare(b.name));
 
@@ -286,5 +365,6 @@ export const getReport = createServerFn({ method: "POST" })
       submitters,
       submittedTotal: submitters.reduce((sum, s) => sum + s.submissions, 0),
       submitterCount: submitters.filter((s) => s.submissions > 0).length,
+      totalPoints: Math.round([...pointsByEmployee.values()].reduce((a, b) => a + b, 0) * 10) / 10,
     };
   });

@@ -36,8 +36,9 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
         const daysFor = new Map<string, number>(
           (companies ?? []).map((c) => [c.id, c.flagged_days ?? 14]),
         );
-        const widestDays = Math.max(14, ...[...daysFor.values()]);
-        const cutoff = new Date(now.getTime() - widestDays * 24 * 60 * 60 * 1000).toISOString();
+        // Query with the shortest configured window so every company's own number is reachable.
+        const shortestDays = daysFor.size ? Math.min(...daysFor.values()) : 14;
+        const cutoff = new Date(now.getTime() - shortestDays * 24 * 60 * 60 * 1000).toISOString();
 
         // Every location counts — nothing is excluded from the Flagged Cars list.
         // Cars a manager swiped off the list stay off until they move again.

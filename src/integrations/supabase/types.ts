@@ -637,6 +637,16 @@ export type Database = {
         }
         Returns: undefined
       }
+      lot_snapshot_at: {
+        Args: { _at: string }
+        Returns: {
+          created_at: string
+          dealership_id: string
+          detail: string
+          event_type: string
+          ro_number: string
+        }[]
+      }
       message_recipients_for: {
         Args: { _uid: string }
         Returns: {

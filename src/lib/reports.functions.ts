@@ -167,6 +167,17 @@ export const getReport = createServerFn({ method: "POST" })
 
     // ---- valet points (weights stay server-side, never shown) ---------------
     type Ev = { dealership_id: string; ro_number: string | null; event_type: string; detail: string | null; actor_id: string | null; created_at: string };
+    // Seed with each car's last known spot before the range, then replay only in-range moves.
+    const seed: Ev[] = [];
+    if (start) {
+      const { data: snap, error: snapErr } = await (supabase.rpc as unknown as (
+        fn: string, args: Record<string, unknown>,
+      ) => Promise<{ data: Omit<Ev, "actor_id">[] | null; error: Error | null }>)(
+        "lot_snapshot_at", { _at: start.toISOString() },
+      );
+      if (snapErr) throw snapErr;
+      (snap ?? []).forEach((s) => seed.push({ ...s, actor_id: null }));
+    }
     const events: Ev[] = [];
     for (let offset = 0; offset < 200_000; offset += PAGE) {
       let q = supabase
@@ -176,12 +187,14 @@ export const getReport = createServerFn({ method: "POST" })
         .order("created_at", { ascending: true })
         .order("id", { ascending: true })
         .range(offset, offset + PAGE - 1);
+      if (start) q = q.gte("created_at", start.toISOString());
       if (end) q = q.lt("created_at", end.toISOString());
       const { data: batch, error } = await q;
       if (error) throw error;
       events.push(...((batch ?? []) as Ev[]));
       if (!batch || batch.length < PAGE) break;
     }
+    const replay: Ev[] = [...seed, ...events];
     const destOf = (e: Ev): string | null => {
       if (e.event_type === "deleted") return null;
       const d = e.detail ?? "";
@@ -199,8 +212,8 @@ export const getReport = createServerFn({ method: "POST" })
     const bump = (k: string, n: number) => spotCount.set(k, (spotCount.get(k) ?? 0) + n);
     let ei = 0;
     for (const r of claimsByTime) {
-      while (ei < events.length && events[ei].created_at <= r.claimed_at!) {
-        const e = events[ei++];
+      while (ei < replay.length && replay[ei].created_at <= r.claimed_at!) {
+        const e = replay[ei++];
         if (!e.ro_number) continue;
         const key = `${e.dealership_id}|${e.ro_number}`;
         const prev = carAt.get(key);

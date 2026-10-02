@@ -57,10 +57,7 @@ function WashRequestPage() {
         sourceRole,
         kind: "wash",
       } });
-      // Wash requests start clean: old shop notes are wiped, only a note typed here sticks.
-      await supabase.from("parked_cars")
-        .update({ notes: noteText || null })
-        .eq("ro_number", ro.trim());
+      // Submission notes stay on the request only; the car's own note is untouched.
       toast.success("Wash request sent");
       navigate({ to: "/pickup", replace: true });
 

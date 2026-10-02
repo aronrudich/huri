@@ -212,8 +212,8 @@ export const getReport = createServerFn({ method: "POST" })
     const bump = (k: string, n: number) => spotCount.set(k, (spotCount.get(k) ?? 0) + n);
     let ei = 0;
     for (const r of claimsByTime) {
-      while (ei < events.length && events[ei].created_at <= r.claimed_at!) {
-        const e = events[ei++];
+      while (ei < replay.length && replay[ei].created_at <= r.claimed_at!) {
+        const e = replay[ei++];
         if (!e.ro_number) continue;
         const key = `${e.dealership_id}|${e.ro_number}`;
         const prev = carAt.get(key);

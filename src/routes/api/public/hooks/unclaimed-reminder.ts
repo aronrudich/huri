@@ -31,7 +31,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
           (companies ?? []).map((c) => [c.id, c.reminder_minutes ?? DEFAULT_REMIND_MINUTES]),
         );
 
-        // Customer arrivals: ding once when the card opens, 20 minutes before the ETA.
+        // Customer arrivals: ding once when the card opens, 30 minutes before the ETA.
         const { notifyValetsOfArrival } = await import("@/lib/arrive.server");
         const { data: opening } = await supabaseAdmin
           .from("pickup_requests")
@@ -39,7 +39,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
           .eq("status", "unclaimed")
           .is("eta_notified_at", null)
           .not("customer_eta", "is", null)
-          .lte("customer_eta", new Date(Date.now() + 20 * 60_000).toISOString());
+          .lte("customer_eta", new Date(Date.now() + 30 * 60_000).toISOString());
         for (const a of opening ?? []) {
           const { data: co } = await supabaseAdmin.from("dealerships").select("timezone").eq("id", a.dealership_id).maybeSingle();
           const at = new Intl.DateTimeFormat("en-US", { timeZone: co?.timezone ?? "America/Los_Angeles", hour: "numeric", minute: "2-digit" })
@@ -68,7 +68,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
           if (minutes <= 0) continue;
           // Upcoming arrivals count from when they open, not when submitted.
           const startedAt = p.customer_eta
-            ? Math.max(new Date(p.created_at).getTime(), new Date(p.customer_eta).getTime() - 20 * 60_000)
+            ? Math.max(new Date(p.created_at).getTime(), new Date(p.customer_eta).getTime() - 30 * 60_000)
             : new Date(p.created_at).getTime();
           if (now - startedAt < minutes * 60_000) continue;
           const { data: recipients } = await supabaseAdmin

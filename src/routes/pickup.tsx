@@ -588,7 +588,7 @@ function PickupPage() {
                         </p>
                         {effectiveNotes && (
                           <p className="mt-0.5 text-sm text-muted-foreground">
-                            <span className="font-medium">Note:</span> {effectiveNotes} · {format(new Date(p.created_at), "M/d")}
+                            <span className="font-medium">Note:</span> {effectiveNotes} · {format(new Date(p.car_notes ? p.created_at : (displayCar?.notes_updated_at ?? p.created_at)), "M/d")}
                           </p>
                         )}
                       </>

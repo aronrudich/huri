@@ -117,8 +117,16 @@ export function CarHistory({ ro }: { ro: string }) {
   const when = (iso: string) => format(new Date(iso), "MMM d · h:mm a");
   const who = (id: string | null) => (id ? (names[id] ?? "Employee") : "Huri");
 
+  // A submission for an RO new to Huri auto-creates the car record, which logs a
+  // "Added to Huri at UNKNOWN" event at the same instant. The submission card
+  // already covers it, so drop those duplicate auto-log events.
+  const isAutoLogAtSubmission = (e: EventRow) =>
+    e.event_type === "logged" &&
+    /^Added to Huri at UNKNOWN\b/.test(e.detail ?? "") &&
+    requests.some((r) => Math.abs(new Date(r.created_at).getTime() - new Date(e.created_at).getTime()) <= 2000);
+
   const entries: Entry[] = [
-    ...events.map((e) => ({
+    ...events.filter((e) => !isAutoLogAtSubmission(e)).map((e) => ({
       key: `e-${e.id}`,
       at: e.created_at,
       title: CAR_TITLES[e.event_type] ?? e.event_type,

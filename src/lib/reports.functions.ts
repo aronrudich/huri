@@ -235,7 +235,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (lot === "sv") return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
       if (lot === "bl") return 1.2;
       if (lot === "cp") return k === "stage" ? 1.2 : 1.0;
-      return 1.2;
+      return 1.3;
     };
     const pointsByEmployee = new Map<string, number>();
     const addPts = (id: string, n: number) => pointsByEmployee.set(id, (pointsByEmployee.get(id) ?? 0) + n);

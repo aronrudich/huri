@@ -235,7 +235,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (lot === "sv") return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
       if (lot === "bl") return 1.2;
       if (lot === "cp") return k === "stage" ? 1.2 : 1.0;
-      return 1.2;
+      return 1.3;
     };
     const pointsByEmployee = new Map<string, number>();
     const addPts = (id: string, n: number) => pointsByEmployee.set(id, (pointsByEmployee.get(id) ?? 0) + n);
@@ -250,6 +250,21 @@ export const getReport = createServerFn({ method: "POST" })
       if (!inHours(e.created_at)) return;
       addPts(e.actor_id, 0.3);
     });
+    // Photos uploaded onto a car earn a small bonus.
+    {
+      let q = supabase
+        .from("car_photos")
+        .select("uploaded_by, created_at")
+        .not("uploaded_by", "is", null);
+      if (start) q = q.gte("created_at", start.toISOString());
+      if (end) q = q.lt("created_at", end.toISOString());
+      const { data: photos, error: photosError } = await q.limit(10_000);
+      if (photosError) throw photosError;
+      (photos ?? []).forEach((p) => {
+        if (!p.uploaded_by || !inHours(p.created_at)) return;
+        addPts(p.uploaded_by, 0.2);
+      });
+    }
 
     // ---- per employee -------------------------------------------------------
     const perEmployee = new Map<string, {

@@ -202,8 +202,8 @@ function PickupPage() {
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.
         if (p.status !== "unclaimed" && p.status !== "claimed") return;
-        // Upcoming customer arrivals ding later, when they open 20 minutes out.
-        if (p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > Date.now()) return;
+        // Upcoming customer arrivals ding later, when they open 30 minutes out.
+        if (p.customer_eta && new Date(p.customer_eta).getTime() - 30 * 60_000 > Date.now()) return;
         if (!canSeeKind(role, p.kind)) return;
         const title = p.is_staged
           ? "🏁 Car staged — bring to CP"
@@ -257,9 +257,9 @@ function PickupPage() {
     const t = setInterval(() => setNowTick(Date.now()), 30000);
     return () => clearInterval(t);
   }, []);
-  /** A customer arrival that doesn't open for claiming until 20 minutes before the ETA. */
+  /** A customer arrival that doesn't open for claiming until 30 minutes before the ETA. */
   const isUpcoming = (p: Pickup) =>
-    p.status === "unclaimed" && !!p.customer_eta && new Date(p.customer_eta).getTime() - 20 * 60_000 > nowTick;
+    p.status === "unclaimed" && !!p.customer_eta && new Date(p.customer_eta).getTime() - 30 * 60_000 > nowTick;
 
 
 
@@ -366,7 +366,7 @@ function PickupPage() {
     const SERVICE_KINDS = ["wash", "parts", "park"];
     const priority = (p: Pickup) => {
       // A customer already on their way outranks everything else on the lot;
-      // arrivals still more than 20 minutes out wait at the very bottom.
+      // arrivals still more than 30 minutes out wait at the very bottom.
       if (p.customer_eta) return isUpcoming(p) ? 9 : -1;
       if (p.is_staged) return 3;
       if (SERVICE_KINDS.includes(p.kind ?? "")) return 2;
@@ -487,25 +487,19 @@ function PickupPage() {
           // The customer set this time themselves from the link their advisor
           // texted them, so the card leads with it and counts down live.
           const customerEta = p.customer_eta ? new Date(p.customer_eta) : null;
-          const etaMinutes = customerEta
-            ? Math.round((customerEta.getTime() - nowTick) / 60000)
-            : null;
-          const etaCountdown = etaMinutes === null
-            ? ""
-            : etaMinutes > 0 ? ` · in ${etaMinutes}m` : " · here now";
           const etaDay = customerEta && format(customerEta, "yyyy-MM-dd") !== format(nowTick, "yyyy-MM-dd")
             ? (format(customerEta, "yyyy-MM-dd") === format(nowTick + 86_400_000, "yyyy-MM-dd") ? "Tomorrow " : `${format(customerEta, "EEE, MMM d")} `)
             : "";
           const opensIn = customerEta && upcoming
             ? (() => {
-                const mins = Math.ceil((customerEta.getTime() - 20 * 60_000 - nowTick) / 60000);
+                const mins = Math.ceil((customerEta.getTime() - 30 * 60_000 - nowTick) / 60000);
                 const h = Math.floor(mins / 60);
                 const d = Math.floor(h / 24);
                 return d >= 1 ? `${d}d ${h % 24}h` : h > 0 ? `${h}h ${mins % 60}m` : `${mins}m`;
               })()
             : "";
-          const pillLabel = customerEta
-            ? `Customer arriving ${etaDay}${format(customerEta, "h:mm a")}${upcoming && etaDay ? "" : etaCountdown}`
+          const pillLabel = customerEta && upcoming
+            ? `Customer arriving ${etaDay}${format(customerEta, "h:mm a")}`
             : isStaged
               ? "Staged"
               : isParts
@@ -517,8 +511,8 @@ function PickupPage() {
                     : isTech
                       ? "Technician pickup"
                       : "Pickup";
-          const pillClass = customerEta
-            ? upcoming ? "bg-arrival/15 text-arrival" : "bg-arrival text-arrival-foreground"
+          const pillClass = customerEta && upcoming
+            ? "bg-arrival/15 text-arrival"
             : isStaged
               ? "bg-foreground text-background"
               : isParts
@@ -540,8 +534,8 @@ function PickupPage() {
             )}
             <li
               className={`overflow-hidden rounded-2xl border bg-background ${
-                customerEta
-                  ? upcoming ? "border-arrival/10 opacity-20 [&_.font-semibold]:font-normal" : "border-arrival ring-2 ring-arrival/30"
+                customerEta && upcoming
+                  ? "border-arrival/10 opacity-20 [&_.font-semibold]:font-normal"
                   : "border-border"
               }`}
             >
@@ -588,7 +582,7 @@ function PickupPage() {
                     {!isParts && (
                       <>
                         <p className="text-sm text-muted-foreground">
-                          {[displayCar?.car_model ?? p.car_model, p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
+                          {[displayCar?.car_model ?? p.car_model, p.customer_eta && (!p.advisor_name || p.advisor_name === "Customer") ? "Customer - ETA link" : p.advisor_name, format(new Date(p.created_at), "h:mm a")].filter(Boolean).join(" · ")}
                         </p>
                         {effectiveNotes && (
                           <p className="mt-0.5 text-sm text-muted-foreground">

@@ -12,7 +12,7 @@ const slugSchema = z.string().trim().toLowerCase().min(2).max(40).regex(/^[a-z0-
 const roSchema = z.string().trim().max(32).regex(/^[A-Za-z0-9-]*$/).optional();
 
 /** Arrivals open for claiming this long before the customer's time. */
-export const ARRIVAL_LEAD_MS = 20 * 60_000;
+export const ARRIVAL_LEAD_MS = 30 * 60_000;
 
 export type ArrivalInfo = {
   companyName: string;
@@ -138,7 +138,7 @@ export const submitArrival = createServerFn({ method: "POST" })
           customer_eta: etaIso,
           lot_position: lotPosition,
           car_model: carModel,
-          advisor_name: "Customer",
+          advisor_name: "Customer - ETA link",
         } as never)
         .select("id")
         .single();

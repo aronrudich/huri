@@ -470,7 +470,9 @@ function PickupPage() {
           const staleBay =
             p.kind === "pickup" && isTech && snapshotSpot.toUpperCase() === "BAY";
           const effectiveSpot = !isParts ? (staleBay ? "UNKNOWN" : snapshotSpot) : null;
-          const effectiveNotes = displayCar?.notes ?? p.car_notes ?? null;
+          // The note typed with this request is the instruction for it — show it
+          // first; only fall back to the car's saved note when none was submitted.
+          const effectiveNotes = p.car_notes ?? displayCar?.notes ?? null;
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
           const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN" && p.lot_position !== "TAKEN") || p.status !== "unclaimed");
@@ -586,7 +588,7 @@ function PickupPage() {
                         </p>
                         {effectiveNotes && (
                           <p className="mt-0.5 text-sm text-muted-foreground">
-                            <span className="font-medium">Note:</span> {effectiveNotes} · {format(new Date(p.created_at), "M/d")}
+                            <span className="font-medium">Note:</span> {effectiveNotes} · {format(new Date(p.car_notes ? p.created_at : (displayCar?.notes_updated_at ?? p.created_at)), "M/d")}
                           </p>
                         )}
                       </>

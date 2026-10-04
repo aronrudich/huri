@@ -387,6 +387,16 @@ function ProfilePage() {
         </section>
       )}
 
+      <div className="mx-3 mt-6 border-t border-border pt-4">
+        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
+          <Link to="/terms" className="hover:text-foreground hover:underline">Terms of Service</Link>
+          <span>·</span>
+          <Link to="/privacy" className="hover:text-foreground hover:underline">Privacy Policy</Link>
+          <span>·</span>
+          <span>Cidur LLC</span>
+        </div>
+      </div>
+
       <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
         <button onClick={() => setConfirmLeave(true)} className="flex w-full items-center gap-3 border-b border-border px-4 py-4 text-destructive active:bg-accent">
           <UserX className="h-5 w-5" />

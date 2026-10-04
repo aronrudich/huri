@@ -10,10 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as WashRouteImport } from './routes/wash'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as PickupNewRouteImport } from './routes/pickup-new'
 import { Route as PickupRouteImport } from './routes/pickup'
 import { Route as PartsRouteImport } from './routes/parts'
@@ -41,6 +43,11 @@ const WashRoute = WashRouteImport.update({
   path: '/wash',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -59,6 +66,11 @@ const ReportsRoute = ReportsRouteImport.update({
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PickupNewRoute = PickupNewRouteImport.update({
@@ -181,10 +193,12 @@ export interface FileRoutesByFullPath {
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
   '/llegar/$slug': typeof LlegarSlugRoute
@@ -209,10 +223,12 @@ export interface FileRoutesByTo {
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
   '/llegar/$slug': typeof LlegarSlugRoute
@@ -238,10 +254,12 @@ export interface FileRoutesById {
   '/parts': typeof PartsRoute
   '/pickup': typeof PickupRoute
   '/pickup-new': typeof PickupNewRoute
+  '/privacy': typeof PrivacyRoute
   '/profile': typeof ProfileRoute
   '/reports': typeof ReportsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/settings': typeof SettingsRoute
+  '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
   '/llegar/$slug': typeof LlegarSlugRoute
@@ -268,10 +286,12 @@ export interface FileRouteTypes {
     | '/parts'
     | '/pickup'
     | '/pickup-new'
+    | '/privacy'
     | '/profile'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/terms'
     | '/wash'
     | '/arrive/$slug'
     | '/llegar/$slug'
@@ -296,10 +316,12 @@ export interface FileRouteTypes {
     | '/parts'
     | '/pickup'
     | '/pickup-new'
+    | '/privacy'
     | '/profile'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/terms'
     | '/wash'
     | '/arrive/$slug'
     | '/llegar/$slug'
@@ -324,10 +346,12 @@ export interface FileRouteTypes {
     | '/parts'
     | '/pickup'
     | '/pickup-new'
+    | '/privacy'
     | '/profile'
     | '/reports'
     | '/reset-password'
     | '/settings'
+    | '/terms'
     | '/wash'
     | '/arrive/$slug'
     | '/llegar/$slug'
@@ -353,10 +377,12 @@ export interface RootRouteChildren {
   PartsRoute: typeof PartsRoute
   PickupRoute: typeof PickupRoute
   PickupNewRoute: typeof PickupNewRoute
+  PrivacyRoute: typeof PrivacyRoute
   ProfileRoute: typeof ProfileRoute
   ReportsRoute: typeof ReportsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SettingsRoute: typeof SettingsRoute
+  TermsRoute: typeof TermsRoute
   WashRoute: typeof WashRoute
   ArriveSlugRoute: typeof ArriveSlugRoute
   LlegarSlugRoute: typeof LlegarSlugRoute
@@ -376,6 +402,13 @@ declare module '@tanstack/react-router' {
       path: '/wash'
       fullPath: '/wash'
       preLoaderRoute: typeof WashRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/settings': {
@@ -404,6 +437,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/pickup-new': {
@@ -569,10 +609,12 @@ const rootRouteChildren: RootRouteChildren = {
   PartsRoute: PartsRoute,
   PickupRoute: PickupRoute,
   PickupNewRoute: PickupNewRoute,
+  PrivacyRoute: PrivacyRoute,
   ProfileRoute: ProfileRoute,
   ReportsRoute: ReportsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SettingsRoute: SettingsRoute,
+  TermsRoute: TermsRoute,
   WashRoute: WashRoute,
   ArriveSlugRoute: ArriveSlugRoute,
   LlegarSlugRoute: LlegarSlugRoute,

@@ -1,0 +1,1 @@
+INSERT INTO public.roles (name, is_group) VALUES ('Valet Supervisor', false) ON CONFLICT (name) DO NOTHING;

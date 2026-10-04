@@ -327,6 +327,12 @@ function AuthPage() {
 
             </form>
           )}
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            By continuing, you agree to Huri’s{" "}
+            <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms of Service</Link>{" "}
+            and acknowledge our{" "}
+            <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy Policy</Link>.
+          </p>
         </div>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Check, LoaderCircle } from "lucide-react";
@@ -366,6 +366,13 @@ function ArrivePage() {
           </button>
         </div>
       )}
+      <footer className="mt-8 pb-4 text-center text-xs text-muted-foreground">
+        <span>Powered by Huri</span>
+        <span className="mx-2">·</span>
+        <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">Privacy</Link>
+        <span className="mx-2">·</span>
+        <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">Terms</Link>
+      </footer>
     </div>
   );
 }

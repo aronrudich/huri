@@ -6,11 +6,12 @@
 
 export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged" | "settings";
 
-export const VALET_ROLES = ["Valet"];
+export const VALET_ROLES = ["Valet", "Valet Supervisor"];
 
 /** Every role a user can be assigned, in display order. */
 export const ROLE_OPTIONS = [
   "Valet",
+  "Valet Supervisor",
   "Car Wash",
   "Advisor",
   "Technician",
@@ -42,6 +43,7 @@ export const REPORTS_ROLES = [
   "Service Director",
   "General Manager",
   "Spectator",
+  "Valet Supervisor",
 ];
 
 export const canViewReports = (role: string | null | undefined) =>
@@ -151,7 +153,7 @@ export function actionsForRole(
     if (isSpectatorRole(r)) return ["reports", "flagged"];
     // The car wash employee doesn't request washes — they just relocate cars once washed.
     if (r === "Car Wash") return ["new"];
-    if (isValetRole(r)) return ["new"];
+    if (isValetRole(r)) return withReports(["new"]);
     if (r === "Advisor") return withReports(["pickup", "new", "stage", "wash"]);
     if (isTechRole(r)) return withReports(["bringme", "park", "new", "wash"]);
     return withReports(["pickup", "new", "stage", "parts", "park", "wash"]);

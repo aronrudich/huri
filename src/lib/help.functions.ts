@@ -3,6 +3,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
 const SUPPORT_EMAIL = "aron@huri.team";
+const SUPPORT_ACCOUNTS = ["aron@huri.team", "aron@oremor.net"];
+const isSupportEmail = (e: string) => SUPPORT_ACCOUNTS.includes(e.toLowerCase());
 
 async function pushToUser(userId: string, payload: object) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

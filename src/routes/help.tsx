@@ -6,9 +6,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
+import { BottomBar } from "@/components/BottomBar";
 import { getHelpIdentity, sendHelpMessage, sendSupportReply } from "@/lib/help.functions";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
 
 export const Route = createFileRoute("/help")({
   head: () => ({
@@ -37,6 +36,7 @@ function HelpPage() {
   const identity = useServerFn(getHelpIdentity);
   const [isSupport, setIsSupport] = useState<boolean | null>(null);
   const [openThread, setOpenThread] = useState<string | null>(null);
+  const [userThread, setUserThread] = useState<string | null | undefined>(undefined);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
   useEffect(() => {
@@ -44,102 +44,42 @@ function HelpPage() {
     identity().then((r) => setIsSupport(r.isSupport)).catch(() => setIsSupport(false));
   }, [user, identity]);
 
-  return (
-    <div className="flex min-h-screen flex-col bg-surface safe-top pb-20">
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">
-        <HuriLogo />
-        <div className="flex-1" />
-        <TopActions />
-        {isSupport && openThread ? (
-          <button onClick={() => setOpenThread(null)} aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></button>
-        ) : (
-          <Link to="/pickup" aria-label="Back" className="grid h-8 w-8 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
-        )}
-      </header>
-      {isSupport === null ? null : isSupport ? (
-        openThread ? <Conversation threadId={openThread} support /> : <SupportInbox onOpen={setOpenThread} />
-      ) : (
-        <UserHelp userId={user?.id} />
-      )}
-      <BottomBar active="profile" />
-    </div>
-  );
-}
-
-function SupportInbox({ onOpen }: { onOpen: (id: string) => void }) {
-  const [threads, setThreads] = useState<Thread[] | null>(null);
-  const load = useCallback(async () => {
-    const { data } = await supabase.from("help_threads").select("*").order("last_message_at", { ascending: false });
-    setThreads((data as Thread[]) ?? []);
-  }, []);
   useEffect(() => {
-    load();
-    const ch = supabase.channel("help-inbox")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "help_messages" }, () => load())
-      .subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [load]);
-  return (
-    <main className="flex-1 p-4">
-      <h1 className="mb-3 text-lg font-semibold">Help requests</h1>
-      {threads?.length === 0 && <p className="text-sm text-muted-foreground">No help requests yet.</p>}
-      <ul className="space-y-2">
-        {threads?.map((t) => {
-          const unread = !t.support_read_at || new Date(t.support_read_at) < new Date(t.last_message_at);
-          return (
-            <li key={t.id}>
-              <button onClick={() => onOpen(t.id)} className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-left active:bg-accent">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{t.company_code}</span>
-                  <span className="truncate text-sm font-medium">{t.dealership_name}</span>
-                  <span className="flex-1" />
-                  {unread && <span aria-label="Unread" className="h-2.5 w-2.5 rounded-full bg-destructive" />}
-                </div>
-                <p className="mt-1 text-sm">{t.user_name} · <span className="text-muted-foreground">{t.user_role}</span></p>
-                <p className="text-xs text-muted-foreground">{format(new Date(t.last_message_at), "MMM d, h:mm a")}</p>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </main>
-  );
-}
-
-function UserHelp({ userId }: { userId?: string }) {
-  const [threadId, setThreadId] = useState<string | null | undefined>(undefined);
-  const load = useCallback(async () => {
-    if (!userId) return;
-    const { data } = await supabase.from("help_threads").select("id")
-      .eq("user_id", userId).eq("hidden_by_user", false)
-      .order("created_at", { ascending: false }).limit(1).maybeSingle();
-    setThreadId(data?.id ?? null);
-  }, [userId]);
-  useEffect(() => { load(); }, [load]);
+    if (!user || isSupport !== false) return;
+    supabase.from("help_threads").select("id")
+      .eq("user_id", user.id).eq("hidden_by_user", false)
+      .order("created_at", { ascending: false }).limit(1).maybeSingle()
+      .then(({ data }) => setUserThread(data?.id ?? null));
+  }, [user, isSupport]);
 
   const clear = async () => {
-    if (!threadId) return;
+    if (!userThread) return;
     if (!confirm("Delete this chat? Your conversation history will be cleared.")) return;
-    await supabase.from("help_threads").update({ hidden_by_user: true }).eq("id", threadId);
-    setThreadId(null);
+    await supabase.from("help_threads").update({ hidden_by_user: true }).eq("id", userThread);
+    setUserThread(null);
     toast.success("Chat deleted");
   };
 
-  if (threadId === undefined) return null;
   return (
-    <>
-      <div className="flex items-center gap-3 border-b border-border bg-background px-4 py-3">
-        <img src={huriLogo.url} alt="Huri" className="h-6 w-auto" />
-        <div className="flex-1">
-          <p className="text-sm font-semibold">Huri Support</p>
-          <p className="text-xs text-muted-foreground">Tell us what's wrong and we'll get back to you here.</p>
-        </div>
-        {threadId && (
-          <button onClick={clear} className="flex items-center gap-1 text-xs text-destructive"><Trash2 className="h-4 w-4" />Delete Chat</button>
+    <div className="flex min-h-screen flex-col bg-surface safe-top pb-20">
+      <header className="sticky top-0 z-10 grid grid-cols-[2.5rem_1fr_2.5rem] items-center border-b border-border bg-background/95 px-3 py-3 backdrop-blur">
+        {isSupport && openThread ? (
+          <button onClick={() => setOpenThread(null)} aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></button>
+        ) : (
+          <Link to="/profile" aria-label="Back" className="grid h-9 w-9 place-items-center rounded-full text-primary"><ArrowLeft className="h-5 w-5" /></Link>
         )}
-      </div>
-      <Conversation threadId={threadId} onCreated={setThreadId} />
-    </>
+        <h1 className="text-center text-base font-semibold">Huri Support</h1>
+        {isSupport === false && userThread ? (
+          <button onClick={clear} aria-label="Delete chat" className="grid h-9 w-9 place-items-center justify-self-end rounded-full text-destructive"><Trash2 className="h-5 w-5" /></button>
+        ) : <span />}
+      </header>
+      {isSupport === null ? null : isSupport ? (
+        openThread ? <Conversation threadId={openThread} support /> : <SupportInbox onOpen={setOpenThread} />
+      ) : userThread === undefined ? null : (
+        <Conversation threadId={userThread} onCreated={setUserThread} />
+      )}
+      <BottomBar active="profile" />
+    </div>
   );
 }
 
@@ -216,5 +156,45 @@ function Conversation({ threadId, support, onCreated }: { threadId: string | nul
         </button>
       </form>
     </>
+  );
+}
+
+function SupportInbox({ onOpen }: { onOpen: (id: string) => void }) {
+  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("help_threads").select("*").order("last_message_at", { ascending: false });
+    setThreads((data as Thread[]) ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("help-inbox")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "help_messages" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+  return (
+    <main className="flex-1 p-4">
+      <h2 className="mb-3 text-lg font-semibold">Help requests</h2>
+      {threads?.length === 0 && <p className="text-sm text-muted-foreground">No help requests yet.</p>}
+      <ul className="space-y-2">
+        {threads?.map((t) => {
+          const unread = !t.support_read_at || new Date(t.support_read_at) < new Date(t.last_message_at);
+          return (
+            <li key={t.id}>
+              <button onClick={() => onOpen(t.id)} className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-left active:bg-accent">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{t.company_code}</span>
+                  <span className="truncate text-sm font-medium">{t.dealership_name}</span>
+                  <span className="flex-1" />
+                  {unread && <span aria-label="Unread" className="h-2.5 w-2.5 rounded-full bg-destructive" />}
+                </div>
+                <p className="mt-1 text-sm">{t.user_name} · <span className="text-muted-foreground">{t.user_role}</span></p>
+                <p className="text-xs text-muted-foreground">{format(new Date(t.last_message_at), "MMM d, h:mm a")}</p>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </main>
   );
 }

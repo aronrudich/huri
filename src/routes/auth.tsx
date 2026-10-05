@@ -396,6 +396,7 @@ function Field({
 
 function BusinessForm() {
   const [email, setEmail] = useState("");
+  const [contactName, setContactName] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<"dealership" | "auction" | "">("");
   const [message, setMessage] = useState("");

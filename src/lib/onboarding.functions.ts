@@ -171,7 +171,9 @@ export const submitOnboarding = createServerFn({ method: "POST" })
     const { supabaseAdmin, link } = r;
     const stats = draftStats(data.data);
     if (!data.data.businessName?.trim()) throw new Error("Business name is required");
-    if (!stats.boundary) throw new Error("Please draw your property boundary first");
+    void stats;
+    const ad = data.data.address ?? {};
+    if (!(ad.street?.trim() && (ad.city?.trim() || ad.zip?.trim()))) throw new Error("Please enter your business address");
     const { data: cur } = await supabaseAdmin.from("business_onboarding_drafts").select("status").eq("inquiry_id", link.inquiry_id).maybeSingle();
     if (cur && ["submitted", "approved", "activated"].includes(cur.status)) return { ok: true, already: true };
     const now = new Date().toISOString();

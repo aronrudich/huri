@@ -22,12 +22,13 @@ type Props = {
   onAddSpot?: (p: LatLng) => void;
   onMoveSpot?: (id: string, p: LatLng) => void;
   onSelectSpot?: (id: string) => void;
+  onCenter?: (c: { lat: number; lng: number; zoom: number }) => void;
   flyTo?: { lat: number; lng: number; zoom?: number; key: number } | null;
 };
 
 let layerPref: "standard" | "satellite" = "standard";
 
-export function PropertyMap({ data, mode, height = 420, selectedSpotId, onShape, onAddSpot, onMoveSpot, onSelectSpot, flyTo }: Props) {
+export function PropertyMap({ data, mode, height = 420, selectedSpotId, onShape, onAddSpot, onMoveSpot, onSelectSpot, flyTo, onCenter }: Props) {
   const el = useRef<HTMLDivElement>(null);
   const L = useRef<typeof Leaflet | null>(null);
   const map = useRef<Leaflet.Map | null>(null);
@@ -36,8 +37,8 @@ export function PropertyMap({ data, mode, height = 420, selectedSpotId, onShape,
   const [ready, setReady] = useState(false);
   const [layer, setLayer] = useState(layerPref);
   const [tileError, setTileError] = useState(false);
-  const latest = useRef({ data, mode, onShape, onAddSpot });
-  latest.current = { data, mode, onShape, onAddSpot };
+  const latest = useRef({ data, mode, onShape, onAddSpot, onCenter });
+  latest.current = { data, mode, onShape, onAddSpot, onCenter };
 
   useEffect(() => {
     let dead = false;
@@ -65,6 +66,10 @@ export function PropertyMap({ data, mode, height = 420, selectedSpotId, onShape,
         if (!cur || !os) return;
         if (md.kind === "row" && cur.length >= 50) return;
         os([...cur, p]);
+      });
+      m.on("moveend", () => {
+        const c = m.getCenter();
+        latest.current.onCenter?.({ lat: +c.lat.toFixed(7), lng: +c.lng.toFixed(7), zoom: m.getZoom() });
       });
       map.current = m;
       setReady(true);

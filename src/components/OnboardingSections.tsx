@@ -89,22 +89,10 @@ export function AddressSection({ draft, set, readOnly }: P) {
         <textarea value={a.notes ?? ""} disabled={readOnly} onChange={(e) => setA("notes")(e.target.value.slice(0, 2000))} rows={2} className={inputCls} />
       </label>
       <p className="text-xs text-muted-foreground">Drag the map so your property is in the middle. We'll save that spot.</p>
-      <PropertyMap data={draft} mode={{ kind: "view" }} height={300} flyTo={fly} />
-      {!readOnly && <CenterHere draft={draft} set={set} />}
+      <PropertyMap data={draft} mode={{ kind: "view" }} height={300} flyTo={fly}
+        onCenter={readOnly ? undefined : (c) => set((d) => ({ ...d, center: c }))} />
+      <p className="text-xs text-muted-foreground">{draft.center ? `Saved location: ${draft.center.lat.toFixed(5)}, ${draft.center.lng.toFixed(5)}` : "No location saved yet."}</p>
     </div>
-  );
-}
-
-function CenterHere({ draft, set }: P) {
-  return (
-    <p className="text-xs text-muted-foreground">
-      {draft.center ? `Saved location: ${draft.center.lat.toFixed(5)}, ${draft.center.lng.toFixed(5)}` : "No location saved yet — search above."}
-      {" "}
-      <button className="font-semibold text-primary" onClick={() => {
-        const m = (window as unknown as { __huriLastCenter?: { lat: number; lng: number } }).__huriLastCenter;
-        if (m) set((d) => ({ ...d, center: { ...m, zoom: 18 } }));
-      }} hidden />
-    </p>
   );
 }
 

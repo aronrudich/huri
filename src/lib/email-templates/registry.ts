@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import { template as helpRequestTemplate } from './help-request'
+import { template as businessInquiryTemplate } from './business-inquiry'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -20,6 +21,7 @@ export interface TemplateEntry {
  */
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'help-request': helpRequestTemplate,
+  'business-inquiry': businessInquiryTemplate,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,
 }

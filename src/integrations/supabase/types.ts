@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      business_inquiries: {
+        Row: {
+          business_name: string
+          business_type: string
+          created_at: string
+          email: string
+          email_notification_error: string | null
+          email_notification_sent_at: string | null
+          id: string
+          message: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submission_key: string | null
+          updated_at: string
+        }
+        Insert: {
+          business_name: string
+          business_type: string
+          created_at?: string
+          email: string
+          email_notification_error?: string | null
+          email_notification_sent_at?: string | null
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submission_key?: string | null
+          updated_at?: string
+        }
+        Update: {
+          business_name?: string
+          business_type?: string
+          created_at?: string
+          email?: string
+          email_notification_error?: string | null
+          email_notification_sent_at?: string | null
+          id?: string
+          message?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submission_key?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       car_events: {
         Row: {
           actor_id: string | null

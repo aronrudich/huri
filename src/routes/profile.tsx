@@ -391,6 +391,11 @@ function ProfilePage() {
         <Link to="/help" className="flex w-full items-center gap-3 px-4 py-4 text-primary active:bg-accent">
           <span className="font-medium">Help & Support</span>
         </Link>
+        {["aron@huri.team", "aron@oremor.net"].includes((user?.email ?? "").toLowerCase()) && (
+          <Link to="/business-onboarding-admin" className="flex w-full items-center gap-3 border-t border-border px-4 py-4 text-primary active:bg-accent">
+            <span className="font-medium">Business Onboarding</span>
+          </Link>
+        )}
       </section>
 
       <div className="mx-3 mt-6 border-t border-border pt-4">

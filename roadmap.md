@@ -14,3 +14,10 @@
 - [x] Company settings restricted to reporting management
 - [x] Help tab (anonymous support, email + push to Aron)
 - [x] robots.txt
+
+## Business onboarding (in progress)
+- [x] Stage 1: Business tab, saved inquiries, email to Aron, Business Onboarding inbox
+- [ ] Stage 2: secure onboarding links + onboarding email
+- [ ] Stage 3: map wizard (free OpenStreetMap address search, property/lot outlines, rows/spots, auction barcode)
+- [ ] Stage 4: Aron's map review + "Approve and Create Company" with permanent code
+- [ ] Stage 5: company-specific maps in daily use (JCD unchanged)

@@ -55,7 +55,7 @@ function NewPickupPage() {
     // Submission notes are temporary: they live only on this request, never on the car.
     const noteText = notes.trim();
     try {
-      await submitPickup({ data: {
+      const result = await submitPickup({ data: {
         ro: ro.trim(),
         advisor: advisorName || null,
         model: model.trim() || car?.car_model || null,
@@ -64,6 +64,13 @@ function NewPickupPage() {
         lotPosition: car?.lot_position ?? null,
         staged: isStage,
       } });
+      if (result?.mergedEta) {
+        const r = ro.trim();
+        if (result.atCp) toast.success(`RO #${r} is already staged at CP!`);
+        else toast.success(`Customer marked as arrived for RO #${r} (ETA)`);
+        navigate({ to: "/pickup", replace: true });
+        return;
+      }
       // Staging flags the car so its map spot shows the checkered pattern; a real
       // pickup on an already-staged car clears that flag instead.
       if (car) {

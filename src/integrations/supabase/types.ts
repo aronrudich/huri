@@ -20,54 +20,75 @@ export type Database = {
           activation_emailed_at: string | null
           business_name: string
           business_type: string
+          city: string | null
           company_id: string | null
           created_at: string
           email: string
           email_notification_error: string | null
           email_notification_sent_at: string | null
+          formatted_address: string | null
           id: string
+          latitude: number | null
+          longitude: number | null
           message: string | null
           reviewed_at: string | null
           reviewed_by: string | null
+          state: string | null
           status: string
+          street_address: string | null
           submission_key: string | null
           updated_at: string
+          zip: string | null
         }
         Insert: {
           activated_at?: string | null
           activation_emailed_at?: string | null
           business_name: string
           business_type: string
+          city?: string | null
           company_id?: string | null
           created_at?: string
           email: string
           email_notification_error?: string | null
           email_notification_sent_at?: string | null
+          formatted_address?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           message?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          state?: string | null
           status?: string
+          street_address?: string | null
           submission_key?: string | null
           updated_at?: string
+          zip?: string | null
         }
         Update: {
           activated_at?: string | null
           activation_emailed_at?: string | null
           business_name?: string
           business_type?: string
+          city?: string | null
           company_id?: string | null
           created_at?: string
           email?: string
           email_notification_error?: string | null
           email_notification_sent_at?: string | null
+          formatted_address?: string | null
           id?: string
+          latitude?: number | null
+          longitude?: number | null
           message?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
+          state?: string | null
           status?: string
+          street_address?: string | null
           submission_key?: string | null
           updated_at?: string
+          zip?: string | null
         }
         Relationships: [
           {

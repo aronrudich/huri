@@ -411,7 +411,7 @@ function BusinessForm() {
     if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid work email");
     if (!name.trim()) return toast.error("Business name is required");
     if (!type) return toast.error("Choose Dealership or Auction");
-    if (!addrComplete(addr)) return toast.error("Confirm your address or enter street, city, state and ZIP");
+    if (!addrComplete(addr)) return toast.error("Enter street, city, state and ZIP");
     setBusy(true);
     try {
       await submitBusinessInquiry({ data: { email: cleanEmail, businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key, address: { street: addr.street.trim(), city: addr.city.trim(), state: addr.state.trim(), zip: addr.zip.trim(), formatted: addr.formatted || undefined, lat: addr.lat, lng: addr.lng } } });
@@ -445,7 +445,7 @@ function BusinessForm() {
             ))}
           </div>
         </div>
-        <BusinessAddress name={name} value={addr} onChange={setAddr} />
+        <BusinessAddress value={addr} onChange={setAddr} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business (optional)</label>
           <textarea

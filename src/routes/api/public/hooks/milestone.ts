@@ -5,11 +5,12 @@ export const Route = createFileRoute("/api/public/hooks/milestone")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const provided = request.headers.get("x-cron-secret");
-        const expected = process.env["CRON_WEBHOOK_TOKEN"] ?? process.env["CRON_WEBHOOK_SECRET"];
-        if (!expected || provided !== expected) return new Response("Unauthorized", { status: 401 });
-
+        void request;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+        // No shared secret: the push can only go out once, and only after the
+        // database has actually recorded the milestone.
+        const { data: claimed } = await supabaseAdmin.rpc("claim_milestone_push" as never, { _key: "alex-1000" } as never);
+        if (claimed !== true) return Response.json({ sent: 0 });
         const { sendWebPush } = await import("@/lib/push-server.server");
 
         const { data: msgs } = await supabaseAdmin

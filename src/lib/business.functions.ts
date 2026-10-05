@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const inquirySchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
+  contactName: z.string().trim().min(1).max(120),
   businessName: z.string().trim().min(1).max(160),
   businessType: z.enum(["dealership", "auction"]),
   message: z.string().trim().max(3000).optional().default(""),

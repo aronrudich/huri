@@ -1,0 +1,1 @@
+alter table public.business_inquiries add column if not exists contact_name text;

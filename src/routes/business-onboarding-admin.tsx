@@ -46,7 +46,7 @@ function BusinessAdmin() {
     enabled: !!who?.isSupport,
     queryFn: async () => {
       const { data, error } = await supabase.from("business_inquiries")
-        .select("id, email, business_name, business_type, message, status, created_at, formatted_address, email_notification_sent_at, email_notification_error")
+        .select("id, email, contact_name, business_name, business_type, message, status, created_at, formatted_address, email_notification_sent_at, email_notification_error")
         .order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data;
@@ -116,7 +116,7 @@ function BusinessAdmin() {
                       <span className="rounded-full bg-muted px-2 py-0.5 text-[11px]">{STATUS_LABEL[r.status] ?? r.status}</span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">
-                      {r.business_type === "auction" ? "Auction" : "Dealership"} · {r.email} · {new Date(r.created_at).toLocaleString()}
+                      {r.business_type === "auction" ? "Auction" : "Dealership"}{r.contact_name ? ` · ${r.contact_name}` : ""} · {r.email} · {new Date(r.created_at).toLocaleString()}
                     </div>
                     {!open && r.message && <p className="mt-2 line-clamp-2 text-sm">{r.message}</p>}
                   </button>

@@ -4,6 +4,7 @@ import { z } from "zod";
 
 const inquirySchema = z.object({
   email: z.string().trim().toLowerCase().email().max(254),
+  contactName: z.string().trim().min(1).max(120),
   businessName: z.string().trim().min(1).max(160),
   businessType: z.enum(["dealership", "auction"]),
   message: z.string().trim().max(3000).optional().default(""),
@@ -44,6 +45,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
     const fullAddress = a.formatted || `${a.street}, ${a.city}, ${a.state} ${a.zip}`;
     const { data: row, error } = await supabaseAdmin.from("business_inquiries").insert({
       email: data.email,
+      contact_name: data.contactName,
       business_name: data.businessName,
       business_type: data.businessType,
       message: data.message || null,
@@ -71,6 +73,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
       submitted_at: new Date().toISOString(),
       data: {
         businessName: data.businessName, businessType: data.businessType, contactEmail: data.email,
+        contactName: data.contactName,
         address: { street: a.street, city: a.city, state: a.state, zip: a.zip },
         ...(hasPt ? { center: { lat: a.lat, lng: a.lng, zoom: 18 } } : {}),
         lots: [], rows: [], spots: [],
@@ -78,7 +81,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
     });
     try {
       const { pushSupport } = await import("./onboarding.functions");
-      await pushSupport({ title: "New business · Huri", body: `${data.businessName} (${data.businessType === "auction" ? "Auction" : "Dealership"}) · ${fullAddress}`, url: `/business-onboarding-review/${row.id}`, tag: `inquiry-${row.id}`, variant: "default" });
+      await pushSupport({ title: "New business · Huri", body: `${data.businessName} (${data.businessType === "auction" ? "Auction" : "Dealership"}) · ${data.contactName} · ${fullAddress}`, url: `/business-onboarding-review/${row.id}`, tag: `inquiry-${row.id}`, variant: "default" });
     } catch { /* push is best-effort */ }
 
     try {
@@ -88,6 +91,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
         templateData: {
           businessName: data.businessName,
           businessType: data.businessType === "auction" ? "Auction" : "Dealership",
+          contactName: data.contactName,
           email: data.email,
           message: data.message,
           address: fullAddress,

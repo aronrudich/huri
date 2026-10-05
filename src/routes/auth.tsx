@@ -396,6 +396,7 @@ function Field({
 
 function BusinessForm() {
   const [email, setEmail] = useState("");
+  const [contactName, setContactName] = useState("");
   const [name, setName] = useState("");
   const [type, setType] = useState<"dealership" | "auction" | "">("");
   const [message, setMessage] = useState("");
@@ -409,13 +410,14 @@ function BusinessForm() {
     if (busy) return;
     const cleanEmail = email.trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid work email");
+    if (!contactName.trim()) return toast.error("Enter your name");
     if (!name.trim()) return toast.error("Business name is required");
     if (!type) return toast.error("Choose Dealership or Auction");
     if (!addrComplete(addr)) return toast.error("Enter street, city, state and ZIP");
     setBusy(true);
     try {
-      await submitBusinessInquiry({ data: { email: cleanEmail, businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key, address: { street: addr.street.trim(), city: addr.city.trim(), state: addr.state.trim(), zip: addr.zip.trim(), formatted: addr.formatted || undefined, lat: addr.lat, lng: addr.lng } } });
-      setEmail(""); setName(""); setType(""); setMessage(""); setAddr(emptyAddr);
+      await submitBusinessInquiry({ data: { email: cleanEmail, contactName: contactName.trim(), businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key, address: { street: addr.street.trim(), city: addr.city.trim(), state: addr.state.trim(), zip: addr.zip.trim(), formatted: addr.formatted || undefined, lat: addr.lat, lng: addr.lng } } });
+      setEmail(""); setContactName(""); setName(""); setType(""); setMessage(""); setAddr(emptyAddr);
       setKey(crypto.randomUUID());
       setDone(true);
     } catch (err) {
@@ -429,6 +431,7 @@ function BusinessForm() {
     <>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />
+        <Field label="Your Name" value={contactName} onChange={(v) => setContactName(v.slice(0, 120))} autoComplete="name" required />
         <Field label="Business Name" value={name} onChange={(v) => setName(v.slice(0, 160))} required />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Business Type</label>

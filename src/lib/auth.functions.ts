@@ -131,12 +131,8 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     // This endpoint is unauthenticated, and the sanitize_profile_insert trigger does
     // not fire for service-role writes, so privileged roles are blocked here: the
     // request is recorded as pending_role_name for an approver to grant.
-    const { MANAGEMENT_ROLES, REPORTS_ROLES } = await import("./roles");
-    const PRIVILEGED_ROLES = Array.from(new Set([
-      ...MANAGEMENT_ROLES,
-      ...REPORTS_ROLES,
-      "Spectator",
-    ]));
+    const { MANAGEMENT_ROLES } = await import("./roles");
+    const PRIVILEGED_ROLES = [...MANAGEMENT_ROLES];
     const privileged = PRIVILEGED_ROLES.some(
       (role) => role.toLowerCase() === requestedRole.toLowerCase(),
     );

@@ -73,6 +73,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
       submitted_at: new Date().toISOString(),
       data: {
         businessName: data.businessName, businessType: data.businessType, contactEmail: data.email,
+        contactName: data.contactName,
         address: { street: a.street, city: a.city, state: a.state, zip: a.zip },
         ...(hasPt ? { center: { lat: a.lat, lng: a.lng, zoom: 18 } } : {}),
         lots: [], rows: [], spots: [],
@@ -80,7 +81,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
     });
     try {
       const { pushSupport } = await import("./onboarding.functions");
-      await pushSupport({ title: "New business · Huri", body: `${data.businessName} (${data.businessType === "auction" ? "Auction" : "Dealership"}) · ${fullAddress}`, url: `/business-onboarding-review/${row.id}`, tag: `inquiry-${row.id}`, variant: "default" });
+      await pushSupport({ title: "New business · Huri", body: `${data.businessName} (${data.businessType === "auction" ? "Auction" : "Dealership"}) · ${data.contactName} · ${fullAddress}`, url: `/business-onboarding-review/${row.id}`, tag: `inquiry-${row.id}`, variant: "default" });
     } catch { /* push is best-effort */ }
 
     try {

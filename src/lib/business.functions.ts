@@ -8,6 +8,15 @@ const inquirySchema = z.object({
   businessType: z.enum(["dealership", "auction"]),
   message: z.string().trim().max(3000).optional().default(""),
   submissionKey: z.string().uuid(),
+  address: z.object({
+    street: z.string().trim().min(1).max(200),
+    city: z.string().trim().min(1).max(100),
+    state: z.string().trim().min(1).max(100),
+    zip: z.string().trim().min(1).max(20),
+    formatted: z.string().trim().max(500).optional(),
+    lat: z.number().min(-90).max(90).nullable().optional(),
+    lng: z.number().min(-180).max(180).nullable().optional(),
+  }),
 });
 
 /** Public: a visitor submits a business inquiry. Creates no account or company. */
@@ -31,18 +40,46 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
       throw new Error("Too many submissions. Please try again later.");
     }
 
+    const a = data.address;
+    const fullAddress = a.formatted || `${a.street}, ${a.city}, ${a.state} ${a.zip}`;
     const { data: row, error } = await supabaseAdmin.from("business_inquiries").insert({
       email: data.email,
       business_name: data.businessName,
       business_type: data.businessType,
       message: data.message || null,
       submission_key: data.submissionKey,
+      street_address: data.address.street,
+      city: data.address.city,
+      state: data.address.state,
+      zip: data.address.zip,
+      formatted_address: fullAddress,
+      latitude: data.address.lat ?? null,
+      longitude: data.address.lng ?? null,
     }).select("id, created_at").single();
     if (error) {
       if (error.code === "23505") return { ok: true };
       console.error("[business] insert failed", error.code);
       throw new Error("Could not send right now. Please try again.");
     }
+
+    // Seed the review draft so the map opens centered on the business.
+    const hasPt = a.lat != null && a.lng != null;
+    await supabaseAdmin.from("business_onboarding_drafts").insert({
+      inquiry_id: row.id,
+      current_step: 3,
+      status: "submitted",
+      submitted_at: new Date().toISOString(),
+      data: {
+        businessName: data.businessName, businessType: data.businessType, contactEmail: data.email,
+        address: { street: a.street, city: a.city, state: a.state, zip: a.zip },
+        ...(hasPt ? { center: { lat: a.lat, lng: a.lng, zoom: 18 } } : {}),
+        lots: [], rows: [], spots: [],
+      } as never,
+    });
+    try {
+      const { pushSupport } = await import("./onboarding.functions");
+      await pushSupport({ title: "New business · Huri", body: `${data.businessName} (${data.businessType === "auction" ? "Auction" : "Dealership"}) · ${fullAddress}`, url: `/business-onboarding-review/${row.id}`, tag: `inquiry-${row.id}`, variant: "default" });
+    } catch { /* push is best-effort */ }
 
     try {
       const { sendTemplateEmail } = await import("./email-templates/send-email");
@@ -53,6 +90,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
           businessType: data.businessType === "auction" ? "Auction" : "Dealership",
           email: data.email,
           message: data.message,
+          address: fullAddress,
           submittedAt: new Date(row.created_at).toLocaleString("en-US", { timeZone: "America/Los_Angeles" }),
         },
       });

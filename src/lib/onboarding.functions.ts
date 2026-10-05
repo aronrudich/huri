@@ -200,7 +200,7 @@ export const submitOnboarding = createServerFn({ method: "POST" })
     return { ok: true, already: false };
   });
 
-async function pushSupport(payload: object) {
+export async function pushSupport(payload: object) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { sendWebPush, isStalePushStatus } = await import("./push-server.server");
   const { data: people } = await supabaseAdmin.from("profiles").select("id").in("email", SUPPORT);

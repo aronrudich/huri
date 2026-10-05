@@ -46,7 +46,7 @@ function BusinessAdmin() {
     enabled: !!who?.isSupport,
     queryFn: async () => {
       const { data, error } = await supabase.from("business_inquiries")
-        .select("id, email, business_name, business_type, message, status, created_at, email_notification_sent_at, email_notification_error")
+        .select("id, email, business_name, business_type, message, status, created_at, formatted_address, email_notification_sent_at, email_notification_error")
         .order("created_at", { ascending: false }).limit(200);
       if (error) throw error;
       return data;
@@ -126,17 +126,9 @@ function BusinessAdmin() {
                       <p className="text-[11px] text-muted-foreground">
                         Email alert: {r.email_notification_sent_at ? "sent" : r.email_notification_error ? "failed to send" : "pending"}
                       </p>
-                      <OnboardingLinkPanel
-                        link={activeLink(r.id)}
-                        draft={draftFor(r.id)}
-                        freshUrl={freshUrl[r.id]}
-                        busy={linkBusy}
-                        closed={r.status === "approved" || r.status === "declined"}
-                        onCreate={(send) => makeLink(r.id, send)}
-                        onRevoke={() => revoke(r.id)}
-                      />
+                      <p className="text-sm"><span className="font-medium">Address:</span> {r.formatted_address || "Not provided"}</p>
                       <div className="flex flex-wrap gap-2">
-                        <Link to="/business-onboarding-review/$inquiryId" params={{ inquiryId: r.id }} className="rounded-full bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground">Review map</Link>
+                        <Link to="/business-onboarding-review/$inquiryId" params={{ inquiryId: r.id }} className="rounded-full bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground">Set Up / Review Map</Link>
                         <a href={`mailto:${r.email}`} className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Email them</a>
                         {r.status !== "contacted" && <button onClick={() => update(r.id, "contacted")} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium">Mark contacted</button>}
                         {r.status !== "declined" && <button onClick={() => update(r.id, "declined")} className="rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive">Decline</button>}

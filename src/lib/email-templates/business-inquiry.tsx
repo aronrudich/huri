@@ -5,13 +5,14 @@ import type { TemplateEntry } from './registry'
 interface Props {
   businessName?: string
   businessType?: string
+  contactName?: string
   email?: string
   message?: string
   submittedAt?: string
   address?: string
 }
 
-const BusinessInquiryEmail = ({ businessName = '', businessType = '', email = '', message = '', submittedAt = '', address = '' }: Props) => (
+const BusinessInquiryEmail = ({ businessName = '', businessType = '', contactName = '', email = '', message = '', submittedAt = '', address = '' }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>New business inquiry from {businessName}</Preview>
@@ -20,6 +21,7 @@ const BusinessInquiryEmail = ({ businessName = '', businessType = '', email = ''
         <Heading style={{ fontSize: '20px', color: '#1e47a8', margin: '0 0 16px' }}>New business inquiry</Heading>
         <Text style={row}><b>Business:</b> {businessName}</Text>
         <Text style={row}><b>Type:</b> {businessType}</Text>
+        <Text style={row}><b>Name:</b> {contactName || '(none)'}</Text>
         <Text style={row}><b>Work email:</b> {email}</Text>
         <Text style={row}><b>Address:</b> {address || '(none)'}</Text>
         <Text style={row}><b>Submitted:</b> {submittedAt}</Text>
@@ -44,5 +46,5 @@ export const template = {
   subject: (d: Record<string, any>) => `[Huri Business] New ${label(d.businessType)} inquiry from ${d.businessName ?? ''}`,
   displayName: 'New business inquiry',
   to: 'aron@huri.team',
-  previewData: { businessName: 'Sunset Motors', businessType: 'Dealership', email: 'gm@sunset.com', message: 'Two lots and a wash bay.', submittedAt: 'Oct 5, 2026 10:30 AM' },
+  previewData: { businessName: 'Sunset Motors', businessType: 'Dealership', contactName: 'Sam Rivera', email: 'gm@sunset.com', message: 'Two lots and a wash bay.', submittedAt: 'Oct 5, 2026 10:30 AM' },
 } satisfies TemplateEntry

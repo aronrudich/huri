@@ -91,6 +91,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
         templateData: {
           businessName: data.businessName,
           businessType: data.businessType === "auction" ? "Auction" : "Dealership",
+          contactName: data.contactName,
           email: data.email,
           message: data.message,
           address: fullAddress,

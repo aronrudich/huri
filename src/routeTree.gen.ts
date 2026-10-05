@@ -32,6 +32,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
+import { Route as BusinessOnboardingTokenRouteImport } from './routes/business-onboarding.$token'
 import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -156,6 +157,11 @@ const LlegarSlugRoute = LlegarSlugRouteImport.update({
   path: '/llegar/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessOnboardingTokenRoute = BusinessOnboardingTokenRouteImport.update({
+  id: '/business-onboarding/$token',
+  path: '/business-onboarding/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ArriveSlugRoute = ArriveSlugRouteImport.update({
   id: '/arrive/$slug',
   path: '/arrive/$slug',
@@ -222,6 +228,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -255,6 +262,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -289,6 +297,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
@@ -324,6 +333,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -357,6 +367,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -390,6 +401,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
@@ -424,6 +436,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WashRoute: typeof WashRoute
   ArriveSlugRoute: typeof ArriveSlugRoute
+  BusinessOnboardingTokenRoute: typeof BusinessOnboardingTokenRoute
   LlegarSlugRoute: typeof LlegarSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
@@ -598,6 +611,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlegarSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-onboarding/$token': {
+      id: '/business-onboarding/$token'
+      path: '/business-onboarding/$token'
+      fullPath: '/business-onboarding/$token'
+      preLoaderRoute: typeof BusinessOnboardingTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/arrive/$slug': {
       id: '/arrive/$slug'
       path: '/arrive/$slug'
@@ -680,6 +700,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WashRoute: WashRoute,
   ArriveSlugRoute: ArriveSlugRoute,
+  BusinessOnboardingTokenRoute: BusinessOnboardingTokenRoute,
   LlegarSlugRoute: LlegarSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,

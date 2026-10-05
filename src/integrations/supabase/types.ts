@@ -62,6 +62,91 @@ export type Database = {
         }
         Relationships: []
       }
+      business_onboarding_drafts: {
+        Row: {
+          created_at: string
+          current_step: number
+          data: Json
+          inquiry_id: string
+          status: string
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_step?: number
+          data?: Json
+          inquiry_id: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_step?: number
+          data?: Json
+          inquiry_id?: string
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_onboarding_drafts_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: true
+            referencedRelation: "business_inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_onboarding_links: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          emailed_at: string | null
+          expires_at: string
+          first_opened_at: string | null
+          id: string
+          inquiry_id: string
+          last_opened_at: string | null
+          revoked_at: string | null
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          emailed_at?: string | null
+          expires_at: string
+          first_opened_at?: string | null
+          id?: string
+          inquiry_id: string
+          last_opened_at?: string | null
+          revoked_at?: string | null
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          emailed_at?: string | null
+          expires_at?: string
+          first_opened_at?: string | null
+          id?: string
+          inquiry_id?: string
+          last_opened_at?: string | null
+          revoked_at?: string | null
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_onboarding_links_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "business_inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       car_events: {
         Row: {
           actor_id: string | null

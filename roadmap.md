@@ -17,7 +17,7 @@
 
 ## Business onboarding (in progress)
 - [x] Stage 1: Business tab, saved inquiries, email to Aron, Business Onboarding inbox
-- [ ] Stage 2: secure onboarding links + onboarding email
+- [x] Stage 2: secure onboarding links + onboarding email (wizard step 1: business details)
 - [ ] Stage 3: map wizard (free OpenStreetMap address search, property/lot outlines, rows/spots, auction barcode)
 - [ ] Stage 4: Aron's map review + "Approve and Create Company" with permanent code
 - [ ] Stage 5: company-specific maps in daily use (JCD unchanged)

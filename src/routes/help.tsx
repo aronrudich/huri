@@ -6,9 +6,8 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
-import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
+import { BottomBar } from "@/components/BottomBar";
 import { getHelpIdentity, sendHelpMessage, sendSupportReply } from "@/lib/help.functions";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
 
 export const Route = createFileRoute("/help")({
   head: () => ({

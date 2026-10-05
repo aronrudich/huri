@@ -26,6 +26,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as FlaggedRouteImport } from './routes/flagged'
 import { Route as ComposeRouteImport } from './routes/compose'
+import { Route as BusinessOnboardingAdminRouteImport } from './routes/business-onboarding-admin'
 import { Route as BringMeRouteImport } from './routes/bring-me'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
@@ -125,6 +126,11 @@ const ComposeRoute = ComposeRouteImport.update({
   path: '/compose',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessOnboardingAdminRoute = BusinessOnboardingAdminRouteImport.update({
+  id: '/business-onboarding-admin',
+  path: '/business-onboarding-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BringMeRoute = BringMeRouteImport.update({
   id: '/bring-me',
   path: '/bring-me',
@@ -197,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
+  '/business-onboarding-admin': typeof BusinessOnboardingAdminRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
+  '/business-onboarding-admin': typeof BusinessOnboardingAdminRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
@@ -262,6 +270,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/bring-me': typeof BringMeRoute
+  '/business-onboarding-admin': typeof BusinessOnboardingAdminRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/bring-me'
+    | '/business-onboarding-admin'
     | '/compose'
     | '/flagged'
     | '/help'
@@ -328,6 +338,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/bring-me'
+    | '/business-onboarding-admin'
     | '/compose'
     | '/flagged'
     | '/help'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/bring-me'
+    | '/business-onboarding-admin'
     | '/compose'
     | '/flagged'
     | '/help'
@@ -393,6 +405,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
   BringMeRoute: typeof BringMeRoute
+  BusinessOnboardingAdminRoute: typeof BusinessOnboardingAdminRoute
   ComposeRoute: typeof ComposeRoute
   FlaggedRoute: typeof FlaggedRoute
   HelpRoute: typeof HelpRoute
@@ -543,6 +556,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ComposeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-onboarding-admin': {
+      id: '/business-onboarding-admin'
+      path: '/business-onboarding-admin'
+      fullPath: '/business-onboarding-admin'
+      preLoaderRoute: typeof BusinessOnboardingAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/bring-me': {
       id: '/bring-me'
       path: '/bring-me'
@@ -641,6 +661,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
   BringMeRoute: BringMeRoute,
+  BusinessOnboardingAdminRoute: BusinessOnboardingAdminRoute,
   ComposeRoute: ComposeRoute,
   FlaggedRoute: FlaggedRoute,
   HelpRoute: HelpRoute,

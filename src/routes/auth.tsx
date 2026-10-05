@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
 import { loginWithPasswordFallback } from "@/lib/password-login.functions";
 import { notifyOwnerOfPendingSignup } from "@/lib/admin.functions";
+import { submitBusinessInquiry } from "@/lib/business.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
@@ -29,7 +30,7 @@ const errorMessage = (error: unknown) =>
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "register">("login");
+  const [mode, setMode] = useState<"login" | "register" | "business">("login");
   const [busy, setBusy] = useState(false);
   const roles = DEFAULT_ROLES;
 
@@ -213,9 +214,18 @@ function AuthPage() {
             >
               Register
             </button>
+            <button
+              type="button"
+              onClick={() => setMode("business")}
+              className={`flex-1 rounded-full py-2 ${mode === "business" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            >
+              Business
+            </button>
           </div>
 
-          {mode === "login" ? (
+          {mode === "business" ? (
+            <BusinessForm />
+          ) : mode === "login" ? (
             <form onSubmit={handleLogin} className="space-y-3">
               <Field
                 label="Email"
@@ -380,5 +390,87 @@ function Field({
         className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
       />
     </div>
+  );
+}
+
+function BusinessForm() {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [type, setType] = useState<"dealership" | "auction" | "">("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const [key, setKey] = useState(() => crypto.randomUUID());
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (busy) return;
+    const cleanEmail = email.trim().toLowerCase();
+    if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid work email");
+    if (!name.trim()) return toast.error("Business name is required");
+    if (!type) return toast.error("Choose Dealership or Auction");
+    setBusy(true);
+    try {
+      await submitBusinessInquiry({ data: { email: cleanEmail, businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key } });
+      setEmail(""); setName(""); setType(""); setMessage("");
+      setKey(crypto.randomUUID());
+      setDone(true);
+    } catch (err) {
+      toast.error(errorMessage(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <form onSubmit={submit} className="space-y-3">
+        <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />
+        <Field label="Business Name" value={name} onChange={(v) => setName(v.slice(0, 160))} required />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Business Type</label>
+          <div className="flex gap-2">
+            {(["dealership", "auction"] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setType(t)}
+                className={`flex-1 rounded-xl border py-3 text-sm font-medium ${type === t ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
+              >
+                {t === "dealership" ? "Dealership" : "Auction"}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business</label>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value.slice(0, 3000))}
+            rows={4}
+            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
+          />
+          <p className="mt-1 text-[11px] text-muted-foreground">Tell us anything that would help us understand your property, lots, or workflow.</p>
+        </div>
+        <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
+          {busy ? "Sending…" : "Contact Huri"}
+        </button>
+        <p className="text-center text-xs text-muted-foreground">
+          Submitting this form does not create an account. Huri will contact you about the next step.
+        </p>
+      </form>
+      {done && (
+        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-6" role="dialog" aria-modal="true">
+          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center shadow-lg">
+            <h2 className="text-xl font-bold">Thank you!</h2>
+            <p className="mt-2 text-sm">We received your information. We'll be right back in Huri.</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              No account has been created yet. We'll contact you at the email address you provided with the next step.
+            </p>
+            <button onClick={() => setDone(false)} className="mt-5 w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Done</button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

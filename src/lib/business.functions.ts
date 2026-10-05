@@ -45,6 +45,7 @@ export const submitBusinessInquiry = createServerFn({ method: "POST" })
     const fullAddress = a.formatted || `${a.street}, ${a.city}, ${a.state} ${a.zip}`;
     const { data: row, error } = await supabaseAdmin.from("business_inquiries").insert({
       email: data.email,
+      contact_name: data.contactName,
       business_name: data.businessName,
       business_type: data.businessType,
       message: data.message || null,

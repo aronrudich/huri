@@ -27,12 +27,14 @@ export type PickupDeliveryResult = {
   atCp?: boolean;
 };
 
+import { VALET_ROLES } from "./roles";
+
 const PARTS_ROLES = [
   "Technician", "Shop Foreman", "Manager", "Assistant Service Manager",
   "Parts Manager", "Director", "Admin", "Service Manager", "Service Director", "General Manager",
 ];
 
-const RECIPIENT_ROLES = ["Valet", "Admin"];
+const RECIPIENT_ROLES = [...VALET_ROLES, "Admin"];
 
 function payloadFor(data: PickupSubmission, pickupId: string) {
   const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";

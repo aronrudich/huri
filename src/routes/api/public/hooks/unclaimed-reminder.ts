@@ -1,11 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { VALET_ROLES } from "@/lib/roles";
 
 /** Used only if a company has no reminder setting saved. */
 const DEFAULT_REMIND_MINUTES = 5;
 
-const audienceFor = (kind: string | null) => {
+const audienceFor = (_kind: string | null) => {
   // Parts follows the same audience as every other pickup-list submission.
-  return ["Valet", "Admin"];
+  return [...VALET_ROLES, "Admin"];
 };
 
 export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({

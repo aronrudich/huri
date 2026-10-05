@@ -459,19 +459,27 @@ function BusinessForm() {
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Sending…" : "Contact Huri"}
         </button>
-        <p className="text-center text-xs text-muted-foreground">
-          Submitting this form does not create an account. Huri will contact you about the next step.
-        </p>
       </form>
       {done && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-6" role="dialog" aria-modal="true">
-          <div className="w-full max-w-sm rounded-2xl bg-card p-6 text-center shadow-lg">
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-6"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setDone(false)}
+        >
+          <div
+            className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-center shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <h2 className="text-xl font-bold">Thank you!</h2>
-            <p className="mt-2 text-sm">We received your information. We'll be right back in Huri.</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              No account has been created yet. We'll contact you at the email address you provided with the next step.
-            </p>
-            <button onClick={() => setDone(false)} className="mt-5 w-full rounded-xl bg-primary py-3 font-semibold text-primary-foreground">Done</button>
+            <p className="text-base font-medium text-foreground">We've received your information.</p>
+            <p className="text-sm font-semibold text-primary">We will contact you in a Huri</p>
+            <button
+              onClick={() => setDone(false)}
+              className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground"
+            >
+              Done
+            </button>
           </div>
         </div>
       )}

@@ -123,8 +123,11 @@ function InboxPage() {
   const myRoleIds = useMemo(() => {
     const ids = new Set<string>();
     if (profile?.role_id) ids.add(profile.role_id);
+    if (profile?.role_name === "Valet Supervisor") {
+      for (const [id, name] of Object.entries(roles)) if (name === "Valet") ids.add(id);
+    }
     return ids;
-  }, [profile?.role_id]);
+  }, [profile?.role_id, profile?.role_name, roles]);
 
   // Messages live in the query cache, so returning to the inbox paints the
   // previous list instantly instead of starting empty and refetching.

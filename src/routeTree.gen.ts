@@ -23,6 +23,7 @@ import { Route as ParkRequestRouteImport } from './routes/park-request'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as LotRouteImport } from './routes/lot'
 import { Route as InboxRouteImport } from './routes/inbox'
+import { Route as HelpRouteImport } from './routes/help'
 import { Route as FlaggedRouteImport } from './routes/flagged'
 import { Route as ComposeRouteImport } from './routes/compose'
 import { Route as BringMeRouteImport } from './routes/bring-me'
@@ -31,6 +32,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
 import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksUnclaimedReminderRouteImport } from './routes/api/public/hooks/unclaimed-reminder'
@@ -108,6 +110,11 @@ const InboxRoute = InboxRouteImport.update({
   path: '/inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HelpRoute = HelpRouteImport.update({
+  id: '/help',
+  path: '/help',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const FlaggedRoute = FlaggedRouteImport.update({
   id: '/flagged',
   path: '/flagged',
@@ -148,6 +155,12 @@ const ArriveSlugRoute = ArriveSlugRouteImport.update({
   path: '/arrive/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
   id: '/lovable/email/auth/webhook',
   path: '/lovable/email/auth/webhook',
@@ -186,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
+  '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -209,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -216,6 +231,7 @@ export interface FileRoutesByTo {
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
+  '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -239,6 +255,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -247,6 +264,7 @@ export interface FileRoutesById {
   '/bring-me': typeof BringMeRoute
   '/compose': typeof ComposeRoute
   '/flagged': typeof FlaggedRoute
+  '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
   '/park': typeof ParkRoute
@@ -270,6 +288,7 @@ export interface FileRoutesById {
   '/api/public/hooks/unclaimed-reminder': typeof ApiPublicHooksUnclaimedReminderRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -279,6 +298,7 @@ export interface FileRouteTypes {
     | '/bring-me'
     | '/compose'
     | '/flagged'
+    | '/help'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -302,6 +322,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -309,6 +330,7 @@ export interface FileRouteTypes {
     | '/bring-me'
     | '/compose'
     | '/flagged'
+    | '/help'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -332,6 +354,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
   id:
     | '__root__'
     | '/'
@@ -339,6 +362,7 @@ export interface FileRouteTypes {
     | '/bring-me'
     | '/compose'
     | '/flagged'
+    | '/help'
     | '/inbox'
     | '/lot'
     | '/park'
@@ -362,6 +386,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/unclaimed-reminder'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
+    | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -370,6 +395,7 @@ export interface RootRouteChildren {
   BringMeRoute: typeof BringMeRoute
   ComposeRoute: typeof ComposeRoute
   FlaggedRoute: typeof FlaggedRoute
+  HelpRoute: typeof HelpRoute
   InboxRoute: typeof InboxRoute
   LotRoute: typeof LotRoute
   ParkRoute: typeof ParkRoute
@@ -393,6 +419,7 @@ export interface RootRouteChildren {
   ApiPublicHooksUnclaimedReminderRoute: typeof ApiPublicHooksUnclaimedReminderRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -495,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/help': {
+      id: '/help'
+      path: '/help'
+      fullPath: '/help'
+      preLoaderRoute: typeof HelpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/flagged': {
       id: '/flagged'
       path: '/flagged'
@@ -551,6 +585,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ArriveSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/auth/webhook': {
       id: '/lovable/email/auth/webhook'
       path: '/lovable/email/auth/webhook'
@@ -602,6 +643,7 @@ const rootRouteChildren: RootRouteChildren = {
   BringMeRoute: BringMeRoute,
   ComposeRoute: ComposeRoute,
   FlaggedRoute: FlaggedRoute,
+  HelpRoute: HelpRoute,
   InboxRoute: InboxRoute,
   LotRoute: LotRoute,
   ParkRoute: ParkRoute,
@@ -625,6 +667,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksUnclaimedReminderRoute: ApiPublicHooksUnclaimedReminderRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

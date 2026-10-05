@@ -48,6 +48,8 @@ type Pickup = {
   customer_address?: string | null;
   /** Set when the customer picked their own arrival time from the text link. */
   customer_eta?: string | null;
+  /** Set when an advisor submitted a pickup for this ETA car — the customer is here. */
+  customer_arrived_at?: string | null;
 };
 
 type ParkedCar = {
@@ -500,7 +502,10 @@ function PickupPage() {
                 return d >= 1 ? `${d}d ${h % 24}h` : h > 0 ? `${h}h ${mins % 60}m` : `${mins}m`;
               })()
             : "";
-          const pillLabel = customerEta && upcoming
+          const arrived = !!p.customer_arrived_at;
+          const pillLabel = arrived
+            ? "Customer is here · ETA"
+            : customerEta && upcoming
             ? `Customer arriving ${etaDay}${format(customerEta, "h:mm a")}`
             : isStaged
               ? "Staged"
@@ -513,7 +518,9 @@ function PickupPage() {
                     : isTech
                       ? "Technician pickup"
                       : "Pickup";
-          const pillClass = customerEta && upcoming
+          const pillClass = arrived
+            ? "bg-destructive text-destructive-foreground animate-pulse"
+            : customerEta && upcoming
             ? "bg-arrival/15 text-arrival"
             : isStaged
               ? "bg-foreground text-background"

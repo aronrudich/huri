@@ -21,6 +21,10 @@ export type PickupDeliveryResult = {
   sent: number;
   pruned: number;
   failed: number;
+  /** Set when the submission was folded into an open customer ETA request. */
+  mergedEta?: boolean;
+  /** Car was already at CP when the advisor submitted. */
+  atCp?: boolean;
 };
 
 const PARTS_ROLES = [
@@ -61,6 +65,87 @@ function payloadFor(data: PickupSubmission, pickupId: string) {
   };
 }
 
+async function mergeIntoEtaRequest(
+  dealershipId: string,
+  data: PickupSubmission,
+): Promise<PickupDeliveryResult | null> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const ro = data.ro!.trim();
+  const { data: eta } = await supabaseAdmin
+    .from("pickup_requests")
+    .select("id, customer_eta, car_notes")
+    .eq("dealership_id", dealershipId)
+    .eq("ro_number", ro)
+    .in("status", ["unclaimed", "claimed"])
+    .not("customer_eta", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (!eta) return null;
+
+  const nowIso = new Date().toISOString();
+  const etaFuture = eta.customer_eta && new Date(eta.customer_eta).getTime() > Date.now();
+  const note = data.notes?.trim();
+  const notes = [eta.car_notes, note].filter(Boolean).join(" · ") || null;
+  const { error } = await supabaseAdmin
+    .from("pickup_requests")
+    .update({
+      customer_arrived_at: nowIso,
+      ...(etaFuture ? { customer_eta: nowIso } : {}),
+      advisor_name: data.advisor ?? null,
+      car_notes: notes,
+    } as never)
+    .eq("id", eta.id);
+  if (error) throw error;
+
+  const { data: car } = await supabaseAdmin
+    .from("parked_cars")
+    .select("lot_position")
+    .eq("dealership_id", dealershipId)
+    .eq("ro_number", ro)
+    .limit(1)
+    .maybeSingle();
+  const atCp = (car?.lot_position ?? "").toUpperCase() === "CP";
+
+  const result = await pushToRoles(dealershipId, ARRIVAL_ROLES, {
+    title: "🚗 Customer is here! (ETA)",
+    body: [`RO #${ro}`, data.advisor && `Advisor ${data.advisor}`].filter(Boolean).join(" · "),
+    url: "/pickup",
+    tag: `pickup-${eta.id}`,
+    variant: "default",
+  }, eta.id);
+  return { ...result, pickupId: eta.id, mergedEta: true, atCp };
+}
+
+const ARRIVAL_ROLES = ["Valet", "Valet Supervisor", "Admin"];
+
+async function pushToRoles(dealershipId: string, roles: string[], payload: object, pickupId: string) {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const out = { pickupId, recipients: 0, devices: 0, sent: 0, pruned: 0, failed: 0 };
+  const { data: recipients } = await supabaseAdmin
+    .from("profiles").select("id")
+    .eq("dealership_id", dealershipId).eq("is_active", true).eq("status", "approved")
+    .eq("notifications_enabled", true).in("role_name", roles);
+  if (!recipients?.length) return out;
+  out.recipients = recipients.length;
+  const { data: subs } = await supabaseAdmin
+    .from("push_subscriptions").select("id, endpoint, p256dh, auth")
+    .in("user_id", recipients.map((r) => r.id));
+  if (!subs?.length) return out;
+  out.devices = subs.length;
+  const stale: string[] = [];
+  await Promise.all(subs.map(async (sub) => {
+    try { await sendWithRetry(sub, payload); out.sent++; }
+    catch (error: unknown) {
+      const status = (error as { statusCode?: number })?.statusCode;
+      if (isStalePushStatus(status)) stale.push(sub.id); else out.failed++;
+    }
+  }));
+  if (stale.length) await supabaseAdmin.from("push_subscriptions").delete().in("id", stale);
+  out.pruned = stale.length;
+  return out;
+}
+
 async function sendWithRetry(sub: { endpoint: string; p256dh: string; auth: string }, payload: object) {
   try {
     await sendWebPush(sub, payload);
@@ -92,6 +177,14 @@ export async function createPickupAndNotify(
   }
 
   const sourceRole = data.sourceRole ?? caller.role_name;
+
+  // A customer who used the ETA link already has a card on the list. When an
+  // advisor then submits a regular pickup for the same RO, fold it into that
+  // card instead of adding a duplicate, and tell every valet the customer is here.
+  if (data.ro && (data.kind ?? "pickup") === "pickup" && !data.staged) {
+    const merged = await mergeIntoEtaRequest(caller.dealership_id, data);
+    if (merged) return merged;
+  }
 
   // Snapshot the car's current spot when the form didn't send one (e.g. wash requests),
   // so the pickup card can show where the car is standing at submit time.

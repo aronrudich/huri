@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { isUpperManagementRole } from "@/lib/roles";
+import { canViewSettings } from "@/lib/roles";
 import { Switch } from "@/components/ui/switch";
 import {
   dealershipSettingsQuery,
@@ -57,7 +57,7 @@ function SettingsPage() {
   const navigate = useNavigate();
   const { user, profile, loading } = useAuth();
   const queryClient = useQueryClient();
-  const allowed = !!profile?.is_owner || isUpperManagementRole(profile?.role_name);
+  const allowed = canViewSettings(profile?.role_name, profile?.is_owner);
 
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const [draft, setDraft] = useState<Draft | null>(null);

@@ -387,6 +387,12 @@ function ProfilePage() {
         </section>
       )}
 
+      <section className="mx-3 mt-6 overflow-hidden rounded-2xl bg-background">
+        <Link to="/help" className="flex w-full items-center gap-3 px-4 py-4 text-primary active:bg-accent">
+          <span className="font-medium">Help & Support</span>
+        </Link>
+      </section>
+
       <div className="mx-3 mt-6 border-t border-border pt-4">
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <Link to="/terms" className="hover:text-foreground hover:underline">Terms of Service</Link>

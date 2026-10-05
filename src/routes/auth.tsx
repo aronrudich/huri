@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
+import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -183,7 +183,7 @@ function AuthPage() {
   if (loading || user) {
     return (
       <div className="grid min-h-screen place-items-center bg-surface safe-top safe-bottom">
-        <img src={huriLogo.url} alt="Huri" className="h-14 w-auto opacity-80" />
+        <img src={huriLogo.url} alt="Huri" className="h-10 w-auto opacity-80" />
       </div>
     );
   }
@@ -193,7 +193,7 @@ function AuthPage() {
 
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
-          <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-14 w-auto" />
+          <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-10 w-auto" />
           <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
         </div>
 

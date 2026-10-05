@@ -1,7 +1,7 @@
 import { useRouter } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import type { ReactNode } from "react";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
+import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 function inline(text: string): ReactNode[] {
   const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
@@ -50,7 +50,7 @@ export function LegalPage({ markdown }: { markdown: string }) {
         <button type="button" onClick={goBack} aria-label="Go back" className="grid h-10 w-10 place-items-center rounded-full active:bg-accent">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <img src={huriLogo.url} alt="Huri" className="h-8 w-auto" />
+        <img src={huriLogo.url} alt="Huri" className="h-7 w-auto" />
         <span className="w-10 text-right text-[10px] leading-tight text-muted-foreground">Updated Oct 2026</span>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-6">

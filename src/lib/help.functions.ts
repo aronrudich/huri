@@ -23,6 +23,21 @@ async function pushToUser(userId: string, payload: object) {
 
 const snippet = (t: string) => (t.length > 120 ? `${t.slice(0, 117)}…` : t);
 
+const attachmentSchema = z.array(z.object({
+  path: z.string().min(1).max(500),
+  type: z.enum(["image", "video"]),
+  name: z.string().max(200),
+})).max(10).optional().default([]);
+type Attachment = z.infer<typeof attachmentSchema>[number];
+
+const previewText = (body: string, atts: Attachment[]) => {
+  if (body) return snippet(body);
+  if (atts.some((a) => a.type === "video")) return "🎥 Video attached";
+  return "📷 Photo attached";
+};
+const msgInput = z.object({ body: z.string().trim().max(4000), attachments: attachmentSchema })
+  .refine((d) => d.body.length > 0 || d.attachments.length > 0, "Message is empty");
+
 /** Is the signed-in user Huri support? */
 export const getHelpIdentity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -34,7 +49,7 @@ export const getHelpIdentity = createServerFn({ method: "GET" })
 /** An employee sends a message to Huri support. */
 export const sendHelpMessage = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ body: z.string().trim().min(1).max(4000) }).parse(d))
+  .inputValidator((d: unknown) => msgInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const { data: me } = await supabase
@@ -57,8 +72,9 @@ export const sendHelpMessage = createServerFn({ method: "POST" })
       if (error) throw error;
       threadId = t.id;
     }
+    if (data.attachments.some((a) => !a.path.startsWith(`${userId}/`))) throw new Error("Invalid attachment");
     const { data: msg, error: msgErr } = await supabase.from("help_messages")
-      .insert({ thread_id: threadId, sender_type: "user", sender_id: userId, body: data.body })
+      .insert({ thread_id: threadId, sender_type: "user", sender_id: userId, body: data.body, attachments: data.attachments })
       .select("id").single();
     if (msgErr) throw msgErr;
     const now = new Date().toISOString();
@@ -68,7 +84,7 @@ export const sendHelpMessage = createServerFn({ method: "POST" })
     try {
       const { sendTemplateEmail } = await import("@/lib/email-templates/send-email");
       await sendTemplateEmail("help-request", SUPPORT_EMAIL, {
-        templateData: { userName: name, role: me.role_name, dealershipName: dealer?.name ?? "", companyCode: dealer?.company_code ?? "", message: data.body },
+        templateData: { userName: name, role: me.role_name, dealershipName: dealer?.name ?? "", companyCode: dealer?.company_code ?? "", message: data.body || previewText("", data.attachments) },
         idempotencyKey: `help-request-${msg.id}`,
       });
     } catch (e) { console.error("help email failed", (e as Error).message); }
@@ -78,7 +94,7 @@ export const sendHelpMessage = createServerFn({ method: "POST" })
       for (const s of support ?? []) {
         await pushToUser(s.id, {
           title: `Help Request · ${dealer?.company_code ?? ""}`,
-          body: `${name} (${me.role_name}): ${snippet(data.body)}`,
+          body: `${name} (${me.role_name}): ${previewText(data.body, data.attachments)}`,
           url: "/help", tag: `help-${threadId}`, variant: "default",
         });
       }
@@ -89,7 +105,7 @@ export const sendHelpMessage = createServerFn({ method: "POST" })
 /** Huri support replies; the employee sees it as coming from "Huri". */
 export const sendSupportReply = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: unknown) => z.object({ threadId: z.string().uuid(), body: z.string().trim().min(1).max(4000) }).parse(d))
+  .inputValidator((d: unknown) => msgInput.and(z.object({ threadId: z.string().uuid() })).parse(d))
   .handler(async ({ data, context }) => {
     const email = String((context.claims as { email?: string }).email ?? "").toLowerCase();
     if (!isSupportEmail(email)) throw new Error("Not allowed");
@@ -97,12 +113,12 @@ export const sendSupportReply = createServerFn({ method: "POST" })
     const { data: thread } = await supabase.from("help_threads").select("id, user_id").eq("id", data.threadId).maybeSingle();
     if (!thread) throw new Error("Conversation not found");
     const { error } = await supabase.from("help_messages")
-      .insert({ thread_id: thread.id, sender_type: "support", sender_id: userId, body: data.body });
+      .insert({ thread_id: thread.id, sender_type: "support", sender_id: userId, body: data.body, attachments: data.attachments });
     if (error) throw error;
     const now = new Date().toISOString();
     await supabase.from("help_threads").update({ last_message_at: now, support_read_at: now }).eq("id", thread.id);
     try {
-      await pushToUser(thread.user_id, { title: "Huri", body: `Huri: ${snippet(data.body)}`, url: "/help", tag: `help-${thread.id}`, variant: "default" });
+      await pushToUser(thread.user_id, { title: "Huri", body: `Huri: ${previewText(data.body, data.attachments)}`, url: "/help", tag: `help-${thread.id}`, variant: "default" });
     } catch (e) { console.error("help reply push failed", (e as Error).message); }
     return { ok: true };
   });

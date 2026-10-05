@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Check, LoaderCircle } from "lucide-react";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
+import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import { getArrivalInfo, submitArrival } from "@/lib/arrive.functions";
 
 /**
@@ -257,7 +257,7 @@ function ArrivePage() {
   if (!info) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface px-6 text-center overscroll-none select-none">
-        <img src={huriLogo.url} alt="Huri" className="h-14 w-auto" />
+        <img src={huriLogo.url} alt="Huri" className="h-10 w-auto" />
         <h1 className="mt-8 text-xl font-semibold">This link is no longer active</h1>
         <p className="mt-2 max-w-xs text-sm text-muted-foreground">
           Please contact your service advisor and they'll take care of you.
@@ -268,7 +268,7 @@ function ArrivePage() {
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-surface px-6 pb-16 pt-14 safe-top safe-bottom overscroll-none select-none">
-      <img src={huriLogo.url} alt="Huri" className="h-14 w-auto" />
+      <img src={huriLogo.url} alt="Huri" className="h-10 w-auto" />
 
       {done ? (
         <div className="mt-14 w-full max-w-sm rounded-3xl bg-background p-8 text-center shadow-xl">

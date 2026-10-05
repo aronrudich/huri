@@ -6,3 +6,11 @@
 - [x] Same note-clearing for wash submissions
 - [x] Any submission (pickup, stage, wash, parts, park) for an unknown RO now creates the car at UNKNOWN
 - [x] Code cleanup: removed retired shuttle history branch, fixed Hook-naming lint error in sign-in, typed message inserts and hidden-thread queries, replaced the silent catch on the owner signup notice
+
+## Six-update batch (Oct 2026)
+- [ ] New logo everywhere + icons
+- [ ] Merge advisor pickup into active ETA request
+- [ ] Shop Foreman reports
+- [ ] Company settings restricted to reporting management
+- [ ] Help tab (anonymous support, email + push to Aron)
+- [ ] robots.txt

@@ -5,6 +5,7 @@ import { isSyntheticEmail } from "@/lib/legacy-email";
 import { Link } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth-context";
 import { AvatarViewer } from "@/components/Avatar";
+import { useAvatarSrc } from "@/lib/avatar-src";
 
 
 type Profile = {
@@ -28,6 +29,7 @@ export function ProfileViewSheet({
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [photoOpen, setPhotoOpen] = useState(false);
+  const avatarSrc = useAvatarSrc(profile?.avatarUrl);
 
 
   useEffect(() => {
@@ -56,14 +58,14 @@ export function ProfileViewSheet({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="mb-4 flex items-start gap-3">
-          {profile?.avatarUrl ? (
+          {profile?.avatarUrl && avatarSrc ? (
             <button
               type="button"
               onClick={() => setPhotoOpen(true)}
               aria-label={`View ${displayName} profile photo`}
               className="h-12 w-12 shrink-0 overflow-hidden rounded-full"
             >
-              <img src={profile.avatarUrl} alt={`${displayName} profile photo`} className="h-full w-full object-cover" />
+              <img src={avatarSrc} alt={`${displayName} profile photo`} className="h-full w-full object-cover" />
             </button>
           ) : (
             <div className="grid h-12 w-12 place-items-center rounded-full bg-primary/10 text-lg font-semibold text-primary">

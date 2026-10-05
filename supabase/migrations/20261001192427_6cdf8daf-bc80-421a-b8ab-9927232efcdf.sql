@@ -30,7 +30,7 @@ BEGIN
   BEGIN
     PERFORM net.http_post(
       url := 'https://project--7a2bc1d9-d11a-4987-b046-aa093d085a42.lovable.app/api/public/hooks/milestone',
-      headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'ZOFCqIPORj_e70a9Y_uf5bBHHiZxnQvNkWxWD85BSD8'),
+      headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'REMOVED'),
       body := '{}'::jsonb);
   EXCEPTION WHEN OTHERS THEN NULL;
   END;

@@ -1,10 +1,23 @@
+ALTER TABLE public.milestone_fired ADD COLUMN IF NOT EXISTS pushed_at timestamptz;
+
+CREATE OR REPLACE FUNCTION public.claim_milestone_push(_key text)
+RETURNS boolean LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
+DECLARE v int;
+BEGIN
+  UPDATE public.milestone_fired SET pushed_at = now() WHERE key = _key AND pushed_at IS NULL;
+  GET DIAGNOSTICS v = ROW_COUNT;
+  RETURN v > 0;
+END $$;
+REVOKE EXECUTE ON FUNCTION public.claim_milestone_push(text) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.claim_milestone_push(text) TO service_role;
+
 CREATE OR REPLACE FUNCTION public.alex_1000_claims_milestone()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public' AS $$
 DECLARE
   v_alex constant uuid := '2bce037a-f670-47d0-a06f-8d1460bd7022';
   v_count int;
   v_inserted int;
-  v_body constant text := '[[celebrate]]WOW! Alex has officially hit 1000 claims! He sure knows to Huri the f*ck up! Thank you Alex!';
+  v_body constant text := '[[celebrate]]WOW! Alex has officially hit 1000 claims! He sure knows how to Huri up! Thank you Alex!';
 BEGIN
   IF NEW.claimed_by IS DISTINCT FROM v_alex THEN RETURN NEW; END IF;
   IF TG_OP = 'UPDATE' AND OLD.claimed_by IS NOT DISTINCT FROM v_alex THEN RETURN NEW; END IF;
@@ -22,12 +35,12 @@ BEGIN
   SELECT 'huri:milestone-alex-1000:' || p.id, NULL, p.id, v_body, p.dealership_id
   FROM public.profiles p
   WHERE p.dealership_id = NEW.dealership_id AND p.is_active AND p.status = 'approved'
-    AND (p.role_name IN ('Valet', 'Service Manager', 'Admin') OR p.id = v_alex);
+    AND (p.role_name IN ('Valet', 'Shop Foreman', 'Service Manager', 'Admin') OR p.id = v_alex);
 
   BEGIN
     PERFORM net.http_post(
       url := 'https://project--7a2bc1d9-d11a-4987-b046-aa093d085a42.lovable.app/api/public/hooks/milestone',
-      headers := jsonb_build_object('Content-Type', 'application/json', 'x-cron-secret', 'REMOVED'),
+      headers := jsonb_build_object('Content-Type', 'application/json'),
       body := '{}'::jsonb);
   EXCEPTION WHEN OTHERS THEN NULL;
   END;

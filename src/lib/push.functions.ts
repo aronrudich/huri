@@ -94,6 +94,17 @@ export const sendMessagePush = createServerFn({ method: "POST" })
     }
     if (!recipientIds.length) return { sent: 0 };
 
+    // Only alert active coworkers at the caller's own company.
+    {
+      const { data: allowed } = await supabaseAdmin
+        .from("profiles")
+        .select("id")
+        .in("id", recipientIds)
+        .eq("dealership_id", caller.dealership_id)
+        .eq("is_active", true);
+      recipientIds = (allowed ?? []).map((r) => r.id).filter((id) => id !== context.userId);
+    }
+    if (!recipientIds.length) return { sent: 0 };
 
     // Sender name + role
     let senderName = "Someone";

@@ -95,6 +95,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     reports: "Reports",
     flagged: "Flagged Cars",
     settings: "Company Settings",
+    help: "Help",
   };
 
   // Short plain-English description shown under each action label (optional).
@@ -107,6 +108,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     reports: "Stats & Claim Times",
     flagged: `Parked ${settings?.flagged_days ?? 14}+ Days`,
     settings: "Timing & Departments",
+    help: "Contact Huri Support",
   };
 
 
@@ -122,6 +124,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       case "reports": return { to: "/reports" };
       case "flagged": return { to: "/flagged" };
       case "settings": return { to: "/settings" };
+      case "help": return { to: "/help" };
       default: return { to: "/pickup" };
     }
   };

@@ -4,7 +4,7 @@
 //   "New"  — log a car into the system (no notification).
 //   "Park" — ask a valet to come to the technician's bay and park their car.
 
-export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged" | "settings";
+export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged" | "settings" | "help";
 
 export const VALET_ROLES = ["Valet", "Valet Supervisor"];
 
@@ -44,6 +44,7 @@ export const REPORTS_ROLES = [
   "General Manager",
   "Spectator",
   "Valet Supervisor",
+  "Shop Foreman",
 ];
 
 export const canViewReports = (role: string | null | undefined) =>
@@ -128,6 +129,12 @@ export const canStageRole = (role: string | null | undefined) => {
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 
+/** Management roles (with Reports access) that can open Company Settings. */
+export const SETTINGS_ROLES = ["Admin", "Service Manager", "Service Director", "General Manager"];
+
+export const canViewSettings = (role: string | null | undefined, isOwner?: boolean | null) =>
+  !!isOwner || SETTINGS_ROLES.includes(role ?? "");
+
 /** Company-level switches that hide optional departments from the menu. */
 export type ActionModules = {
   enable_wash?: boolean;
@@ -167,9 +174,10 @@ export function actionsForRole(
     return true;
   });
 
-  // Only upper management (and the owner) can open company settings.
-  if (modules?.isOwner || isUpperManagementRole(r)) items = [...items, "settings"];
-  return items;
+  // Only reporting management (and the owner) can open company settings.
+  if (canViewSettings(r, modules?.isOwner)) items = [...items, "settings"];
+  // Everyone can reach Huri support.
+  return [...items, "help"];
 }
 
 /**

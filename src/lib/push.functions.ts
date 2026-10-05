@@ -62,6 +62,7 @@ export const sendMessagePush = createServerFn({ method: "POST" })
         .from("roles").select("name").eq("id", roleId).maybeSingle();
       let roleNames: string[] | null = null;
       if (roleRow?.name === "Technician") roleNames = ["Technician", "Shop Foreman"];
+      if (roleRow?.name === "Valet") roleNames = ["Valet", "Valet Supervisor"];
       let q = supabaseAdmin
         .from("profiles")
         .select("id")

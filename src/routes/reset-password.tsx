@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import huriLogo from "@/assets/huri-logo-compressed.png.asset.json";
+import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -72,7 +72,7 @@ function ResetPasswordPage() {
     <div className="min-h-screen bg-surface safe-top safe-bottom">
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
-          <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-14 w-auto" />
+          <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-10 w-auto" />
           <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
         </div>
 

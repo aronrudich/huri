@@ -28,7 +28,7 @@ export const getHelpIdentity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const email = String((context.claims as { email?: string }).email ?? "").toLowerCase();
-    return { isSupport: email === SUPPORT_EMAIL };
+    return { isSupport: isSupportEmail(email) };
   });
 
 /** An employee sends a message to Huri support. */
@@ -74,7 +74,7 @@ export const sendHelpMessage = createServerFn({ method: "POST" })
     } catch (e) { console.error("help email failed", (e as Error).message); }
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { data: support } = await supabaseAdmin.from("profiles").select("id").ilike("email", SUPPORT_EMAIL);
+      const { data: support } = await supabaseAdmin.from("profiles").select("id").in("email", SUPPORT_ACCOUNTS);
       for (const s of support ?? []) {
         await pushToUser(s.id, {
           title: `Help Request · ${dealer?.company_code ?? ""}`,
@@ -92,7 +92,7 @@ export const sendSupportReply = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object({ threadId: z.string().uuid(), body: z.string().trim().min(1).max(4000) }).parse(d))
   .handler(async ({ data, context }) => {
     const email = String((context.claims as { email?: string }).email ?? "").toLowerCase();
-    if (email !== SUPPORT_EMAIL) throw new Error("Not allowed");
+    if (!isSupportEmail(email)) throw new Error("Not allowed");
     const { supabase, userId } = context;
     const { data: thread } = await supabase.from("help_threads").select("id, user_id").eq("id", data.threadId).maybeSingle();
     if (!thread) throw new Error("Conversation not found");

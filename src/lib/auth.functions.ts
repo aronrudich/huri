@@ -146,7 +146,18 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     const pendingRoleName = privileged ? requestedRole : null;
 
 
-    const ensureProfile = async (userId: string) => {
+    const ensureProfile = async (userId: string, existingAccount = false) => {
+      if (existingAccount) {
+        // An existing account can never be moved to another company from sign-up.
+        const { data: current } = await adminClient
+          .from("profiles").select("dealership_id").eq("id", userId).maybeSingle();
+        if (current) {
+          if (current.dealership_id !== dealershipId) {
+            throw new Error("That email already has an account. Try signing in instead.");
+          }
+          return;
+        }
+      }
       const { data: roleRow, error: roleError } = await adminClient
         .from("roles")
         .upsert({ name: roleName }, { onConflict: "name" })
@@ -199,7 +210,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
     });
 
     if (!signInError) {
-      if (signInData.user?.id) await ensureProfile(signInData.user.id);
+      if (signInData.user?.id) await ensureProfile(signInData.user.id, true);
       return { userId: signInData.user?.id ?? null };
     }
     if (!/email not confirmed/i.test(signInError.message)) {
@@ -223,7 +234,7 @@ export const createConfirmedAccount = createServerFn({ method: "POST" })
           user_metadata: { full_name: fullName },
         });
         if (updateError) throw new Error("Could not confirm this account automatically.");
-        await ensureProfile(user.id);
+        await ensureProfile(user.id, true);
         return { userId: user.id };
       }
 

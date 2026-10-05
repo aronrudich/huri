@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
+import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -398,6 +399,7 @@ function BusinessForm() {
   const [name, setName] = useState("");
   const [type, setType] = useState<"dealership" | "auction" | "">("");
   const [message, setMessage] = useState("");
+  const [addr, setAddr] = useState<Addr>(emptyAddr);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [key, setKey] = useState(() => crypto.randomUUID());
@@ -409,10 +411,11 @@ function BusinessForm() {
     if (!/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid work email");
     if (!name.trim()) return toast.error("Business name is required");
     if (!type) return toast.error("Choose Dealership or Auction");
+    if (!addrComplete(addr)) return toast.error("Confirm your address or enter street, city, state and ZIP");
     setBusy(true);
     try {
-      await submitBusinessInquiry({ data: { email: cleanEmail, businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key } });
-      setEmail(""); setName(""); setType(""); setMessage("");
+      await submitBusinessInquiry({ data: { email: cleanEmail, businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key, address: { street: addr.street.trim(), city: addr.city.trim(), state: addr.state.trim(), zip: addr.zip.trim(), formatted: addr.formatted || undefined, lat: addr.lat, lng: addr.lng } } });
+      setEmail(""); setName(""); setType(""); setMessage(""); setAddr(emptyAddr);
       setKey(crypto.randomUUID());
       setDone(true);
     } catch (err) {
@@ -442,8 +445,9 @@ function BusinessForm() {
             ))}
           </div>
         </div>
+        <BusinessAddress name={name} value={addr} onChange={setAddr} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business (optional)</label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 3000))}

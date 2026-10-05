@@ -51,7 +51,7 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "pr
 export function HuriLogo() {
   return (
     <Link to="/pickup" aria-label="Huri home" className="flex select-none items-center">
-      <img src={huriLogo.url} alt="Huri" className="h-12 w-auto" />
+      <img src={huriLogo.url} alt="Huri" className="h-9 w-auto" />
     </Link>
   );
 }

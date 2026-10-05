@@ -2,6 +2,9 @@ import type { ComponentType } from 'react'
 import { template as helpRequestTemplate } from './help-request'
 import { template as businessInquiryTemplate } from './business-inquiry'
 import { template as businessOnboardingTemplate } from './business-onboarding'
+import { template as onboardingSubmittedTemplate } from './onboarding-submitted'
+import { template as onboardingChangesTemplate } from './onboarding-changes'
+import { template as companyActivatedTemplate } from './company-activated'
 
 export interface TemplateEntry {
   component: ComponentType<any>
@@ -24,6 +27,9 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'help-request': helpRequestTemplate,
   'business-inquiry': businessInquiryTemplate,
   'business-onboarding': businessOnboardingTemplate,
+  'onboarding-submitted': onboardingSubmittedTemplate,
+  'onboarding-changes': onboardingChangesTemplate,
+  'company-activated': companyActivatedTemplate,
   // Add templates here as they are created, e.g.:
   // 'welcome': welcomeTemplate,
 }

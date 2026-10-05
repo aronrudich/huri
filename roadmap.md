@@ -18,6 +18,6 @@
 ## Business onboarding (in progress)
 - [x] Stage 1: Business tab, saved inquiries, email to Aron, Business Onboarding inbox
 - [x] Stage 2: secure onboarding links + onboarding email (wizard step 1: business details)
-- [ ] Stage 3: map wizard (free OpenStreetMap address search, property/lot outlines, rows/spots, auction barcode)
-- [ ] Stage 4: Aron's map review + "Approve and Create Company" with permanent code
-- [ ] Stage 5: company-specific maps in daily use (JCD unchanged)
+- [x] Stage 3: map wizard — no-key maps: OpenStreetMap standard + Esri World Imagery satellite, Nominatim address search; property/lots/rows/spots, auction barcode info
+- [x] Stage 4: Aron's map review/edit, request changes, activity log, "Approve and Create Company" (atomic, permanent code), activation email
+- [ ] Stage 5: company-specific maps in daily use (maps are saved per company; daily screens still use JCD's SV/CP/BL layout)

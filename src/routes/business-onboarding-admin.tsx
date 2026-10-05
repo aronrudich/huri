@@ -27,7 +27,7 @@ export const Route = createFileRoute("/business-onboarding-admin")({
 
 const STATUS_LABEL: Record<string, string> = {
   new: "New", contacted: "Contacted", onboarding_sent: "Onboarding sent", onboarding_started: "Onboarding started",
-  submitted_for_review: "Ready for review", approved: "Approved", declined: "Declined",
+  submitted_for_review: "Ready for review", changes_requested: "Changes requested", approved: "Company created", declined: "Declined",
 };
 
 function BusinessAdmin() {
@@ -136,6 +136,7 @@ function BusinessAdmin() {
                         onRevoke={() => revoke(r.id)}
                       />
                       <div className="flex flex-wrap gap-2">
+                        <Link to="/business-onboarding-review/$inquiryId" params={{ inquiryId: r.id }} className="rounded-full bg-success px-3 py-1.5 text-xs font-semibold text-success-foreground">Review map</Link>
                         <a href={`mailto:${r.email}`} className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground">Email them</a>
                         {r.status !== "contacted" && <button onClick={() => update(r.id, "contacted")} className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium">Mark contacted</button>}
                         {r.status !== "declined" && <button onClick={() => update(r.id, "declined")} className="rounded-full bg-destructive/10 px-3 py-1.5 text-xs font-medium text-destructive">Decline</button>}

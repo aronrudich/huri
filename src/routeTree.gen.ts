@@ -33,6 +33,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
 import { Route as BusinessOnboardingTokenRouteImport } from './routes/business-onboarding.$token'
+import { Route as BusinessOnboardingReviewInquiryIdRouteImport } from './routes/business-onboarding-review.$inquiryId'
 import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -162,6 +163,12 @@ const BusinessOnboardingTokenRoute = BusinessOnboardingTokenRouteImport.update({
   path: '/business-onboarding/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessOnboardingReviewInquiryIdRoute =
+  BusinessOnboardingReviewInquiryIdRouteImport.update({
+    id: '/business-onboarding-review/$inquiryId',
+    path: '/business-onboarding-review/$inquiryId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ArriveSlugRoute = ArriveSlugRouteImport.update({
   id: '/arrive/$slug',
   path: '/arrive/$slug',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -262,6 +270,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -297,6 +306,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/wash': typeof WashRoute
   '/arrive/$slug': typeof ArriveSlugRoute
+  '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
@@ -367,6 +378,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
@@ -401,6 +413,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/wash'
     | '/arrive/$slug'
+    | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
@@ -436,6 +449,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   WashRoute: typeof WashRoute
   ArriveSlugRoute: typeof ArriveSlugRoute
+  BusinessOnboardingReviewInquiryIdRoute: typeof BusinessOnboardingReviewInquiryIdRoute
   BusinessOnboardingTokenRoute: typeof BusinessOnboardingTokenRoute
   LlegarSlugRoute: typeof LlegarSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
@@ -618,6 +632,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessOnboardingTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business-onboarding-review/$inquiryId': {
+      id: '/business-onboarding-review/$inquiryId'
+      path: '/business-onboarding-review/$inquiryId'
+      fullPath: '/business-onboarding-review/$inquiryId'
+      preLoaderRoute: typeof BusinessOnboardingReviewInquiryIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/arrive/$slug': {
       id: '/arrive/$slug'
       path: '/arrive/$slug'
@@ -700,6 +721,8 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   WashRoute: WashRoute,
   ArriveSlugRoute: ArriveSlugRoute,
+  BusinessOnboardingReviewInquiryIdRoute:
+    BusinessOnboardingReviewInquiryIdRoute,
   BusinessOnboardingTokenRoute: BusinessOnboardingTokenRoute,
   LlegarSlugRoute: LlegarSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,

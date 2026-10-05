@@ -158,3 +158,43 @@ function Conversation({ threadId, support, onCreated }: { threadId: string | nul
     </>
   );
 }
+
+function SupportInbox({ onOpen }: { onOpen: (id: string) => void }) {
+  const [threads, setThreads] = useState<Thread[] | null>(null);
+  const load = useCallback(async () => {
+    const { data } = await supabase.from("help_threads").select("*").order("last_message_at", { ascending: false });
+    setThreads((data as Thread[]) ?? []);
+  }, []);
+  useEffect(() => {
+    load();
+    const ch = supabase.channel("help-inbox")
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "help_messages" }, () => load())
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [load]);
+  return (
+    <main className="flex-1 p-4">
+      <h2 className="mb-3 text-lg font-semibold">Help requests</h2>
+      {threads?.length === 0 && <p className="text-sm text-muted-foreground">No help requests yet.</p>}
+      <ul className="space-y-2">
+        {threads?.map((t) => {
+          const unread = !t.support_read_at || new Date(t.support_read_at) < new Date(t.last_message_at);
+          return (
+            <li key={t.id}>
+              <button onClick={() => onOpen(t.id)} className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-left active:bg-accent">
+                <div className="flex items-center gap-2">
+                  <span className="rounded-full bg-primary px-2 py-0.5 text-xs font-bold text-primary-foreground">{t.company_code}</span>
+                  <span className="truncate text-sm font-medium">{t.dealership_name}</span>
+                  <span className="flex-1" />
+                  {unread && <span aria-label="Unread" className="h-2.5 w-2.5 rounded-full bg-destructive" />}
+                </div>
+                <p className="mt-1 text-sm">{t.user_name} · <span className="text-muted-foreground">{t.user_role}</span></p>
+                <p className="text-xs text-muted-foreground">{format(new Date(t.last_message_at), "MMM d, h:mm a")}</p>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </main>
+  );
+}

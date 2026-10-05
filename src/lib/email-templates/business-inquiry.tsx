@@ -8,9 +8,10 @@ interface Props {
   email?: string
   message?: string
   submittedAt?: string
+  address?: string
 }
 
-const BusinessInquiryEmail = ({ businessName = '', businessType = '', email = '', message = '', submittedAt = '' }: Props) => (
+const BusinessInquiryEmail = ({ businessName = '', businessType = '', email = '', message = '', submittedAt = '', address = '' }: Props) => (
   <Html lang="en" dir="ltr">
     <Head />
     <Preview>New business inquiry from {businessName}</Preview>
@@ -20,6 +21,7 @@ const BusinessInquiryEmail = ({ businessName = '', businessType = '', email = ''
         <Text style={row}><b>Business:</b> {businessName}</Text>
         <Text style={row}><b>Type:</b> {businessType}</Text>
         <Text style={row}><b>Work email:</b> {email}</Text>
+        <Text style={row}><b>Address:</b> {address || '(none)'}</Text>
         <Text style={row}><b>Submitted:</b> {submittedAt}</Text>
         <Hr />
         <Text style={{ fontSize: '15px', color: '#111', whiteSpace: 'pre-wrap' }}>{message || '(No message)'}</Text>

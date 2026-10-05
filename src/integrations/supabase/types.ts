@@ -16,8 +16,11 @@ export type Database = {
     Tables: {
       business_inquiries: {
         Row: {
+          activated_at: string | null
+          activation_emailed_at: string | null
           business_name: string
           business_type: string
+          company_id: string | null
           created_at: string
           email: string
           email_notification_error: string | null
@@ -31,8 +34,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          activated_at?: string | null
+          activation_emailed_at?: string | null
           business_name: string
           business_type: string
+          company_id?: string | null
           created_at?: string
           email: string
           email_notification_error?: string | null
@@ -46,8 +52,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          activated_at?: string | null
+          activation_emailed_at?: string | null
           business_name?: string
           business_type?: string
+          company_id?: string | null
           created_at?: string
           email?: string
           email_notification_error?: string | null
@@ -60,32 +69,90 @@ export type Database = {
           submission_key?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "business_inquiries_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_onboarding_activity: {
+        Row: {
+          actor_id: string | null
+          actor_label: string
+          created_at: string
+          id: string
+          inquiry_id: string
+          section: string
+          summary: Json
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_label?: string
+          created_at?: string
+          id?: string
+          inquiry_id: string
+          section: string
+          summary?: Json
+        }
+        Update: {
+          actor_id?: string | null
+          actor_label?: string
+          created_at?: string
+          id?: string
+          inquiry_id?: string
+          section?: string
+          summary?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_onboarding_activity_inquiry_id_fkey"
+            columns: ["inquiry_id"]
+            isOneToOne: false
+            referencedRelation: "business_inquiries"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       business_onboarding_drafts: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           current_step: number
           data: Json
           inquiry_id: string
+          review_message: string | null
+          reviewer_notes: string | null
           status: string
           submitted_at: string | null
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           current_step?: number
           data?: Json
           inquiry_id: string
+          review_message?: string | null
+          reviewer_notes?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           current_step?: number
           data?: Json
           inquiry_id?: string
+          review_message?: string | null
+          reviewer_notes?: string | null
           status?: string
           submitted_at?: string | null
           updated_at?: string
@@ -261,8 +328,191 @@ export type Database = {
           },
         ]
       }
+      company_map_lots: {
+        Row: {
+          category: string | null
+          created_at: string
+          dealership_id: string
+          description: string | null
+          geometry: Json
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          dealership_id: string
+          description?: string | null
+          geometry: Json
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          dealership_id?: string
+          description?: string | null
+          geometry?: Json
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_map_lots_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_map_property: {
+        Row: {
+          address: Json
+          boundary: Json | null
+          center: Json | null
+          created_at: string
+          dealership_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: Json
+          boundary?: Json | null
+          center?: Json | null
+          created_at?: string
+          dealership_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: Json
+          boundary?: Json | null
+          center?: Json | null
+          created_at?: string
+          dealership_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_map_property_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: true
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_map_rows: {
+        Row: {
+          created_at: string
+          dealership_id: string
+          geometry: Json
+          id: string
+          label: string
+          lot_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dealership_id: string
+          geometry: Json
+          id?: string
+          label: string
+          lot_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dealership_id?: string
+          geometry?: Json
+          id?: string
+          label?: string
+          lot_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_map_rows_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_map_rows_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "company_map_lots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      company_map_spots: {
+        Row: {
+          created_at: string
+          dealership_id: string
+          id: string
+          label: string
+          lat: number
+          lng: number
+          lot_id: string
+          row_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dealership_id: string
+          id?: string
+          label: string
+          lat: number
+          lng: number
+          lot_id: string
+          row_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dealership_id?: string
+          id?: string
+          label?: string
+          lat?: number
+          lng?: number
+          lot_id?: string
+          row_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_map_spots_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_map_spots_lot_id_fkey"
+            columns: ["lot_id"]
+            isOneToOne: false
+            referencedRelation: "company_map_lots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "company_map_spots_row_id_fkey"
+            columns: ["row_id"]
+            isOneToOne: false
+            referencedRelation: "company_map_rows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealerships: {
         Row: {
+          business_type: string
           claim_hide_minutes: number
           company_code: string
           created_at: string
@@ -278,6 +528,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          business_type?: string
           claim_hide_minutes?: number
           company_code: string
           created_at?: string
@@ -293,6 +544,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          business_type?: string
           claim_hide_minutes?: number
           company_code?: string
           created_at?: string
@@ -808,6 +1060,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      activate_business_onboarding: {
+        Args: { _actor: string; _inquiry_id: string }
+        Returns: Json
+      }
       archive_stale_pickups: { Args: never; Returns: undefined }
       assign_lot_position: {
         Args: {

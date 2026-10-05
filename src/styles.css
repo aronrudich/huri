@@ -172,3 +172,23 @@
 }
 
 
+
+/* Property map (onboarding) — Leaflet SVG paths styled with design tokens */
+.hm-boundary { stroke: var(--primary); stroke-width: 3; fill: var(--primary); fill-opacity: 0.08; stroke-dasharray: 6 4; }
+.hm-dim { stroke-opacity: 0.45; fill-opacity: 0.03; }
+.hm-lot { stroke-width: 2.5; fill-opacity: 0.22; }
+.hm-lot-0 { stroke: var(--primary); fill: var(--primary); }
+.hm-lot-1 { stroke: var(--success); fill: var(--success); }
+.hm-lot-2 { stroke: var(--warning); fill: var(--warning); }
+.hm-lot-3 { stroke: var(--destructive); fill: var(--destructive); }
+.hm-lot-4 { stroke: var(--foreground); fill: var(--foreground); }
+.hm-lot-5 { stroke: var(--muted-foreground); fill: var(--muted-foreground); }
+.hm-active { stroke-width: 4; fill-opacity: 0.3; stroke-dasharray: none; }
+.hm-row { stroke: var(--warning); stroke-width: 4; }
+.hm-row.hm-active { stroke: var(--destructive); stroke-width: 5; }
+.hm-row-end { stroke: var(--warning); fill: var(--warning); fill-opacity: 1; }
+.hm-label { background: var(--background); color: var(--foreground); border: 0; font-size: 11px; font-weight: 600; padding: 1px 6px; box-shadow: 0 1px 3px rgb(0 0 0 / 0.25); }
+.hm-label::before { display: none; }
+.hm-vertex { transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 9999px; background: var(--background); border: 2px solid var(--destructive); color: var(--foreground); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
+.hm-spot { transform: translate(-50%, -50%); white-space: nowrap; border-radius: 6px; background: var(--primary); color: var(--primary-foreground); font-size: 10px; font-weight: 700; padding: 1px 4px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.3); }
+.hm-spot-sel { background: var(--destructive); color: var(--destructive-foreground); outline: 2px solid var(--background); }

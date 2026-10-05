@@ -331,14 +331,17 @@ export type Database = {
         Row: {
           fired_at: string
           key: string
+          pushed_at: string | null
         }
         Insert: {
           fired_at?: string
           key: string
+          pushed_at?: string | null
         }
         Update: {
           fired_at?: string
           key?: string
+          pushed_at?: string | null
         }
         Relationships: []
       }
@@ -684,6 +687,7 @@ export type Database = {
         }
         Returns: Json
       }
+      claim_milestone_push: { Args: { _key: string }; Returns: boolean }
       claim_pickup_request: {
         Args: { _pickup_id: string }
         Returns: {

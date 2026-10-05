@@ -22,6 +22,7 @@ export type Database = {
           business_type: string
           city: string | null
           company_id: string | null
+          contact_name: string | null
           created_at: string
           email: string
           email_notification_error: string | null
@@ -47,6 +48,7 @@ export type Database = {
           business_type: string
           city?: string | null
           company_id?: string | null
+          contact_name?: string | null
           created_at?: string
           email: string
           email_notification_error?: string | null
@@ -72,6 +74,7 @@ export type Database = {
           business_type?: string
           city?: string | null
           company_id?: string | null
+          contact_name?: string | null
           created_at?: string
           email?: string
           email_notification_error?: string | null

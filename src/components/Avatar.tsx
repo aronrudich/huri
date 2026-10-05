@@ -1,4 +1,5 @@
 import { X } from "lucide-react";
+import { useAvatarSrc } from "@/lib/avatar-src";
 
 /**
  * Round profile photo (or initial fallback). Tapping the photo opens it full-size
@@ -20,8 +21,9 @@ export function Avatar({
   const display = name?.trim() || "Unknown";
   const initial = display[0]?.toUpperCase() ?? "?";
   const style = { width: size, height: size };
+  const src = useAvatarSrc(url);
 
-  if (url) {
+  if (url && src) {
     return (
       <button
         type="button"
@@ -29,13 +31,13 @@ export function Avatar({
           if (!onExpand) return;
           e.preventDefault();
           e.stopPropagation();
-          onExpand(url, display);
+          onExpand(src, display);
         }}
         aria-label={`View ${display} profile photo`}
         className={`shrink-0 overflow-hidden rounded-full ${className}`}
         style={style}
       >
-        <img src={url} alt={`${display} profile photo`} className="h-full w-full object-cover" />
+        <img src={src} alt={`${display} profile photo`} className="h-full w-full object-cover" />
       </button>
     );
   }
@@ -61,6 +63,7 @@ export function AvatarViewer({
   name: string;
   onClose: () => void;
 }) {
+  const src = useAvatarSrc(url);
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/85 p-6" onClick={onClose}>
       <button
@@ -72,7 +75,7 @@ export function AvatarViewer({
         <X className="h-5 w-5" />
       </button>
       <figure className="max-h-full w-full max-w-md text-center" onClick={(e) => e.stopPropagation()}>
-        <img src={url} alt={`${name} profile photo`} className="mx-auto max-h-[70vh] w-full rounded-2xl object-contain" />
+        <img src={src ?? undefined} alt={`${name} profile photo`} className="mx-auto max-h-[70vh] w-full rounded-2xl object-contain" />
         <figcaption className="mt-3 text-sm font-medium text-white">{name}</figcaption>
       </figure>
     </div>

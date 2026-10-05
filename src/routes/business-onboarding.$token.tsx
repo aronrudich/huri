@@ -4,8 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { openOnboarding, saveOnboardingDraft, submitOnboarding } from "@/lib/onboarding.functions";
-import { duplicateSpotLabels, type Draft } from "@/lib/onboarding-schema";
-import { AddressSection, BarcodeSection, LotsSection, PropertySection, ReviewSummary, RowsSpotsSection } from "@/components/OnboardingSections";
+import type { Draft } from "@/lib/onboarding-schema";
+import { AddressLookup } from "@/components/AddressLookup";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 export const Route = createFileRoute("/business-onboarding/$token")({
@@ -25,7 +25,9 @@ export const Route = createFileRoute("/business-onboarding/$token")({
   component: OnboardingPage,
 });
 
-const STEPS = ["Business", "Address", "Property", "Lots", "Rows & Spots", "Review", "Submitted"];
+const STEPS = ["Business", "Address", "Review"];
+const DONE = 4;
+const addrOk = (d: Draft) => !!(d.address?.street?.trim() && (d.address.city?.trim() || d.address.zip?.trim()));
 
 function OnboardingPage() {
   const { token } = Route.useParams();
@@ -53,8 +55,8 @@ function OnboardingPage() {
       contactEmail: d.contactEmail ?? data.inquiry.email,
     });
     const st = data.draft?.status;
-    if (st === "submitted" || st === "approved" || st === "activated") { setLocked(true); setStep(7); }
-    else if (data.draft?.current_step) setStep(Math.min(6, Math.max(1, data.draft.current_step)));
+    if (st === "submitted" || st === "approved" || st === "activated") { setLocked(true); setStep(DONE); }
+    else if (data.draft?.current_step) setStep(Math.min(3, Math.max(1, data.draft.current_step)));
     setLoaded(true);
   }, [data]);
 
@@ -74,22 +76,22 @@ function OnboardingPage() {
 
   const go = async (next: number) => {
     if (step === 1 && !form.businessName?.trim()) return toast.error("Business name is required");
-    if (next === 5 && !(form.lots ?? []).every((l) => l.name.trim() && l.polygon.length >= 3)) return toast.error("Each lot needs a name and a shape");
+    if (step === 2 && next === 3 && !addrOk(form)) return toast.error("Please enter your business address");
     setSaving("saving");
     try { await save({ data: { token, step: next, data: form } }); dirty.current = false; setSaving("saved"); setStep(next); window.scrollTo(0, 0); }
     catch (e) { setSaving("error"); toast.error(e instanceof Error ? e.message : "Could not save"); }
   };
 
   const doSubmit = async () => {
-    if (!(form.boundary && form.boundary.length >= 3)) { toast.error("Please draw your property boundary first"); return setStep(3); }
-    if (duplicateSpotLabels(form).length && !confirm("Some spot labels are duplicated. Submit anyway?")) return;
+    if (!form.businessName?.trim()) { toast.error("Business name is required"); return setStep(1); }
+    if (!addrOk(form)) { toast.error("Please enter your business address"); return setStep(2); }
     setSubmitting(true);
-    try { await submit({ data: { token, data: form } }); setLocked(true); setStep(7); window.scrollTo(0, 0); }
+    try { await submit({ data: { token, data: form } }); setLocked(true); setStep(DONE); window.scrollTo(0, 0); }
     catch (e) { toast.error(e instanceof Error ? e.message : "Could not submit. Please try again."); }
     finally { setSubmitting(false); }
   };
 
-  const wide = step >= 2 && step <= 6;
+  const wide = false;
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
       <div className={`mx-auto px-4 py-8 ${wide ? "max-w-3xl" : "max-w-md"}`}>
@@ -101,16 +103,16 @@ function OnboardingPage() {
             <h1 className="text-lg font-bold">This link isn't active</h1>
             <p className="mt-2 text-sm text-muted-foreground">It may have expired, been replaced, or your setup is already complete. Contact Huri and we'll help.</p>
           </div>
-        ) : step === 7 ? (
+        ) : step === DONE ? (
           <div className="rounded-2xl bg-card p-6 text-center shadow-sm">
-            <h1 className="text-xl font-bold">Map submitted</h1>
-            <p className="mt-3 text-sm">Thank you. Huri is reviewing your business and property map now.</p>
-            <p className="mt-3 text-sm text-muted-foreground">We'll reach out if we need anything else. Once your setup is approved, Huri will create your company and provide the company code you'll use to create employee accounts.</p>
+            <h1 className="text-xl font-bold">Thank you!</h1>
+            <p className="mt-3 text-sm">We've got your details. Huri will be in touch to finish setting up your property map with you.</p>
+            <p className="mt-3 text-sm text-muted-foreground">Once your setup is approved, Huri will create your company and provide the company code you'll use to create employee accounts.</p>
           </div>
         ) : (
           <>
             <ol className="mb-4 flex gap-1 overflow-x-auto pb-1 text-[11px]">
-              {STEPS.slice(0, 6).map((s, i) => (
+              {STEPS.map((s, i) => (
                 <li key={s} className={`shrink-0 rounded-full px-2.5 py-1 ${step === i + 1 ? "bg-primary text-primary-foreground" : i + 1 < step ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
                   {i + 1}. {s}
                 </li>
@@ -124,7 +126,7 @@ function OnboardingPage() {
             )}
             <div className="rounded-2xl bg-card p-4 shadow-sm sm:p-6">
               <div className="mb-3 flex items-center justify-between">
-                <h1 className="text-lg font-bold">{["Confirm your business", "Business address", "Property boundary", "Lots", "Rows & parking spots", "Review & submit"][step - 1]}</h1>
+                <h1 className="text-lg font-bold">{["Confirm your business", "Business address", "Review & submit"][step - 1]}</h1>
                 <span className="text-[11px] text-muted-foreground">{saving === "saving" ? "Saving…" : saving === "saved" ? "Saved" : saving === "error" ? "Not saved" : ""}</span>
               </div>
               {step === 1 && (
@@ -152,34 +154,38 @@ function OnboardingPage() {
                   </div>
                 </div>
               )}
-              {step === 2 && <AddressSection draft={form} set={set} />}
-              {step === 3 && <PropertySection draft={form} set={set} />}
-              {step === 4 && <LotsSection draft={form} set={set} />}
-              {step === 5 && (
-                <div className="space-y-4">
-                  <RowsSpotsSection draft={form} set={set} />
-                  {form.businessType === "auction" && <BarcodeSection draft={form} set={set} />}
-                </div>
-              )}
-              {step === 6 && (
+              {step === 2 && <AddressLookup draft={form} set={set} />}
+              {step === 3 && (
                 <div className="space-y-3">
-                  <ReviewSummary draft={form} onEdit={(s) => setStep(s)} />
-                  <p className="rounded-xl bg-muted p-3 text-sm">Huri will review your property map and contact you if anything needs clarification. Your company and employee accounts will not be created until Huri approves the setup.</p>
+                  <div className="rounded-xl border border-border p-3 text-sm">
+                    <div className="flex justify-between"><p className="font-semibold">Business</p><button onClick={() => setStep(1)} className="text-xs text-primary">Edit</button></div>
+                    <p>{form.businessName}</p>
+                    <p className="text-muted-foreground">{form.businessType === "auction" ? "Auction" : "Dealership"} · {form.contactEmail}</p>
+                    {(form.contactName || form.contactPhone) && <p className="text-muted-foreground">{[form.contactName, form.contactPhone].filter(Boolean).join(" · ")}</p>}
+                    {form.notes && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{form.notes}</p>}
+                  </div>
+                  <div className="rounded-xl border border-border p-3 text-sm">
+                    <div className="flex justify-between"><p className="font-semibold">Address</p><button onClick={() => setStep(2)} className="text-xs text-primary">Edit</button></div>
+                    <p>{form.address?.street}</p>
+                    <p>{[form.address?.city, form.address?.state, form.address?.zip].filter(Boolean).join(", ")}</p>
+                    {form.address?.country && <p>{form.address.country}</p>}
+                    {form.address?.notes && <p className="mt-1 whitespace-pre-wrap text-muted-foreground">{form.address.notes}</p>}
+                  </div>
+                  <p className="rounded-xl bg-muted p-3 text-sm">Huri will contact you to set up your property map together. Your company and employee accounts will not be created until Huri approves the setup.</p>
                   <button disabled={submitting} onClick={doSubmit} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-                    {submitting ? "Submitting…" : "Submit map for Huri review"}
+                    {submitting ? "Submitting…" : "Submit to Huri"}
                   </button>
                 </div>
               )}
               <div className="mt-5 flex gap-2">
                 {step > 1 && <button onClick={() => go(step - 1)} className="flex-1 rounded-xl bg-muted py-3 text-sm font-medium">Back</button>}
-                {step < 6 && (
-                  <button disabled={step === 3 && !form.boundaryConfirmed} onClick={() => go(step + 1)}
+                {step < 3 && (
+                  <button onClick={() => go(step + 1)}
                     className="flex-[2] rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-50">
                     Save & Continue
                   </button>
                 )}
               </div>
-              {step === 3 && !form.boundaryConfirmed && <p className="mt-2 text-center text-[11px] text-muted-foreground">Draw the boundary and tick the box to continue.</p>}
             </div>
           </>
         )}

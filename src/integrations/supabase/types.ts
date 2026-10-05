@@ -176,6 +176,103 @@ export type Database = {
         }
         Relationships: []
       }
+      help_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sender_id: string | null
+          sender_type: string
+          thread_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_type: string
+          thread_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sender_id?: string | null
+          sender_type?: string
+          thread_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "help_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      help_threads: {
+        Row: {
+          company_code: string
+          created_at: string
+          dealership_id: string
+          dealership_name: string
+          hidden_by_user: boolean
+          id: string
+          last_message_at: string
+          status: string
+          support_read_at: string | null
+          updated_at: string
+          user_email: string
+          user_id: string
+          user_name: string
+          user_read_at: string | null
+          user_role: string
+        }
+        Insert: {
+          company_code: string
+          created_at?: string
+          dealership_id: string
+          dealership_name?: string
+          hidden_by_user?: boolean
+          id?: string
+          last_message_at?: string
+          status?: string
+          support_read_at?: string | null
+          updated_at?: string
+          user_email: string
+          user_id: string
+          user_name: string
+          user_read_at?: string | null
+          user_role: string
+        }
+        Update: {
+          company_code?: string
+          created_at?: string
+          dealership_id?: string
+          dealership_name?: string
+          hidden_by_user?: boolean
+          id?: string
+          last_message_at?: string
+          status?: string
+          support_read_at?: string | null
+          updated_at?: string
+          user_email?: string
+          user_id?: string
+          user_name?: string
+          user_read_at?: string | null
+          user_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "help_threads_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
@@ -320,6 +417,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_address: string | null
+          customer_arrived_at: string | null
           customer_eta: string | null
           customer_name: string | null
           customer_phone: string | null
@@ -346,6 +444,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_address?: string | null
+          customer_arrived_at?: string | null
           customer_eta?: string | null
           customer_name?: string | null
           customer_phone?: string | null
@@ -372,6 +471,7 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           customer_address?: string | null
+          customer_arrived_at?: string | null
           customer_eta?: string | null
           customer_name?: string | null
           customer_phone?: string | null
@@ -592,6 +692,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           customer_address: string | null
+          customer_arrived_at: string | null
           customer_eta: string | null
           customer_name: string | null
           customer_phone: string | null

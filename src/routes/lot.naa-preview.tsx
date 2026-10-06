@@ -1,6 +1,4 @@
-import { useEffect } from "react";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { createFileRoute } from "@tanstack/react-router";
 import { NaaPreviewMap } from "@/components/NaaPreviewMap";
 
 export const Route = createFileRoute("/lot/naa-preview")({
@@ -18,16 +16,5 @@ export const Route = createFileRoute("/lot/naa-preview")({
 });
 
 function NaaPreviewPage() {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
-
-  useEffect(() => {
-    if (!loading && !user) navigate({ to: "/auth", replace: true });
-  }, [loading, navigate, user]);
-
-  if (loading || !user) {
-    return <div className="grid h-dvh place-items-center bg-surface text-sm text-muted-foreground">Opening private test map…</div>;
-  }
-
   return <main className="flex h-dvh min-h-0 flex-col overflow-hidden"><NaaPreviewMap /></main>;
 }

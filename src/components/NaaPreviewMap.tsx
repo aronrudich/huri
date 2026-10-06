@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
-import { CarFront, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, CarFront, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 type ZoneId = "front" | "lanes" | "yard" | "recon" | "transport";

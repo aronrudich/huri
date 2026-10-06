@@ -121,10 +121,10 @@ function SWRegistrar() {
 
 function NaaSandboxToggle() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const onMap = pathname === "/lot/naa-preview";
+  const onMap = pathname === "/naa-preview";
   return (
     <Link
-      to={onMap ? "/pickup" : "/lot/naa-preview"}
+      to={onMap ? "/pickup" : "/naa-preview"}
       className="fixed left-1/2 top-3 z-50 -translate-x-1/2 whitespace-nowrap rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground shadow-lg"
     >
       {onMap ? "← Back to Huri App" : "🗺️ Tap to View NAA Test Map (588 Spots)"}

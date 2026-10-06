@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { NaaPreviewMap } from "@/components/NaaPreviewMap";
 
-export const Route = createFileRoute("/lot/naa-preview")({
+export const Route = createFileRoute("/naa-preview")({
   head: () => ({
     meta: [
       { title: "NAA Test Map · Huri" },

@@ -178,6 +178,9 @@ export function NaaPreviewMap() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
+                <Link to="/pickup" className="grid size-8 shrink-0 place-items-center rounded-full border bg-background active:bg-accent" aria-label="Exit sandbox" title="Exit sandbox">
+                  <ArrowLeft className="size-4" />
+                </Link>
                 <span className="rounded bg-warning px-2 py-1 text-[10px] font-bold uppercase text-warning-foreground">Sandbox</span>
                 <h1 className="text-lg font-bold">NAA Test Map</h1>
               </div>

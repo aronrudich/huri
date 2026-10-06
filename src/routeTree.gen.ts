@@ -18,6 +18,7 @@ import { Route as FlaggedRouteImport } from './routes/flagged'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LotRouteImport } from './routes/lot'
+import { Route as NaaPreviewRouteImport } from './routes/naa-preview'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as ParkRequestRouteImport } from './routes/park-request'
 import { Route as PartsRouteImport } from './routes/parts'
@@ -34,7 +35,6 @@ import { Route as ArriveSlugRouteImport } from './routes/arrive.$slug'
 import { Route as BusinessOnboardingReviewInquiryIdRouteImport } from './routes/business-onboarding-review.$inquiryId'
 import { Route as BusinessOnboardingTokenRouteImport } from './routes/business-onboarding.$token'
 import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
-import { Route as LotNaaPreviewRouteImport } from './routes/lot.naa-preview'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
 import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 import { Route as ApiPublicHooksMilestoneRouteImport } from './routes/api/public/hooks/milestone'
@@ -87,6 +87,11 @@ const InboxRoute = InboxRouteImport.update({
 const LotRoute = LotRouteImport.update({
   id: '/lot',
   path: '/lot',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NaaPreviewRoute = NaaPreviewRouteImport.update({
+  id: '/naa-preview',
+  path: '/naa-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkRoute = ParkRouteImport.update({
@@ -170,11 +175,6 @@ const LlegarSlugRoute = LlegarSlugRouteImport.update({
   path: '/llegar/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LotNaaPreviewRoute = LotNaaPreviewRouteImport.update({
-  id: '/naa-preview',
-  path: '/naa-preview',
-  getParentRoute: () => LotRoute,
-} as any)
 const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   id: '/thread/$threadId',
   path: '/thread/$threadId',
@@ -227,7 +227,8 @@ export interface FileRoutesByFullPath {
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
-  '/lot': typeof LotRouteWithChildren
+  '/lot': typeof LotRoute
+  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -244,7 +245,6 @@ export interface FileRoutesByFullPath {
   '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
-  '/lot/naa-preview': typeof LotNaaPreviewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
@@ -263,7 +263,8 @@ export interface FileRoutesByTo {
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
-  '/lot': typeof LotRouteWithChildren
+  '/lot': typeof LotRoute
+  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -280,7 +281,6 @@ export interface FileRoutesByTo {
   '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
-  '/lot/naa-preview': typeof LotNaaPreviewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
@@ -300,7 +300,8 @@ export interface FileRoutesById {
   '/flagged': typeof FlaggedRoute
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
-  '/lot': typeof LotRouteWithChildren
+  '/lot': typeof LotRoute
+  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -317,7 +318,6 @@ export interface FileRoutesById {
   '/business-onboarding-review/$inquiryId': typeof BusinessOnboardingReviewInquiryIdRoute
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
-  '/lot/naa-preview': typeof LotNaaPreviewRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
@@ -339,6 +339,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
+    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -355,7 +356,6 @@ export interface FileRouteTypes {
     | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
-    | '/lot/naa-preview'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
@@ -375,6 +375,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
+    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -391,7 +392,6 @@ export interface FileRouteTypes {
     | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
-    | '/lot/naa-preview'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
@@ -411,6 +411,7 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
+    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -427,7 +428,6 @@ export interface FileRouteTypes {
     | '/business-onboarding-review/$inquiryId'
     | '/business-onboarding/$token'
     | '/llegar/$slug'
-    | '/lot/naa-preview'
     | '/thread/$threadId'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
@@ -447,7 +447,8 @@ export interface RootRouteChildren {
   FlaggedRoute: typeof FlaggedRoute
   HelpRoute: typeof HelpRoute
   InboxRoute: typeof InboxRoute
-  LotRoute: typeof LotRouteWithChildren
+  LotRoute: typeof LotRoute
+  NaaPreviewRoute: typeof NaaPreviewRoute
   ParkRoute: typeof ParkRoute
   ParkRequestRoute: typeof ParkRequestRoute
   PartsRoute: typeof PartsRoute
@@ -537,6 +538,13 @@ declare module '@tanstack/react-router' {
       path: '/lot'
       fullPath: '/lot'
       preLoaderRoute: typeof LotRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/naa-preview': {
+      id: '/naa-preview'
+      path: '/naa-preview'
+      fullPath: '/naa-preview'
+      preLoaderRoute: typeof NaaPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/park': {
@@ -651,13 +659,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LlegarSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/lot/naa-preview': {
-      id: '/lot/naa-preview'
-      path: '/naa-preview'
-      fullPath: '/lot/naa-preview'
-      preLoaderRoute: typeof LotNaaPreviewRouteImport
-      parentRoute: typeof LotRoute
-    }
     '/thread/$threadId': {
       id: '/thread/$threadId'
       path: '/thread/$threadId'
@@ -717,16 +718,6 @@ declare module '@tanstack/react-router' {
   }
 }
 
-interface LotRouteChildren {
-  LotNaaPreviewRoute: typeof LotNaaPreviewRoute
-}
-
-const LotRouteChildren: LotRouteChildren = {
-  LotNaaPreviewRoute: LotNaaPreviewRoute,
-}
-
-const LotRouteWithChildren = LotRoute._addFileChildren(LotRouteChildren)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
@@ -736,7 +727,8 @@ const rootRouteChildren: RootRouteChildren = {
   FlaggedRoute: FlaggedRoute,
   HelpRoute: HelpRoute,
   InboxRoute: InboxRoute,
-  LotRoute: LotRouteWithChildren,
+  LotRoute: LotRoute,
+  NaaPreviewRoute: NaaPreviewRoute,
   ParkRoute: ParkRoute,
   ParkRequestRoute: ParkRequestRoute,
   PartsRoute: PartsRoute,

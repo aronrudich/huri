@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
-import { CarFront, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
+import { ArrowLeft, CarFront, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 type ZoneId = "front" | "lanes" | "yard" | "recon" | "transport";
@@ -138,7 +139,7 @@ export function NaaPreviewMap() {
   const [view, setView] = useState<ViewId>("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
-  const [api, setApi] = useState<ReactZoomPanPinchRef | null>(null);
+  const apiRef = useRef<ReactZoomPanPinchRef | null>(null);
   const [overrides, setOverrides] = useState<Record<string, StallStatus>>({});
 
   const stalls = useMemo(() => INITIAL_STALLS.map((stall) => ({ ...stall, status: overrides[stall.id] ?? stall.status })), [overrides]);
@@ -151,15 +152,15 @@ export function NaaPreviewMap() {
     : stalls.filter((stall) => stall.id.includes(normalizedQuery) || stall.stock?.includes(normalizedQuery) || stall.vin?.includes(normalizedQuery)).slice(0, 8);
 
   const focusElement = (elementId: string) => {
-    window.setTimeout(() => api?.zoomToElement(elementId, 1.65, 350, "easeOut"), 40);
+    window.setTimeout(() => apiRef.current?.zoomToElement(elementId, 1.65, 350, "easeOut"), 40);
   };
 
   const selectView = (next: ViewId) => {
     setView(next);
     setSelectedId(null);
     window.setTimeout(() => {
-      if (next === "all") api?.resetTransform(350);
-      else api?.zoomToElement(`naa-zone-${next}`, 0.92, 350, "easeOut");
+      if (next === "all") apiRef.current?.resetTransform(350);
+      else apiRef.current?.zoomToElement(`naa-zone-${next}`, 0.92, 350, "easeOut");
     }, 40);
   };
 
@@ -177,6 +178,9 @@ export function NaaPreviewMap() {
           <div className="flex items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
+                <Link to="/pickup" className="grid size-8 shrink-0 place-items-center rounded-full border bg-background active:bg-accent" aria-label="Exit sandbox" title="Exit sandbox">
+                  <ArrowLeft className="size-4" />
+                </Link>
                 <span className="rounded bg-warning px-2 py-1 text-[10px] font-bold uppercase text-warning-foreground">Sandbox</span>
                 <h1 className="text-lg font-bold">NAA Test Map</h1>
               </div>
@@ -229,7 +233,7 @@ export function NaaPreviewMap() {
 
       <div className="relative min-h-[520px] flex-1 overflow-hidden bg-muted">
         <TransformWrapper
-          ref={(ref) => setApi(ref)}
+          ref={apiRef}
           initialScale={0.72}
           minScale={0.5}
           maxScale={4}
@@ -286,7 +290,7 @@ export function NaaPreviewMap() {
             </div>
           </TransformComponent>
         </TransformWrapper>
-        <MapControls api={api} />
+        <MapControls api={apiRef.current} />
         <div className="absolute bottom-3 left-3 rounded bg-background/90 px-2 py-1 text-[10px] font-medium shadow">Pinch or scroll to zoom · drag to pan</div>
       </div>
 

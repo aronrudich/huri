@@ -24,3 +24,7 @@
 
 - [x] Business-facing map wizard replaced with a short intake (business info + address with live lookup). Property mapping is now done by Huri Support in the private review tool after talking with the business.
 - [x] Thank-you popup copy: "Thank you!" / "We've received your information." / "We will contact you in a Huri" (primary), remove footnote and subtext, backdrop-close
+
+## NAA lot-map sandbox
+- [x] Private `/lot/naa-preview` test page with all 588 mock stalls, five zones, pan/zoom, search, filters, vehicle details, and tandem-blocker previews
+- [x] Keep the sandbox frontend-only and isolated from JCD's `/lot`, company data, onboarding, and permanent company code

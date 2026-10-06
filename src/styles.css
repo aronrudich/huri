@@ -192,3 +192,17 @@
 .hm-vertex { transform: translate(-50%, -50%); width: 22px; height: 22px; border-radius: 9999px; background: var(--background); border: 2px solid var(--destructive); color: var(--foreground); font-size: 10px; font-weight: 700; display: grid; place-items: center; }
 .hm-spot { transform: translate(-50%, -50%); white-space: nowrap; border-radius: 6px; background: var(--primary); color: var(--primary-foreground); font-size: 10px; font-weight: 700; padding: 1px 4px; box-shadow: 0 1px 2px rgb(0 0 0 / 0.3); }
 .hm-spot-sel { background: var(--destructive); color: var(--destructive-foreground); outline: 2px solid var(--background); }
+
+/* NAA sandbox: token-based property texture and staged-stall checker. */
+.naa-property-grid {
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--border) 45%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+.naa-checkered {
+  background-color: var(--background);
+  background-image: repeating-conic-gradient(var(--muted-foreground) 0 25%, var(--background) 0 50%);
+  background-size: 8px 8px;
+}

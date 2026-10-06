@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { TransformComponent, TransformWrapper, type ReactZoomPanPinchRef } from "react-zoom-pan-pinch";
 import { CarFront, LocateFixed, Minus, Plus, Search, X } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 type ZoneId = "front" | "lanes" | "yard" | "recon" | "transport";
 type ViewId = "all" | ZoneId;
@@ -80,15 +81,19 @@ function buildStalls(): Stall[] {
       stalls.push(withVehicle({ id: `L${lane}-${slot}`, zone: "lanes", x: 470 + (lane - 1) * 115, y: 84 + (slot - 1) * 24, width: 104, height: 20 }, index, "lanes"));
     }
   }
-  for (let pair = 1; pair <= 210; pair += 1) {
-    const column = (pair - 1) % 21;
-    const row = Math.floor((pair - 1) / 21);
-    const baseId = `R${String(pair).padStart(2, "0")}`;
-    const x = 250 + column * 51;
-    const y = 320 + row * 54;
-    const frontId = `${baseId}-F`;
-    stalls.push(withVehicle({ id: frontId, zone: "yard", x, y: y + 24, width: 46, height: 22 }, pair * 2, "yard"));
-    stalls.push(withVehicle({ id: `${baseId}-B`, zone: "yard", x, y, width: 46, height: 22, blockerId: frontId }, pair * 2 + 1, "yard"));
+  let pairIndex = 0;
+  for (let rowNumber = 1; rowNumber <= 22; rowNumber += 1) {
+    const baysInRow = rowNumber <= 12 ? 10 : 9;
+    for (let bay = 1; bay <= baysInRow; bay += 1) {
+      pairIndex += 1;
+      const rowLabel = `R${String(rowNumber).padStart(2, "0")}`;
+      const baseId = bay === 1 ? rowLabel : `${rowLabel}-${String(bay).padStart(2, "0")}`;
+      const x = 250 + (bay - 1) * 105;
+      const y = 315 + (rowNumber - 1) * 25;
+      const frontId = `${baseId}-F`;
+      stalls.push(withVehicle({ id: frontId, zone: "yard", x: x + 48, y, width: 44, height: 20 }, pairIndex * 2, "yard"));
+      stalls.push(withVehicle({ id: `${baseId}-B`, zone: "yard", x, y, width: 44, height: 20, blockerId: frontId }, pairIndex * 2 + 1, "yard"));
+    }
   }
   for (let i = 0; i < 40; i += 1) {
     stalls.push(withVehicle({ id: `D${String(i + 1).padStart(2, "0")}`, zone: "recon", x: 46 + (i % 5) * 62, y: 80 + Math.floor(i / 5) * 31, width: 56, height: 26 }, i + 1, "recon"));
@@ -177,7 +182,11 @@ export function NaaPreviewMap() {
               </div>
               <p className="mt-1 text-xs text-muted-foreground">Norwalk Auto Auction · 588 mock stalls</p>
             </div>
-            <div className="hidden items-center gap-3 text-xs md:flex">
+            <label className="ml-auto flex shrink-0 items-center gap-2 rounded-lg border bg-muted px-3 py-2 text-xs font-semibold">
+              <Switch checked={view === "all"} onCheckedChange={(checked) => selectView(checked ? "all" : "front")} aria-label="View entire property" />
+              Entire property
+            </label>
+            <div className="hidden items-center gap-3 text-xs lg:flex">
               <span className="flex items-center gap-1.5"><span className="size-3 border border-foreground/60 bg-background" /> Open</span>
               <span className="flex items-center gap-1.5"><span className="size-3 bg-destructive" /> Occupied</span>
               <span className="flex items-center gap-1.5"><span className="size-3 bg-primary" /> Active pull</span>

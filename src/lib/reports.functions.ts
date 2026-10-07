@@ -260,7 +260,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (e.event_type === "deleted" || !e.actor_id) return;
       if (start && e.created_at < start.toISOString()) return;
       if (!inHours(e.created_at)) return;
-      if (destOf(e) === "UNKNOWN") return; // penalized below
+      if (destOf(e) === "UNKNOWN") return; // not a real location — never earns points
       addPts(e.actor_id, 0.3, "Locations logged");
     });
     // ---- unlogged locations (-1 each; automatic Huri moves never count) -----
@@ -277,14 +277,14 @@ export const getReport = createServerFn({ method: "POST" })
       (byRo.get(k) ?? byRo.set(k, []).get(k)!).push(r);
     });
     byRo.forEach((list) => list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
-    // a) Park request completed without logging a stall.
+    // a) Park request completed without logging a spot.
     live.forEach((r) => {
       if (kindOf(r) !== "park" || r.status !== "completed" || !r.claimed_by || !r.claimed_at || !r.ro_number) return;
       if (!inHours(r.created_at)) return;
       const until = new Date(new Date(r.completed_at ?? r.claimed_at).getTime() + 30 * 60_000).toISOString();
       if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, until)) addPts(r.claimed_by, -1, UNLOGGED);
     });
-    // b) Car left a tech's bay with no park request and no stall logged.
+    // b) Car left a tech's bay with no park request and no spot logged.
     live.forEach((r) => {
       if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.completed_at || !r.requested_by || !r.ro_number) return;
       if (!inHours(r.completed_at)) return;
@@ -292,12 +292,9 @@ export const getReport = createServerFn({ method: "POST" })
       if (!next || kindOf(next) === "park") return;
       if (!realMoveIn(r.dealership_id, r.ro_number, r.completed_at, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
     });
-    // c) A known car manually set to Unknown.
-    events.forEach((e) => {
-      if (!e.actor_id || e.event_type !== "moved" || destOf(e) !== "UNKNOWN") return;
-      if (!inHours(e.created_at)) return;
-      addPts(e.actor_id, -1, UNLOGGED);
-    });
+    // Moves to UNKNOWN are never penalized: historically most were automatic
+    // customer-pickup archives and spot-displacement bumps, not employee choices.
+
     // Photos uploaded onto a car earn a small bonus.
     {
       let q = supabase

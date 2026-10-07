@@ -312,7 +312,7 @@ export const getReport = createServerFn({ method: "POST" })
         r.completed_at ? new Date(r.completed_at).getTime() + 30 * 60_000 : 0,
       );
       if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, new Date(endMs).toISOString())) {
-        addPts(r.claimed_by, -1, UNLOGGED);
+        addPts(r.claimed_by, -2, UNLOGGED);
       }
     });
     // b) Car left a tech's bay with no hand-off, judged once per BAY STAY.
@@ -349,7 +349,7 @@ export const getReport = createServerFn({ method: "POST" })
         if (selfLogged) continue;
         const snap = (ender.lot_position ?? "").trim().toUpperCase() || "UNKNOWN";
         if (snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
-          addPts(tech, -1, UNLOGGED);
+          addPts(tech, -2, UNLOGGED);
         }
       }
     });

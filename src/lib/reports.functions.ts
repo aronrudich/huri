@@ -248,8 +248,8 @@ export const getReport = createServerFn({ method: "POST" })
       breakdownBy.set(id, b);
     };
     const CAT: Record<string, string> = {
-      pickup_customer: "Customer deliveries", pickup_tech: "Technician bay deliveries",
-      stage: "Staging", park: "Lot park requests", parts: "Parts runs", wash: "Wash runs",
+      pickup_customer: "Customer deliveries", pickup_tech: "Technician deliveries",
+      stage: "Staging", park: "Park requests", parts: "Parts runs", wash: "Wash",
     };
     durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
     // Manual add/edit of car locations (automatic moves carry no actor).

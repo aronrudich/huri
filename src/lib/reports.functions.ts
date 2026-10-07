@@ -261,7 +261,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (start && e.created_at < start.toISOString()) return;
       if (!inHours(e.created_at)) return;
       if (destOf(e) === "UNKNOWN") return; // penalized below
-      addPts(e.actor_id, 0.3, "Manual stall check-ins");
+      addPts(e.actor_id, 0.3, "Locations logged");
     });
     // ---- unlogged locations (-1 each; automatic Huri moves never count) -----
     const UNLOGGED = "Unlogged locations";

@@ -256,11 +256,28 @@ export const getReport = createServerFn({ method: "POST" })
     const inHours = (iso: string) =>
       !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||
       (pacificHour(new Date(iso)) >= data.startHour && pacificHour(new Date(iso)) < data.endHour!);
+    // Latest completed staging request per car: a CP check-in within 30 minutes
+    // of completion is that same staging work, already credited at +1.2.
+    const stageDoneAt = new Map<string, number>();
+    list.forEach((r) => {
+      if (kindOf(r) !== "stage" || r.status !== "completed" || !r.ro_number) return;
+      const at = r.completed_at ?? r.claimed_at;
+      if (!at) return;
+      const key = `${r.dealership_id}|${r.ro_number}`;
+      stageDoneAt.set(key, Math.max(stageDoneAt.get(key) ?? 0, new Date(at).getTime()));
+    });
     events.forEach((e) => {
       if (e.event_type === "deleted" || !e.actor_id) return;
       if (start && e.created_at < start.toISOString()) return;
       if (!inHours(e.created_at)) return;
-      if (destOf(e) === "UNKNOWN") return; // not a real location — never earns points
+      const dest = destOf(e);
+      if (!dest || dest === "UNKNOWN") return; // not a real location — never earns points
+      // Automated work destinations are already credited elsewhere — no bonus.
+      if (dest === "BAY" || dest.startsWith("BAY ") || dest === "TAKEN" || dest === "WASH") return;
+      if (dest === "CP") {
+        const doneAt = stageDoneAt.get(`${e.dealership_id}|${e.ro_number}`);
+        if (doneAt && e.created_at <= new Date(doneAt + 30 * 60_000).toISOString()) return;
+      }
       addPts(e.actor_id, 0.3, "Locations logged");
     });
     // ---- unlogged locations (-1 each; automatic Huri moves never count) -----

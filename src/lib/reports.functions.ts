@@ -285,7 +285,7 @@ export const getReport = createServerFn({ method: "POST" })
     const realMoveIn = (dealer: string, ro: string, from: string, to: string) =>
       events.some((e) =>
         e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
-        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN"; })());
+        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
     const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
     const byRo = new Map<string, Row[]>();
     live.forEach((r) => {
@@ -318,7 +318,7 @@ export const getReport = createServerFn({ method: "POST" })
       const k = kindOf(next);
       if (k === "park" || k === "wash") return; // proper hand-off
       if (!inHours(next.created_at)) return;
-      if (start && next.created_at < start.toISOString()) return;
+      if (start && arrived < start.toISOString()) return; // history before the range isn't loaded
       if (!realMoveIn(r.dealership_id, r.ro_number, arrived, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
     });
     // Moves to UNKNOWN are never penalized: historically most were automatic

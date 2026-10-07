@@ -18,7 +18,6 @@ import { Route as FlaggedRouteImport } from './routes/flagged'
 import { Route as HelpRouteImport } from './routes/help'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as LotRouteImport } from './routes/lot'
-import { Route as NaaPreviewRouteImport } from './routes/naa-preview'
 import { Route as ParkRouteImport } from './routes/park'
 import { Route as ParkRequestRouteImport } from './routes/park-request'
 import { Route as PartsRouteImport } from './routes/parts'
@@ -87,11 +86,6 @@ const InboxRoute = InboxRouteImport.update({
 const LotRoute = LotRouteImport.update({
   id: '/lot',
   path: '/lot',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NaaPreviewRoute = NaaPreviewRouteImport.update({
-  id: '/naa-preview',
-  path: '/naa-preview',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ParkRoute = ParkRouteImport.update({
@@ -228,7 +222,6 @@ export interface FileRoutesByFullPath {
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
-  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -264,7 +257,6 @@ export interface FileRoutesByTo {
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
-  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -301,7 +293,6 @@ export interface FileRoutesById {
   '/help': typeof HelpRoute
   '/inbox': typeof InboxRoute
   '/lot': typeof LotRoute
-  '/naa-preview': typeof NaaPreviewRoute
   '/park': typeof ParkRoute
   '/park-request': typeof ParkRequestRoute
   '/parts': typeof PartsRoute
@@ -339,7 +330,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
-    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -375,7 +365,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
-    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -411,7 +400,6 @@ export interface FileRouteTypes {
     | '/help'
     | '/inbox'
     | '/lot'
-    | '/naa-preview'
     | '/park'
     | '/park-request'
     | '/parts'
@@ -448,7 +436,6 @@ export interface RootRouteChildren {
   HelpRoute: typeof HelpRoute
   InboxRoute: typeof InboxRoute
   LotRoute: typeof LotRoute
-  NaaPreviewRoute: typeof NaaPreviewRoute
   ParkRoute: typeof ParkRoute
   ParkRequestRoute: typeof ParkRequestRoute
   PartsRoute: typeof PartsRoute
@@ -538,13 +525,6 @@ declare module '@tanstack/react-router' {
       path: '/lot'
       fullPath: '/lot'
       preLoaderRoute: typeof LotRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/naa-preview': {
-      id: '/naa-preview'
-      path: '/naa-preview'
-      fullPath: '/naa-preview'
-      preLoaderRoute: typeof NaaPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/park': {
@@ -728,7 +708,6 @@ const rootRouteChildren: RootRouteChildren = {
   HelpRoute: HelpRoute,
   InboxRoute: InboxRoute,
   LotRoute: LotRoute,
-  NaaPreviewRoute: NaaPreviewRoute,
   ParkRoute: ParkRoute,
   ParkRequestRoute: ParkRequestRoute,
   PartsRoute: PartsRoute,

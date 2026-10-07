@@ -308,21 +308,42 @@ export const getReport = createServerFn({ method: "POST" })
         addPts(r.claimed_by, -1, UNLOGGED);
       }
     });
-    // b) Car left a tech's bay with no hand-off. Custody starts when the car
-    //    reached the bay (claim time). A park or wash request clears it; otherwise
-    //    the next pickup's snapshot location shows whether a real spot was logged.
-    live.forEach((r) => {
-      if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.requested_by || !r.ro_number) return;
-      const arrived = r.claimed_at ?? r.created_at;
-      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)?.find((n) => n.id !== r.id && n.created_at > arrived);
-      if (!next) return; // car still in custody — nothing to judge yet
-      const k = kindOf(next);
-      if (k === "park" || k === "wash") return; // proper hand-off
-      if (!inHours(next.created_at)) return;
-      if (start && arrived < start.toISOString()) return; // history before the range isn't loaded
-      const snap = (next.lot_position ?? "").trim().toUpperCase() || "UNKNOWN";
-      if (snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
-        addPts(r.requested_by, -1, UNLOGGED);
+    // b) Car left a tech's bay with no hand-off, judged once per BAY STAY.
+    //    Consecutive tech pickups by the same tech are one stay. A park or wash
+    //    request, or the tech logging a real spot, clears the stay; otherwise the
+    //    first request from anyone else shows (via its snapshot) where the car was.
+    const isRealSpot = (d: string | null) =>
+      !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY ");
+    byRo.forEach((list) => {
+      for (let i = 0; i < list.length; i++) {
+        const r = list[i];
+        if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.requested_by) continue;
+        const tech = r.requested_by;
+        const prev = i > 0 ? list[i - 1] : null;
+        if (prev && kindOf(prev) === "pickup_tech" && prev.requested_by === tech) continue; // same stay
+        const arrived = r.claimed_at ?? r.created_at;
+        if (start && arrived < start.toISOString()) continue;
+        let ender: Row | null = null;
+        for (let j = i + 1; j < list.length; j++) {
+          const n = list[j];
+          if (n.created_at <= arrived) continue;
+          if (kindOf(n) === "pickup_tech" && n.requested_by === tech) continue; // still in the bay
+          ender = n;
+          break;
+        }
+        if (!ender) continue; // still in custody
+        const k = kindOf(ender);
+        if (k === "park" || k === "wash") continue; // proper hand-off
+        if (!inHours(ender.created_at)) continue;
+        const selfLogged = events.some((e) =>
+          e.actor_id === tech && e.event_type !== "deleted" && e.dealership_id === r.dealership_id &&
+          e.ro_number === r.ro_number && e.created_at >= arrived && e.created_at <= ender!.created_at &&
+          isRealSpot(destOf(e)));
+        if (selfLogged) continue;
+        const snap = (ender.lot_position ?? "").trim().toUpperCase() || "UNKNOWN";
+        if (snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
+          addPts(tech, -1, UNLOGGED);
+        }
       }
     });
     // Moves to UNKNOWN are never penalized: historically most were automatic

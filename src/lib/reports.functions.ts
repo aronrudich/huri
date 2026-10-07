@@ -248,8 +248,8 @@ export const getReport = createServerFn({ method: "POST" })
       breakdownBy.set(id, b);
     };
     const CAT: Record<string, string> = {
-      pickup_customer: "Customer deliveries", pickup_tech: "Technician bay deliveries",
-      stage: "Staging", park: "Lot park requests", parts: "Parts runs", wash: "Wash runs",
+      pickup_customer: "Customer deliveries", pickup_tech: "Technician deliveries",
+      stage: "Staging", park: "Park requests", parts: "Parts runs", wash: "Wash",
     };
     durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
     // Manual add/edit of car locations (automatic moves carry no actor).
@@ -261,7 +261,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (start && e.created_at < start.toISOString()) return;
       if (!inHours(e.created_at)) return;
       if (destOf(e) === "UNKNOWN") return; // penalized below
-      addPts(e.actor_id, 0.3, "Manual stall check-ins");
+      addPts(e.actor_id, 0.3, "Locations logged");
     });
     // ---- unlogged locations (-1 each; automatic Huri moves never count) -----
     const UNLOGGED = "Unlogged locations";

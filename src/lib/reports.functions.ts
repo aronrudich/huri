@@ -287,9 +287,10 @@ export const getReport = createServerFn({ method: "POST" })
         e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
         e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
     const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
+    // Parts runs and the "picked up" shortcut say nothing about where a car is.
     const byRo = new Map<string, Row[]>();
     live.forEach((r) => {
-      if (!r.ro_number) return;
+      if (!r.ro_number || r.status === "picked_up" || kindOf(r) === "parts") return;
       const k = `${r.dealership_id}|${r.ro_number}`;
       (byRo.get(k) ?? byRo.set(k, []).get(k)!).push(r);
     });
@@ -308,18 +309,21 @@ export const getReport = createServerFn({ method: "POST" })
       }
     });
     // b) Car left a tech's bay with no hand-off. Custody starts when the car
-    //    reached the bay (claim time); a park or wash request, or any real spot
-    //    logged before the next pickup request, clears it.
+    //    reached the bay (claim time). A park or wash request clears it; otherwise
+    //    the next pickup's snapshot location shows whether a real spot was logged.
     live.forEach((r) => {
       if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.requested_by || !r.ro_number) return;
       const arrived = r.claimed_at ?? r.created_at;
-      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)!.find((n) => n.id !== r.id && n.created_at > arrived);
+      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)?.find((n) => n.id !== r.id && n.created_at > arrived);
       if (!next) return; // car still in custody — nothing to judge yet
       const k = kindOf(next);
       if (k === "park" || k === "wash") return; // proper hand-off
       if (!inHours(next.created_at)) return;
       if (start && arrived < start.toISOString()) return; // history before the range isn't loaded
-      if (!realMoveIn(r.dealership_id, r.ro_number, arrived, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
+      const snap = normalizeSpot(next.lot_position);
+      if (!snap || snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
+        addPts(r.requested_by, -1, UNLOGGED);
+      }
     });
     // Moves to UNKNOWN are never penalized: historically most were automatic
     // customer-pickup archives and spot-displacement bumps, not employee choices.

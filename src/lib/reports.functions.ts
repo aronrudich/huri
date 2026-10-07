@@ -320,8 +320,8 @@ export const getReport = createServerFn({ method: "POST" })
       if (k === "park" || k === "wash") return; // proper hand-off
       if (!inHours(next.created_at)) return;
       if (start && arrived < start.toISOString()) return; // history before the range isn't loaded
-      const snap = normalizeSpot(next.lot_position);
-      if (!snap || snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
+      const snap = (next.lot_position ?? "").trim().toUpperCase() || "UNKNOWN";
+      if (snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
         addPts(r.requested_by, -1, UNLOGGED);
       }
     });

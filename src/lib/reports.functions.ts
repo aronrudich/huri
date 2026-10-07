@@ -252,6 +252,13 @@ export const getReport = createServerFn({ method: "POST" })
       stage: "Staging", park: "Park requests", parts: "Parts runs", wash: "Wash",
     };
     durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
+    // Technicians earn +0.3 for every request they submit (car, parts, park, wash).
+    list.forEach((r) => {
+      if (!r.requested_by || !isTechSource(r.source_role)) return;
+      if (r.status === "canceled" || r.status === "cancelled") return;
+      if (!inHours(r.created_at)) return;
+      addPts(r.requested_by, 0.3, "Requests submitted");
+    });
     // Manual add/edit of car locations (automatic moves carry no actor).
     const inHours = (iso: string) =>
       !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||

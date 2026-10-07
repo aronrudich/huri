@@ -17,6 +17,7 @@ export type EmployeeStat = {
   anomalies: number;
   byKind: Record<string, number>;
   points: number;
+  breakdown: Record<string, { points: number; count: number }>;
 };
 
 export type SubmitterStat = {
@@ -117,14 +118,14 @@ export const getReport = createServerFn({ method: "POST" })
     type Row = {
       id: string; kind: string | null; is_staged: boolean | null; status: string;
       created_at: string; claimed_at: string | null; claimed_by: string | null;
-      requested_by: string | null; source_role: string | null;
+      requested_by: string | null; source_role: string | null; completed_at: string | null;
       lot_position: string | null; ro_number: string | null; dealership_id: string;
     };
     const rows: Row[] = [];
     for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
       let query = supabase
         .from("pickup_requests")
-        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, lot_position, ro_number, dealership_id")
+        .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, completed_at, lot_position, ro_number, dealership_id")
         .order("created_at", { ascending: false })
         .order("id", { ascending: false })
         .range(offset, offset + PAGE - 1);
@@ -238,8 +239,19 @@ export const getReport = createServerFn({ method: "POST" })
       return 1.3;
     };
     const pointsByEmployee = new Map<string, number>();
-    const addPts = (id: string, n: number) => pointsByEmployee.set(id, (pointsByEmployee.get(id) ?? 0) + n);
-    durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row)));
+    const breakdownBy = new Map<string, Record<string, { points: number; count: number }>>();
+    const addPts = (id: string, n: number, cat: string) => {
+      pointsByEmployee.set(id, (pointsByEmployee.get(id) ?? 0) + n);
+      const b = breakdownBy.get(id) ?? {};
+      const c = b[cat] ?? { points: 0, count: 0 };
+      c.points += n; c.count += 1; b[cat] = c;
+      breakdownBy.set(id, b);
+    };
+    const CAT: Record<string, string> = {
+      pickup_customer: "Customer deliveries", pickup_tech: "Technician bay deliveries",
+      stage: "Staging", park: "Lot park requests", parts: "Parts runs", wash: "Wash runs",
+    };
+    durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
     // Manual add/edit of car locations (automatic moves carry no actor).
     const inHours = (iso: string) =>
       !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||
@@ -248,7 +260,43 @@ export const getReport = createServerFn({ method: "POST" })
       if (e.event_type === "deleted" || !e.actor_id) return;
       if (start && e.created_at < start.toISOString()) return;
       if (!inHours(e.created_at)) return;
-      addPts(e.actor_id, 0.3);
+      if (destOf(e) === "UNKNOWN") return; // penalized below
+      addPts(e.actor_id, 0.3, "Manual stall check-ins");
+    });
+    // ---- unlogged locations (-1 each; automatic Huri moves never count) -----
+    const UNLOGGED = "Unlogged locations";
+    const realMoveIn = (dealer: string, ro: string, from: string, to: string) =>
+      events.some((e) =>
+        e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
+        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN"; })());
+    const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
+    const byRo = new Map<string, Row[]>();
+    live.forEach((r) => {
+      if (!r.ro_number) return;
+      const k = `${r.dealership_id}|${r.ro_number}`;
+      (byRo.get(k) ?? byRo.set(k, []).get(k)!).push(r);
+    });
+    byRo.forEach((list) => list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
+    // a) Park request completed without logging a stall.
+    live.forEach((r) => {
+      if (kindOf(r) !== "park" || r.status !== "completed" || !r.claimed_by || !r.claimed_at || !r.ro_number) return;
+      if (!inHours(r.created_at)) return;
+      const until = new Date(new Date(r.completed_at ?? r.claimed_at).getTime() + 30 * 60_000).toISOString();
+      if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, until)) addPts(r.claimed_by, -1, UNLOGGED);
+    });
+    // b) Car left a tech's bay with no park request and no stall logged.
+    live.forEach((r) => {
+      if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.completed_at || !r.requested_by || !r.ro_number) return;
+      if (!inHours(r.completed_at)) return;
+      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)!.find((n) => n.created_at > r.completed_at!);
+      if (!next || kindOf(next) === "park") return;
+      if (!realMoveIn(r.dealership_id, r.ro_number, r.completed_at, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
+    });
+    // c) A known car manually set to Unknown.
+    events.forEach((e) => {
+      if (!e.actor_id || e.event_type !== "moved" || destOf(e) !== "UNKNOWN") return;
+      if (!inHours(e.created_at)) return;
+      addPts(e.actor_id, -1, UNLOGGED);
     });
     // Photos uploaded onto a car earn a small bonus.
     {
@@ -262,7 +310,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (photosError) throw photosError;
       (photos ?? []).forEach((p) => {
         if (!p.uploaded_by || !inHours(p.created_at)) return;
-        addPts(p.uploaded_by, 0.2);
+        addPts(p.uploaded_by, 0.2, "Vehicle photos");
       });
     }
 
@@ -358,6 +406,7 @@ export const getReport = createServerFn({ method: "POST" })
         anomalies: entry?.anomalies ?? 0,
         byKind: entry?.byKind ?? {},
         points: Math.round((pointsByEmployee.get(id) ?? 0) * 10) / 10,
+        breakdown: breakdownBy.get(id) ?? {},
       };
     }).sort((a, b) => b.claims - a.claims || a.name.localeCompare(b.name));
 

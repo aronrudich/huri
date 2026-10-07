@@ -301,7 +301,7 @@ function ReportsPage() {
                                   </li>
                                 ))}
                                 <li className="flex items-center justify-between border-t border-border pt-1 font-bold">
-                                  <span>Net total</span><span>{e.points.toFixed(1)} pts</span>
+                                  <span>Total</span><span>{e.points.toFixed(1)} pts</span>
                                 </li>
                               </ul>
                             )}

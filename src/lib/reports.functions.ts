@@ -285,7 +285,7 @@ export const getReport = createServerFn({ method: "POST" })
     const realMoveIn = (dealer: string, ro: string, from: string, to: string) =>
       events.some((e) =>
         e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
-        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN"; })());
+        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
     const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
     const byRo = new Map<string, Row[]>();
     live.forEach((r) => {
@@ -294,20 +294,32 @@ export const getReport = createServerFn({ method: "POST" })
       (byRo.get(k) ?? byRo.set(k, []).get(k)!).push(r);
     });
     byRo.forEach((list) => list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
-    // a) Park request completed without logging a spot.
+    // a) Park request claimed but no real spot logged from claim until 30 min
+    //    after it left the list. Anchored at claim, never only at the late archive time.
     live.forEach((r) => {
       if (kindOf(r) !== "park" || r.status !== "completed" || !r.claimed_by || !r.claimed_at || !r.ro_number) return;
-      if (!inHours(r.created_at)) return;
-      const until = new Date(new Date(r.completed_at ?? r.claimed_at).getTime() + 30 * 60_000).toISOString();
-      if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, until)) addPts(r.claimed_by, -1, UNLOGGED);
+      if (!inHours(r.claimed_at)) return;
+      const endMs = Math.max(
+        new Date(r.claimed_at).getTime() + 30 * 60_000,
+        r.completed_at ? new Date(r.completed_at).getTime() + 30 * 60_000 : 0,
+      );
+      if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, new Date(endMs).toISOString())) {
+        addPts(r.claimed_by, -1, UNLOGGED);
+      }
     });
-    // b) Car left a tech's bay with no park request and no spot logged.
+    // b) Car left a tech's bay with no hand-off. Custody starts when the car
+    //    reached the bay (claim time); a park or wash request, or any real spot
+    //    logged before the next pickup request, clears it.
     live.forEach((r) => {
-      if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.completed_at || !r.requested_by || !r.ro_number) return;
-      if (!inHours(r.completed_at)) return;
-      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)!.find((n) => n.created_at > r.completed_at!);
-      if (!next || kindOf(next) === "park") return;
-      if (!realMoveIn(r.dealership_id, r.ro_number, r.completed_at, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
+      if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.requested_by || !r.ro_number) return;
+      const arrived = r.claimed_at ?? r.created_at;
+      const next = byRo.get(`${r.dealership_id}|${r.ro_number}`)!.find((n) => n.id !== r.id && n.created_at > arrived);
+      if (!next) return; // car still in custody — nothing to judge yet
+      const k = kindOf(next);
+      if (k === "park" || k === "wash") return; // proper hand-off
+      if (!inHours(next.created_at)) return;
+      if (start && arrived < start.toISOString()) return; // history before the range isn't loaded
+      if (!realMoveIn(r.dealership_id, r.ro_number, arrived, next.created_at)) addPts(r.requested_by, -1, UNLOGGED);
     });
     // Moves to UNKNOWN are never penalized: historically most were automatic
     // customer-pickup archives and spot-displacement bumps, not employee choices.

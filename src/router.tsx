@@ -1,14 +1,14 @@
 import { QueryClient } from "@tanstack/react-query";
 import { createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
-import { attachQueryPersistence } from "./lib/query-persist";
+import { clearPersistedQueryCache } from "./lib/query-persist";
 
 export const getRouter = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
-        // Cached data must survive long enough to be worth writing to storage.
-        gcTime: 24 * 60 * 60 * 1000,
+        // In-memory only: keeps tab switches instant during a session.
+        gcTime: 45 * 60 * 1000,
         // Coming back to a suspended phone must re-check the server, and a
         // request killed mid-flight by sleep should retry instead of hanging.
         refetchOnWindowFocus: true,
@@ -19,7 +19,8 @@ export const getRouter = () => {
     },
   });
 
-  attachQueryPersistence(queryClient);
+  // Remove stale snapshots saved by older versions of the app.
+  clearPersistedQueryCache();
 
   const router = createRouter({
     routeTree,

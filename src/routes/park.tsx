@@ -91,7 +91,7 @@ function ParkPage() {
       setExistingId(data.id);
       setRo(data.ro_number ?? "");
       setModel(data.car_model ?? "");
-      setPos(data.lot_position === "UNKNOWN" || data.lot_position === "TAKEN" ? "" : data.lot_position);
+      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
       setNotes(data.notes ?? "");
       setStaged(!!data.is_staged);
       setSavedPos(data.lot_position ?? null);
@@ -389,12 +389,15 @@ function BlockingInfo({ spot, carsBySpot, bayTech }: { spot: string | null; cars
   const describe = (c: MapCar) =>
     `${c.lot_position} (${c.ro_number ? `RO #${c.ro_number}` : "no RO"}${c.car_model ? ` · ${c.car_model}` : ""})`;
 
+  if (normalized === "TAKEN" || (!blockedBy.length && !blocking.length && !(normalized === "BAY" && bayTech))) return null;
   return (
     <div className="rounded-xl bg-surface px-3 py-2 text-sm">
-      <p>
-        <span className="text-muted-foreground">Location:</span>{" "}
-        <span className="font-semibold">{locationLabel(normalized, bayTech)}</span>
-      </p>
+      {normalized === "BAY" && bayTech && (
+        <p>
+          <span className="text-muted-foreground">Location:</span>{" "}
+          <span className="font-semibold">{locationLabel(normalized, bayTech)}</span>
+        </p>
+      )}
       {isSv && blockedBy.length > 0 && (
         <p className="mt-1 text-xs text-muted-foreground">
           <span className="font-medium text-foreground">Blocked by:</span>{" "}

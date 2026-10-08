@@ -126,7 +126,7 @@ export function CarHistory({ ro }: { ro: string }) {
     requests.some((r) => Math.abs(new Date(r.created_at).getTime() - new Date(e.created_at).getTime()) <= 2000);
 
   const entries: Entry[] = [
-    ...events.filter((e) => !isAutoLogAtSubmission(e)).map((e) => ({
+    ...events.filter((e) => !isAutoLogAtSubmission(e) && !(e.event_type === "moved" && !e.actor_id)).map((e) => ({
       key: `e-${e.id}`,
       at: e.created_at,
       title: CAR_TITLES[e.event_type] ?? e.event_type,

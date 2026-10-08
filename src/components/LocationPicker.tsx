@@ -17,6 +17,8 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "OTHER", label: "Other", detail: "Custom Location" },
   { id: "UNKNOWN", label: "Unknown", detail: "Not In A Spot" },
 ];
+// Shown when the car currently sits at TAKEN, but never offered as a manual choice.
+const TAKEN_OPTION = { id: "TAKEN" as LocationChoice, label: "Taken", detail: "Taken by Customer" };
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
   const [open, setOpen] = useState(false);
@@ -63,7 +65,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   };
 
 
-  const selected = OPTIONS.find((option) => option.id === choice);
+  const selected = choice === "TAKEN" ? TAKEN_OPTION : OPTIONS.find((option) => option.id === choice);
 
   return (
     <div ref={rootRef}>

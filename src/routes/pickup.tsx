@@ -636,7 +636,7 @@ function PickupPage() {
                       <span className="text-muted-foreground">Location:</span>{" "}
                       <span className="font-semibold">
                         {hasCarRecord
-                          ? locationLabel(effectiveSpot, liveCar?.bay_tech)
+                          ? locationLabel(effectiveSpot, liveCar?.bay_tech || (isTech ? p.advisor_name : null))
                           : "Unknown"}
                       </span>
                     </p>

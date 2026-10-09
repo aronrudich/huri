@@ -30,7 +30,14 @@ type MapCar = {
 type ParkSearch = { ro?: string; id?: string; spot?: string; from?: string };
 
 export const Route = createFileRoute("/park")({
-  head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Park a Car · Huri" },
+    { name: "description", content: "Update a vehicle's current location and parking details." },
+    { property: "og:title", content: "Park a Car · Huri" },
+    { property: "og:description", content: "Update a vehicle's current location and parking details." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): ParkSearch => ({
     ro: typeof s.ro === "string" ? s.ro : undefined,
     id: typeof s.id === "string" ? s.id : undefined,

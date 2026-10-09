@@ -16,7 +16,14 @@ import { PhotoBadge } from "@/components/PhotoBadge";
 
 
 export const Route = createFileRoute("/lot")({
-  head: () => ({ meta: [{ title: "Lot · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Lot Map · Huri" },
+    { name: "description", content: "View current vehicle locations across the company lot." },
+    { property: "og:title", content: "Lot Map · Huri" },
+    { property: "og:description", content: "View current vehicle locations across the company lot." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: LotPage,
 });
 

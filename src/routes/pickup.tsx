@@ -32,7 +32,14 @@ const isTechSource = (role: string | null | undefined) =>
 
 
 export const Route = createFileRoute("/pickup")({
-  head: () => ({ meta: [{ title: "Pickup Queue · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Pickup Queue · Huri" },
+    { name: "description", content: "Manage vehicle pickups, parking requests, and customer arrivals." },
+    { property: "og:title", content: "Pickup Queue · Huri" },
+    { property: "og:description", content: "Manage vehicle pickups, parking requests, and customer arrivals." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PickupPage,
 });
 

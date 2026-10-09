@@ -30,7 +30,14 @@ type MapCar = {
 type ParkSearch = { ro?: string; id?: string; spot?: string; from?: string };
 
 export const Route = createFileRoute("/park")({
-  head: () => ({ meta: [{ title: "Park a Car · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Park a Car · Huri" },
+    { name: "description", content: "Update a vehicle's current location and parking details." },
+    { property: "og:title", content: "Park a Car · Huri" },
+    { property: "og:description", content: "Update a vehicle's current location and parking details." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): ParkSearch => ({
     ro: typeof s.ro === "string" ? s.ro : undefined,
     id: typeof s.id === "string" ? s.id : undefined,
@@ -354,7 +361,7 @@ function ParkPage() {
             <div className="min-w-0">
               <p className="truncate text-base font-semibold">SV lot map</p>
               <p className="text-xs text-muted-foreground">
-                <span className="font-semibold text-primary">{mapSpot}</span> (blue)
+                Current location: <span className="font-semibold">{mapSpot}</span>
               </p>
             </div>
             <button
@@ -367,7 +374,7 @@ function ParkPage() {
             </button>
           </div>
           <div className="min-h-0 flex-1 overflow-hidden px-3 py-2 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-            <LotMap spots={svSpots} carsBySpot={carsBySpot} highlightSpot={mapSpot} staticView />
+            <LotMap spots={svSpots} carsBySpot={carsBySpot} staticView />
           </div>
         </div>
       )}

@@ -14,6 +14,11 @@ export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "WASH" | "TAKEN" | "OT
 export const MIN_SPOT = 1;
 export const MAX_SPOT = 147;
 
+/** Blue map locations are reserved for active pickups, never park/wash/stage work. */
+export function isPickupMapRequest(kind: string | null | undefined, isStaged?: boolean | null): boolean {
+  return kind === "pickup" && !isStaged;
+}
+
 /** Normalize a raw spot string to canonical uppercase form, or null if invalid. */
 export function normalizeSpot(raw: string | null | undefined): string | null {
   if (raw == null) return null;

@@ -191,8 +191,8 @@ export function LotMap({
 
 
 
-  // Read-only snapshot: numbered in reading order (1 top-left, 147
-  // bottom-right). Always fits its container — no scrolling.
+  // Read-only snapshot. Mobile keeps its established vertical order; desktop
+  // mirrors the physical lot with 1 bottom-left and 147 top-right.
   if (staticView) {
     return (
       <div className="h-full w-full overflow-hidden">
@@ -212,7 +212,7 @@ export function LotMap({
             gridTemplateColumns: `repeat(${ROWS}, minmax(0, 1fr))`,
           }}
         >
-          {gridCells("xs", "reading-h")}
+          {gridCells("xs", "h")}
         </div>
 
       </div>

@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { Check, LoaderCircle } from "lucide-react";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
-import { getArrivalInfo, submitArrival } from "@/lib/arrive.functions";
+import { getArrivalInfo, markCustomerArrived, submitArrival } from "@/lib/arrive.functions";
 
 /**
  * Customer-facing arrival screen. No sign-in, no navigation, no app chrome:
@@ -238,17 +239,35 @@ function ArrivePage() {
   const [meridiem, setMeridiem] = useState<"AM" | "PM">(initial.meridiem);
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
+  const [alreadyHere, setAlreadyHere] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitArrivalFn = useServerFn(submitArrival);
+  const markCustomerArrivedFn = useServerFn(markCustomerArrived);
 
   const submit = async () => {
     setBusy(true);
     setError(null);
     try {
-      await submitArrival({ data: { slug, ro, date, hour, minute, meridiem } });
+      await submitArrivalFn({ data: { slug, ro, date, hour, minute, meridiem } });
+      setAlreadyHere(false);
       setDone(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       setError(msg.includes("passed") || msg.includes("later day") ? "La hora que eligió ya pasó. Por favor elija una hora más tarde." : "No pudimos guardar su hora de llegada. Por favor intente de nuevo.");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const arriveNow = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      await markCustomerArrivedFn({ data: { slug, ro } });
+      setAlreadyHere(true);
+      setDone(true);
+    } catch {
+      setError("No pudimos avisar al equipo que ya llegó. Intente de nuevo o comuníquese con su asesor.");
     } finally {
       setBusy(false);
     }
@@ -276,19 +295,22 @@ function ArrivePage() {
             <Check className="h-8 w-8 text-primary" />
           </div>
           <p className="mt-6 text-2xl font-semibold tracking-tight">
-            Llegando {dayLabel(date, today)} a las {hour}:{String(minute).padStart(2, "0")} {meridiem}
+            {alreadyHere ? "Su llegada está confirmada" : `Llegando ${dayLabel(date, today)} a las ${hour}:${String(minute).padStart(2, "0")} ${meridiem}`}
           </p>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            ¡Excelente! Si sus planes cambian, puede actualizar su hora a través de este mismo enlace.
-            ¡Muchas gracias y nos vemos pronto!
+            {alreadyHere
+              ? "Avisamos al equipo que ya llegó. Traerán su vehículo lo antes posible."
+              : "¡Excelente! Si sus planes cambian, puede actualizar su hora a través de este mismo enlace. ¡Muchas gracias y nos vemos pronto!"}
           </p>
-          <button
-            type="button"
-            onClick={() => setDone(false)}
-            className="mt-7 w-full rounded-2xl bg-muted py-3.5 text-sm font-semibold text-foreground"
-          >
-            Cambiar mi hora
-          </button>
+          {!alreadyHere && (
+            <button
+              type="button"
+              onClick={() => setDone(false)}
+              className="mt-7 w-full rounded-2xl bg-muted py-3.5 text-sm font-semibold text-foreground"
+            >
+              Cambiar mi hora
+            </button>
+          )}
         </div>
       ) : (
         <div className="mt-12 w-full max-w-sm rounded-3xl bg-background p-7 shadow-xl">
@@ -363,6 +385,15 @@ function ArrivePage() {
           >
             {busy && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {info.currentEta ? "Actualizar hora de llegada" : "Confirmar hora de llegada"}
+          </button>
+          <button
+            type="button"
+            onClick={arriveNow}
+            disabled={busy || !ro}
+            className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-sm font-semibold text-foreground disabled:opacity-50"
+          >
+            {busy && <LoaderCircle className="h-4 w-4 animate-spin" />}
+            Ya estoy aquí
           </button>
         </div>
       )}

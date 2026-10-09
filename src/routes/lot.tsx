@@ -6,7 +6,7 @@ import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recov
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
-import { spotsForLot, lotOf, normalizeSpot, spotBadge, locationLabel, type LotId } from "@/lib/lot";
+import { spotsForLot, lotOf, normalizeSpot, spotBadge, locationLabel, isPickupMapRequest, type LotId } from "@/lib/lot";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
@@ -87,14 +87,13 @@ function LotPage() {
     return m;
   }, [cars]);
 
-  // A stall turns blue while its car is on the active pickup list, and
-  // checkered while it is only staged. If a different car has since been
-  // parked there, the stall stays red.
+  // A spot turns blue only while its car is being found for a pickup, and
+  // checkered while staged. Park and wash requests keep the normal map color.
   useEffect(() => {
     const next = new Set<string>();
     const staged = new Set<string>();
     activePickups.forEach((p) => {
-      if (p.kind === "parts") return;
+      if (!p.is_staged && !isPickupMapRequest(p.kind, p.is_staged)) return;
       const live = p.ro_number
         ? cars.find((c) => c.ro_number === p.ro_number)
         : undefined;
@@ -107,7 +106,7 @@ function LotPage() {
       const occupant = byPos[spot];
       if (occupant && occupant.ro_number !== p.ro_number) return;
       if (p.is_staged) staged.add(spot);
-      else next.add(spot);
+      else if (isPickupMapRequest(p.kind, p.is_staged)) next.add(spot);
     });
     // A real pickup always wins over a stage on the same spot.
     next.forEach((s) => staged.delete(s));

@@ -7,7 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMapRequest } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
@@ -132,7 +132,7 @@ function PickupPage() {
     },
   });
   // Spot to locate on the SV map overlay (null = overlay closed).
-  const [mapSpot, setMapSpot] = useState<string | null>(null);
+  const [mapSelection, setMapSelection] = useState<{ spot: string; highlight: boolean } | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -692,7 +692,10 @@ function PickupPage() {
 
                   {!isParts && (
                     <button
-                      onClick={() => effectiveSpot && setMapSpot(effectiveSpot)}
+                      onClick={() => effectiveSpot && setMapSelection({
+                        spot: effectiveSpot,
+                        highlight: isPickupMapRequest(p.kind, p.is_staged),
+                      })}
                       disabled={!effectiveSpot || lotOf(effectiveSpot) !== "sv"}
                       aria-label="Show on lot map"
                       className="flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent disabled:opacity-40"
@@ -738,17 +741,21 @@ function PickupPage() {
         })}
       </ul>
 
-      {mapSpot && (
+      {mapSelection && (
         <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
           <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
             <div className="min-w-0">
               <p className="truncate text-base font-semibold">SV lot map</p>
               <p className="text-xs text-muted-foreground">
-                Pick up <span className="font-semibold text-primary">{mapSpot}</span> (blue)
+                {mapSelection.highlight ? (
+                  <>Pick up <span className="font-semibold text-primary">{mapSelection.spot}</span> (blue)</>
+                ) : (
+                  <>Location <span className="font-semibold">{mapSelection.spot}</span></>
+                )}
               </p>
             </div>
             <button
-              onClick={() => setMapSpot(null)}
+              onClick={() => setMapSelection(null)}
               aria-label="Close map"
               className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-muted active:bg-accent"
             >
@@ -761,7 +768,7 @@ function PickupPage() {
             <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}
-              highlightSpot={mapSpot}
+              highlightSpot={mapSelection.highlight ? mapSelection.spot : null}
               staticView
             />
           </div>

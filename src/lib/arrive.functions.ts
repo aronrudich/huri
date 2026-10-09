@@ -160,3 +160,57 @@ export const submitArrival = createServerFn({ method: "POST" })
     await supabaseAdmin.from("pickup_requests").update({ eta_notified_at: new Date().toISOString() }).eq("id", pickupId);
     return { eta: etaIso };
   });
+
+export const markCustomerArrived = createServerFn({ method: "POST" })
+  .inputValidator((data: { slug: string; ro?: string }) =>
+    z.object({ slug: slugSchema, ro: roSchema }).parse(data))
+  .handler(async ({ data }): Promise<{ arrivedAt: string; alreadyMarked: boolean }> => {
+    const ro = data.ro?.trim();
+    if (!ro) throw new Error("This arrival link does not identify a vehicle.");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { notifyValetsOfArrival } = await import("./arrive.server");
+    const { data: company } = await supabaseAdmin
+      .from("dealerships")
+      .select("id")
+      .eq("slug", data.slug)
+      .maybeSingle();
+    if (!company) throw new Error("This arrival link is no longer active.");
+
+    const { data: request } = await supabaseAdmin
+      .from("pickup_requests")
+      .select("id, customer_eta, customer_arrived_at")
+      .eq("dealership_id", company.id)
+      .eq("ro_number", ro)
+      .in("status", ["unclaimed", "claimed"])
+      .not("customer_eta", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!request) throw new Error("We could not find an active arrival for this vehicle.");
+    if (request.customer_arrived_at) {
+      return { arrivedAt: request.customer_arrived_at, alreadyMarked: true };
+    }
+
+    const nowIso = new Date().toISOString();
+    const etaIsFuture = !!request.customer_eta && new Date(request.customer_eta).getTime() > Date.now();
+    const { error } = await supabaseAdmin
+      .from("pickup_requests")
+      .update({
+        customer_arrived_at: nowIso,
+        ...(etaIsFuture ? { customer_eta: nowIso } : {}),
+        eta_notified_at: nowIso,
+      } as never)
+      .eq("id", request.id)
+      .is("customer_arrived_at", null);
+    if (error) throw new Error("We couldn't notify the team that you're here.");
+
+    await notifyValetsOfArrival(supabaseAdmin, company.id, {
+      title: "🚗 Customer is here! (ETA)",
+      body: `RO #${ro} · Customer marked themselves here`,
+      url: "/pickup",
+      tag: `arrival-here-${request.id}`,
+      variant: "customer",
+    });
+    return { arrivedAt: nowIso, alreadyMarked: false };
+  });

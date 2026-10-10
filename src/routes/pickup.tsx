@@ -526,7 +526,7 @@ function PickupPage() {
                       ? "Technician pickup"
                       : "Pickup";
           const pillClass = arrived
-            ? "bg-destructive text-destructive-foreground animate-pulse"
+            ? "bg-primary text-primary-foreground animate-pulse"
             : customerEta && upcoming
             ? "bg-arrival/15 text-arrival"
             : isStaged

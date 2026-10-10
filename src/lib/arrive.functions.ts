@@ -187,23 +187,50 @@ export const markCustomerArrived = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
-    if (!request) throw new Error("We could not find an active arrival for this vehicle.");
-    if (request.customer_arrived_at) {
-      return { arrivedAt: request.customer_arrived_at, alreadyMarked: true };
-    }
-
     const nowIso = new Date().toISOString();
-    const etaIsFuture = !!request.customer_eta && new Date(request.customer_eta).getTime() > Date.now();
-    const { error } = await supabaseAdmin
-      .from("pickup_requests")
-      .update({
-        customer_arrived_at: nowIso,
-        ...(etaIsFuture ? { customer_eta: nowIso } : {}),
-        eta_notified_at: nowIso,
-      } as never)
-      .eq("id", request.id)
-      .is("customer_arrived_at", null);
-    if (error) throw new Error("We couldn't notify the team that you're here.");
+    let requestId: string;
+    if (request) {
+      if (request.customer_arrived_at) {
+        return { arrivedAt: request.customer_arrived_at, alreadyMarked: true };
+      }
+      const { error } = await supabaseAdmin
+        .from("pickup_requests")
+        .update({ customer_arrived_at: nowIso, customer_eta: nowIso, eta_notified_at: nowIso } as never)
+        .eq("id", request.id)
+        .is("customer_arrived_at", null);
+      if (error) throw new Error("We couldn't notify the team that you're here.");
+      requestId = request.id;
+    } else {
+      const { data: car } = await supabaseAdmin
+        .from("parked_cars")
+        .select("lot_position, car_model")
+        .eq("dealership_id", company.id)
+        .eq("ro_number", ro)
+        .limit(1)
+        .maybeSingle();
+      const { data: row, error } = await supabaseAdmin
+        .from("pickup_requests")
+        .insert({
+          dealership_id: company.id,
+          kind: "pickup",
+          source_role: "Customer",
+          status: "unclaimed",
+          ro_number: ro,
+          customer_eta: nowIso,
+          customer_arrived_at: nowIso,
+          eta_notified_at: nowIso,
+          lot_position: car?.lot_position ?? null,
+          car_model: car?.car_model ?? null,
+          advisor_name: "Customer - Arrived now",
+        } as never)
+        .select("id")
+        .single();
+      if (error || !row) {
+        console.error("arrived-now insert failed", error);
+        throw new Error("We couldn't notify the team that you're here.");
+      }
+      requestId = (row as { id: string }).id;
+    }
 
     await notifyValetsOfArrival(supabaseAdmin, company.id, {
       title: "🚗 Customer is here! (ETA)",

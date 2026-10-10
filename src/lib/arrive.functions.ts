@@ -236,7 +236,7 @@ export const markCustomerArrived = createServerFn({ method: "POST" })
       title: "🚗 Customer is here! (ETA)",
       body: `RO #${ro} · Customer marked themselves here`,
       url: "/pickup",
-      tag: `arrival-here-${request.id}`,
+      tag: `arrival-here-${requestId}`,
       variant: "customer",
     });
     return { arrivedAt: nowIso, alreadyMarked: false };

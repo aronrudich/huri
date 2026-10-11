@@ -506,3 +506,143 @@ function Mini({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
+
+type ReportData = Awaited<ReturnType<typeof getReport>>;
+
+const KIND_KEYS = ["pickup_customer", "pickup_tech", "stage", "park", "parts", "wash"] as const;
+const KIND_SHORT: Record<string, string> = {
+  pickup_customer: "Customer pickups", pickup_tech: "Tech pickups", stage: "Staging",
+  park: "Park requests", parts: "Parts", wash: "Wash",
+};
+
+type Metric = { key: string; label: string; group: string };
+const METRICS: Metric[] = [
+  ...KIND_KEYS.map((k) => ({ key: `c:${k}`, label: KIND_SHORT[k], group: "Claims" })),
+  { key: "c:all", label: "All claims", group: "Claims" },
+  ...KIND_KEYS.map((k) => ({ key: `s:${k}`, label: KIND_SHORT[k], group: "Submissions" })),
+  { key: "s:all", label: "All submissions", group: "Submissions" },
+  { key: "b:Locations logged", label: "Locations logged", group: "Lot & accuracy" },
+  { key: "b:Unlogged locations", label: "Unlogged locations", group: "Lot & accuracy" },
+  { key: "b:Vehicle photos", label: "Vehicle photos", group: "Lot & accuracy" },
+  { key: "p:total", label: "Total points", group: "Points" },
+];
+const GROUPS = ["Claims", "Submissions", "Lot & accuracy", "Points"];
+
+function CustomView({
+  data, roles, setRoles, metrics, setMetrics,
+}: {
+  data: ReportData;
+  roles: string[]; setRoles: (r: string[]) => void;
+  metrics: string[]; setMetrics: (m: string[]) => void;
+}) {
+  const subs = new Map((data.submitters ?? []).map((s) => [s.id, s]));
+  const emps = new Map((data.employees ?? []).map((e) => [e.id, e]));
+  const ids = [...new Set([...emps.keys(), ...subs.keys()])];
+  const roster = ids.map((id) => {
+    const e = emps.get(id); const s = subs.get(id);
+    return { id, name: e?.name ?? s?.name ?? "Employee", role: e?.role || s?.role || "Employee", e, s };
+  });
+  const allRoles = [...new Set(roster.map((r) => r.role))].sort();
+
+  const value = (r: (typeof roster)[number], key: string): number => {
+    const [t, k] = [key.slice(0, 1), key.slice(2)];
+    if (t === "c") {
+      if (k === "all") return r.e?.claims ?? 0;
+      const bk = r.e?.byKind ?? {};
+      return k === "pickup_customer" ? (bk.pickup_customer ?? 0) + (bk.pickup ?? 0) : bk[k] ?? 0;
+    }
+    if (t === "s") {
+      if (k === "all") return r.s?.submissions ?? 0;
+      const bk = r.s?.byKind ?? {};
+      return k === "pickup_customer" ? (bk.pickup_customer ?? 0) + (bk.pickup ?? 0) : bk[k] ?? 0;
+    }
+    if (t === "b") return r.e?.breakdown?.[k]?.count ?? 0;
+    return Math.round((r.e?.points ?? 0) * 10) / 10;
+  };
+
+  const toggle = (list: string[], v: string) => list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+  const pill = (on: boolean) =>
+    `rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+      on ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground active:bg-accent"
+    }`;
+
+  const rows = roster
+    .filter((r) => roles.length === 0 || roles.includes(r.role))
+    .map((r) => ({ ...r, vals: metrics.map((m) => value(r, m)) }))
+    .map((r) => ({ ...r, sum: r.vals.reduce((a, b) => a + b, 0) }))
+    .filter((r) => r.vals.some((v) => v !== 0))
+    .sort((a, b) => b.sum - a.sum || a.name.localeCompare(b.name));
+
+  return (
+    <>
+      <section className="space-y-2">
+        <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Employees</h2>
+        <div className="flex flex-wrap gap-1.5">
+          <button type="button" className={pill(roles.length === 0)} onClick={() => setRoles([])}>All</button>
+          {allRoles.map((r) => (
+            <button key={r} type="button" className={pill(roles.includes(r))} onClick={() => setRoles(toggle(roles, r))}>{r}</button>
+          ))}
+        </div>
+      </section>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-bold uppercase tracking-wide text-muted-foreground">Metrics</h2>
+          <div className="flex gap-3">
+            <button type="button" className="text-xs font-semibold text-primary active:opacity-60" onClick={() => setMetrics(METRICS.map((m) => m.key))}>Select all</button>
+            {metrics.length > 0 && (
+              <button type="button" className="text-xs font-semibold text-primary active:opacity-60" onClick={() => setMetrics([])}>Clear</button>
+            )}
+          </div>
+        </div>
+        {GROUPS.map((g) => (
+          <div key={g}>
+            <p className="mb-1 text-[11px] font-semibold text-muted-foreground">{g}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {METRICS.filter((m) => m.group === g).map((m) => (
+                <button key={m.key} type="button" className={pill(metrics.includes(m.key))} onClick={() => setMetrics(toggle(metrics, m.key))}>{m.label}</button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+      <section>
+        {metrics.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
+            Select one or more metrics above to view employee performance.
+          </p>
+        ) : rows.length === 0 ? (
+          <p className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Nothing matches in this window.</p>
+        ) : (
+          <ul className="space-y-2">
+            {rows.map((r, i) => (
+              <li key={r.id} className="rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-3">
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-bold text-primary">{i + 1}</span>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-semibold">{r.name}</p>
+                    <p className="truncate text-xs text-muted-foreground">{r.role}</p>
+                  </div>
+                  {metrics.length > 1 && (
+                    <p className="text-base font-bold">{Number.isInteger(r.sum) ? r.sum : r.sum.toFixed(1)}</p>
+                  )}
+                </div>
+                <div className="mt-2 flex flex-wrap gap-1.5 border-t border-border pt-2">
+                  {metrics.map((m, j) => {
+                    const meta = METRICS.find((x) => x.key === m)!;
+                    const prefix = meta.group === "Claims" ? "Claimed " : meta.group === "Submissions" ? "Submitted " : "";
+                    return (
+                      <span key={m} className="rounded-md bg-muted px-2 py-1 text-[11px]">
+                        <span className="text-muted-foreground">{prefix}{prefix ? meta.label.toLowerCase() : meta.label}:</span>{" "}
+                        <span className="font-semibold">{r.vals[j]}</span>
+                      </span>
+                    );
+                  })}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+    </>
+  );
+}

@@ -55,7 +55,9 @@ function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const [range, setRange] = useState<RangeKey>("day");
-  const [view, setView] = useState<"claiming" | "submitting" | "points">("claiming");
+  const [view, setView] = useState<"claiming" | "submitting" | "points" | "custom">("claiming");
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>([]);
   const [openSubmitter, setOpenSubmitter] = useState<string | null>(null);
   const [openPoints, setOpenPoints] = useState<string | null>(null);
   const [custom, setCustom] = useState<{ start: string | null; end: string | null }>({
@@ -128,12 +130,12 @@ function ReportsPage() {
           ))}
         </div>
         <div className="mt-2 flex gap-1 rounded-xl bg-muted p-1">
-          {([["claiming", "Claiming"], ["submitting", "Submitting"], ["points", "Points"]] as const).map(([key, label]) => (
+          {([["claiming", "Claiming"], ["submitting", "Submitting"], ["points", "Points"], ["custom", "Custom"]] as const).map(([key, label]) => (
             <button
               key={key}
               type="button"
               onClick={() => setView(key)}
-              className={`flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition-colors md:text-sm ${
+              className={`flex-1 rounded-lg px-1.5 py-2 text-[11px] font-semibold transition-colors md:text-sm ${
                 view === key
                   ? "bg-card text-foreground shadow-sm"
                   : "text-muted-foreground active:bg-accent"
@@ -257,19 +259,21 @@ function ReportsPage() {
 
         ) : data ? (
           <>
-            {view === "points" ? (() => {
+            {view === "custom" ? (
+              <CustomView
+                data={data}
+                roles={selectedRoles}
+                setRoles={setSelectedRoles}
+                metrics={selectedMetrics}
+                setMetrics={setSelectedMetrics}
+              />
+            ) : view === "points" ? (() => {
               const ranked = [...(data.employees ?? [])].sort((a, b) => b.points - a.points || a.name.localeCompare(b.name));
               const active = ranked.filter((e) => e.points !== 0 || Object.keys(e.breakdown ?? {}).length > 0);
               const top = active[0];
-              const total = data.totalPoints ?? 0;
+              void top;
               return (
                 <>
-                  <section className="grid grid-cols-2 gap-3">
-                    <Stat label="Total points" value={total.toFixed(1)} />
-                    <Stat label="Active employees" value={String(active.length)} />
-                    <Stat label="Top earner" value={top ? `${top.name} · ${top.points.toFixed(1)}` : "—"} />
-                    <Stat label="Avg points / person" value={active.length ? (total / active.length).toFixed(1) : "—"} />
-                  </section>
                   <section>
                     <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted-foreground">Points</h2>
                     {active.length === 0 ? (

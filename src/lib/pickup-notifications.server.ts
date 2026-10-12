@@ -203,6 +203,24 @@ export async function createPickupAndNotify(
       .maybeSingle();
     carExists = !!car;
     if (!lotPosition) lotPosition = car?.lot_position ?? null;
+    // If the car only shows a temporary destination because another request
+    // is claimed right now, snapshot where it physically was before that claim.
+    const temp = (lotPosition ?? "").toUpperCase();
+    if (["BAY", "CP", "WASH", "TAKEN"].includes(temp) && data.kind !== "park") {
+      const { data: active } = await supabase
+        .from("pickup_requests")
+        .select("lot_position")
+        .eq("dealership_id", caller.dealership_id)
+        .eq("ro_number", data.ro)
+        .eq("status", "claimed")
+        .order("claimed_at", { ascending: false })
+        .limit(5);
+      const physical = (active ?? []).map((r) => r.lot_position).find((s) => {
+        const u = (s ?? "").toUpperCase();
+        return !!u && !["BAY", "CP", "WASH", "TAKEN", "UNKNOWN"].includes(u);
+      });
+      if (physical) lotPosition = physical;
+    }
   }
 
   // Any submission (pickup, stage, wash, parts, park) for an RO Huri has never

@@ -478,7 +478,15 @@ function PickupPage() {
           // from its last bay visit is useless — show it as unknown instead.
           const staleBay =
             p.kind === "pickup" && isTech && snapshotSpot.toUpperCase() === "BAY";
-          const effectiveSpot = !isParts ? (staleBay ? "UNKNOWN" : snapshotSpot) : null;
+          // When the snapshot doesn't say where the car is, use the car's live
+          // spot if someone has logged a real one since.
+          const snapUp = snapshotSpot.toUpperCase();
+          const snapshotUseless = staleBay || snapUp === "UNKNOWN" || snapUp === "TAKEN" || snapUp === "";
+          const liveUp = (liveCar?.lot_position ?? "").toUpperCase();
+          const liveUsable = !!liveUp && liveUp !== "UNKNOWN" && liveUp !== "TAKEN" && !(p.kind === "pickup" && isTech && liveUp === "BAY");
+          const effectiveSpot = !isParts
+            ? (snapshotUseless ? (liveUsable ? liveCar!.lot_position : "UNKNOWN") : snapshotSpot)
+            : null;
           // The note typed with this request is the instruction for it — show it
           // first; only fall back to the car's saved note when none was submitted.
           const effectiveNotes = p.car_notes ?? displayCar?.notes ?? null;
@@ -728,6 +736,17 @@ function PickupPage() {
                         if (isStaged) patch.is_staged = false;
                         if (Object.keys(patch).length) {
                           await supabase.from("parked_cars").update(patch).eq("ro_number", p.ro_number);
+                          // Other open tickets for this car that caught the temporary "Bay"
+                          // while this one was claimed get the real spot back too.
+                          if (patch.lot_position) {
+                            await supabase.from("pickup_requests")
+                              .update({ lot_position: patch.lot_position })
+                              .eq("ro_number", p.ro_number)
+                              .in("status", ["unclaimed", "claimed"])
+                              .eq("lot_position", "BAY")
+                              .neq("id", p.id)
+                              .neq("kind", "park");
+                          }
                           await loadCars();
                         }
                       }

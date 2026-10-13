@@ -294,9 +294,51 @@ export const getReport = createServerFn({ method: "POST" })
         e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
         e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
     const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
+    // Custody lookback: a car can enter a tech's bay days before someone finds it
+    // unlogged. Load up to 30 days of earlier requests/events for in-range cars.
+    const priorRows: Row[] = [];
+    const priorEvents: Ev[] = [];
+    if (start) {
+      const ros = [...new Set(live.map((r) => r.ro_number).filter((x): x is string => !!x))];
+      const lookFrom = new Date(start.getTime() - 30 * 86_400_000).toISOString();
+      for (let i = 0; i < ros.length; i += 200) {
+        const chunk = ros.slice(i, i + 200);
+        for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+          const { data: batch, error } = await supabase
+            .from("pickup_requests")
+            .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, completed_at, lot_position, ro_number, dealership_id")
+            .in("ro_number", chunk)
+            .gte("created_at", lookFrom)
+            .lt("created_at", start.toISOString())
+            .order("created_at", { ascending: true })
+            .order("id", { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (error) throw error;
+          priorRows.push(...((batch ?? []) as Row[]).filter((r) => r.status !== "canceled" && r.status !== "cancelled"));
+          if (!batch || batch.length < PAGE) break;
+        }
+        for (let offset = 0; offset < 200_000; offset += PAGE) {
+          const { data: batch, error } = await supabase
+            .from("car_events")
+            .select("dealership_id, ro_number, event_type, detail, actor_id, created_at")
+            .in("ro_number", chunk)
+            .in("event_type", ["logged", "moved"])
+            .not("actor_id", "is", null)
+            .gte("created_at", lookFrom)
+            .lt("created_at", start.toISOString())
+            .order("created_at", { ascending: true })
+            .order("id", { ascending: true })
+            .range(offset, offset + PAGE - 1);
+          if (error) throw error;
+          priorEvents.push(...((batch ?? []) as Ev[]));
+          if (!batch || batch.length < PAGE) break;
+        }
+      }
+    }
+    const custodyEvents: Ev[] = [...priorEvents, ...events];
     // Parts runs and the "picked up" shortcut say nothing about where a car is.
     const byRo = new Map<string, Row[]>();
-    live.forEach((r) => {
+    [...priorRows, ...live].forEach((r) => {
       if (!r.ro_number || r.status === "picked_up" || kindOf(r) === "parts") return;
       const k = `${r.dealership_id}|${r.ro_number}`;
       (byRo.get(k) ?? byRo.set(k, []).get(k)!).push(r);
@@ -329,7 +371,6 @@ export const getReport = createServerFn({ method: "POST" })
         const prev = i > 0 ? list[i - 1] : null;
         if (prev && kindOf(prev) === "pickup_tech" && prev.requested_by === tech) continue; // same stay
         const arrived = r.claimed_at ?? r.created_at;
-        if (start && arrived < start.toISOString()) continue;
         let ender: Row | null = null;
         for (let j = i + 1; j < list.length; j++) {
           const n = list[j];
@@ -341,8 +382,11 @@ export const getReport = createServerFn({ method: "POST" })
         if (!ender) continue; // still in custody
         const k = kindOf(ender);
         if (k === "park" || k === "wash") continue; // proper hand-off
+        // Dated when someone else finds the car unlogged, not when it entered the bay.
+        if (start && ender.created_at < start.toISOString()) continue;
+        if (end && ender.created_at >= end.toISOString()) continue;
         if (!inHours(ender.created_at)) continue;
-        const selfLogged = events.some((e) =>
+        const selfLogged = custodyEvents.some((e) =>
           e.actor_id === tech && e.event_type !== "deleted" && e.dealership_id === r.dealership_id &&
           e.ro_number === r.ro_number && e.created_at >= arrived && e.created_at <= ender!.created_at &&
           isRealSpot(destOf(e)));

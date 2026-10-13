@@ -1,4 +1,5 @@
 # Roadmap
+- [ ] Replace legacy browser and home-screen icons with the approved wordmark and verify the served files.
 
 - [x] Fix history attribution: automated/background moves no longer stamped with a stale `parked_by` user
 - [x] History wording: "Requested by" / "Claimed by"

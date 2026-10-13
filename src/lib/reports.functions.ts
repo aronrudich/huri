@@ -371,7 +371,6 @@ export const getReport = createServerFn({ method: "POST" })
         const prev = i > 0 ? list[i - 1] : null;
         if (prev && kindOf(prev) === "pickup_tech" && prev.requested_by === tech) continue; // same stay
         const arrived = r.claimed_at ?? r.created_at;
-        if (start && arrived < start.toISOString()) continue;
         let ender: Row | null = null;
         for (let j = i + 1; j < list.length; j++) {
           const n = list[j];
@@ -383,8 +382,11 @@ export const getReport = createServerFn({ method: "POST" })
         if (!ender) continue; // still in custody
         const k = kindOf(ender);
         if (k === "park" || k === "wash") continue; // proper hand-off
+        // Dated when someone else finds the car unlogged, not when it entered the bay.
+        if (start && ender.created_at < start.toISOString()) continue;
+        if (end && ender.created_at >= end.toISOString()) continue;
         if (!inHours(ender.created_at)) continue;
-        const selfLogged = events.some((e) =>
+        const selfLogged = custodyEvents.some((e) =>
           e.actor_id === tech && e.event_type !== "deleted" && e.dealership_id === r.dealership_id &&
           e.ro_number === r.ro_number && e.created_at >= arrived && e.created_at <= ender!.created_at &&
           isRealSpot(destOf(e)));

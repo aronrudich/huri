@@ -41,6 +41,15 @@ export function PhotoViewer({
     if (photos.length === 0) onClose();
   }, [photos.length, onClose]);
 
+  // Preload neighbours so swiping is instant.
+  useEffect(() => {
+    if (!urls) return;
+    [index - 1, index + 1].forEach((i) => {
+      const u = photos[i] && urls[photos[i].storage_path];
+      if (u) { const img = new Image(); img.src = u; }
+    });
+  }, [index, urls, photos]);
+
   const photo = photos[index];
   if (!photo) return null;
   const url = urls?.[photo.storage_path];
@@ -97,7 +106,7 @@ export function PhotoViewer({
           )}
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => { e.stopPropagation(); onClose(); }}
             aria-label="Close photo"
             className="grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white"
           >

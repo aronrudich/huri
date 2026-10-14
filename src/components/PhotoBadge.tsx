@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Camera } from "lucide-react";
 import { type CarPhoto, hasUnseenPhotos, markPhotosSeen, useSignedPhotoUrls } from "@/lib/car-photos";
 import { PhotoViewer } from "@/components/PhotoViewer";
@@ -24,7 +24,18 @@ export function PhotoBadge({
   const [open, setOpen] = useState(false);
   const [unseen, setUnseen] = useState(() => hasUnseenPhotos(photos));
   const first = photos[0];
-  const { data: urls } = useSignedPhotoUrls(first ? [first.storage_path] : []);
+  // Same paths (and cache key) the viewer uses, so tapping opens with no wait.
+  const { data: urls } = useSignedPhotoUrls(photos.map((p) => p.storage_path));
+  // Warm the browser image cache in the background for the full-size photo.
+  useEffect(() => {
+    if (!urls || typeof window === "undefined") return;
+    const preload = () => photos.slice(0, 3).forEach((p) => {
+      const u = urls[p.storage_path];
+      if (u) { const img = new Image(); img.decoding = "async"; img.src = u; }
+    });
+    const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => number }).requestIdleCallback;
+    if (idle) idle(preload); else window.setTimeout(preload, 200);
+  }, [urls, photos]);
   if (!first) return null;
   const thumb = urls?.[first.storage_path];
 

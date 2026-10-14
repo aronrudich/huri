@@ -32,26 +32,46 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
       indicator.dataset.ready = distance >= TRIGGER_DISTANCE ? "true" : "false";
     };
 
+    // The blocking (non-passive) move listener is attached only while a pull
+    // can actually start — finger down at the very top. Normal scrolling stays
+    // fully passive so the browser scrolls at full frame rate.
+    let blocking = false;
+    const detachBlocking = () => {
+      if (!blocking) return;
+      blocking = false;
+      scroller.removeEventListener("touchmove", onTouchMove);
+    };
+
     const onTouchStart = (event: TouchEvent) => {
       if (refreshingRef.current || scroller.scrollTop > 0) return;
       startYRef.current = event.touches[0]?.clientY ?? null;
+      if (!blocking) {
+        blocking = true;
+        scroller.addEventListener("touchmove", onTouchMove, { passive: false });
+      }
     };
 
-    const onTouchMove = (event: TouchEvent) => {
+    function onTouchMove(event: TouchEvent) {
       const startY = startYRef.current;
       const currentY = event.touches[0]?.clientY;
-      if (startY === null || currentY === undefined || scroller.scrollTop > 0) return;
+      if (startY === null || currentY === undefined || scroller!.scrollTop > 0) {
+        detachBlocking();
+        return;
+      }
       const rawDistance = currentY - startY;
       if (rawDistance <= 0) {
         setDistance(0);
+        // Scrolling up/down the list: hand control back to the browser.
+        if (distanceRef.current === 0) detachBlocking();
         return;
       }
       event.preventDefault();
       setDistance(Math.min(MAX_DISTANCE, rawDistance * 0.48));
-    };
+    }
 
     const finishPull = () => {
       startYRef.current = null;
+      detachBlocking();
       if (distanceRef.current < TRIGGER_DISTANCE || refreshingRef.current) {
         setDistance(0);
         return;
@@ -71,18 +91,18 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
     };
 
     const cancelPull = () => {
+      detachBlocking();
       if (refreshingRef.current) return;
       startYRef.current = null;
       setDistance(0);
     };
 
     scroller.addEventListener("touchstart", onTouchStart, { passive: true });
-    scroller.addEventListener("touchmove", onTouchMove, { passive: false });
     scroller.addEventListener("touchend", finishPull);
     scroller.addEventListener("touchcancel", cancelPull);
     return () => {
+      detachBlocking();
       scroller.removeEventListener("touchstart", onTouchStart);
-      scroller.removeEventListener("touchmove", onTouchMove);
       scroller.removeEventListener("touchend", finishPull);
       scroller.removeEventListener("touchcancel", cancelPull);
     };

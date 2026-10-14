@@ -66,8 +66,6 @@ function LotPage() {
   const cars = carsData as ParkedCar[];
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];
-  // Which cars have photos attached, so every row can glow.
-  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(cars.map((c) => c.ro_number ?? "")));
 
 
   useEffect(() => {
@@ -173,6 +171,14 @@ function LotPage() {
       c.lot_position?.toLowerCase().includes(n),
     );
   }, [carsOffLot, q]);
+
+  // Photo lookups only for cars shown on the current tab (not the whole lot);
+  // keyed by tab, not search text, so typing doesn't refetch.
+  const photoRos = useMemo(() => {
+    const onTab = tab === "sv" ? Object.values(byPos) : tab === "cp" ? carsInCP : tab === "bl" ? carsInBL : [];
+    return [...onTab, ...carsOffLot].map((c) => c.ro_number ?? "");
+  }, [tab, byPos, carsInCP, carsInBL, carsOffLot]);
+  const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(photoRos));
 
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.

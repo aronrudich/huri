@@ -10,7 +10,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/park")({
 });
 
 function ParkPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const { ro: roParam, id: idParam, spot: spotParam, from: fromParam } = Route.useSearch();
@@ -83,17 +84,9 @@ function ParkPage() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
-    const load = async () => {
-      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
-      let data: Row | null = null;
-      if (idParam) {
-        const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
-        data = (r.data as Row | null) ?? null;
-      } else if (roParam) {
-        const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
-        data = (r.data as Row | null) ?? null;
-      }
-      if (!data) return;
+    type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
+    let cancelled = false;
+    const apply = (data: Row) => {
       setEditing(true);
       setExistingId(data.id);
       setRo(data.ro_number ?? "");
@@ -104,8 +97,25 @@ function ParkPage() {
       setSavedPos(data.lot_position ?? null);
       setBayTech(data.bay_tech ?? null);
     };
+    // Paint instantly from the lot list already in memory, then verify live.
+    const cached = queryClient.getQueryData<Row[]>(["parked-cars"]);
+    const hit = cached?.find((c) => (idParam ? c.id === idParam : !!roParam && c.ro_number === roParam));
+    if (hit) apply(hit);
+    const load = async () => {
+      let data: Row | null = null;
+      if (idParam) {
+        const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
+        data = (r.data as Row | null) ?? null;
+      } else if (roParam) {
+        const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
+        data = (r.data as Row | null) ?? null;
+      }
+      if (!data || cancelled) return;
+      apply(data);
+    };
     void load();
-  }, [roParam, idParam]);
+    return () => { cancelled = true; };
+  }, [roParam, idParam, queryClient]);
 
   // Loaded up front: powers both the map overlay and the blocking section.
   useEffect(() => {

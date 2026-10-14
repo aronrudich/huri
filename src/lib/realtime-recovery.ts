@@ -48,15 +48,25 @@ export function useRealtimeRecovery() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     let last = 0;
+    let timer: number | undefined;
 
-    const recover = () => {
-      // Debounce: iOS fires visibility + focus + online in a burst.
+    const run = () => {
+      timer = undefined;
       const now = Date.now();
-      if (now - last < 1500) return;
+      if (now - last < 3000) return;
       last = now;
-
-      reconnectRealtime();
+      // Only rebuild the socket when it actually died; a healthy one keeps
+      // its channels and avoids a resubscribe storm on every app switch.
+      let healthy = false;
+      try { healthy = supabase.realtime.isConnected(); } catch { healthy = false; }
+      if (!healthy) reconnectRealtime();
       void queryClient.invalidateQueries({ type: "active" });
+    };
+
+    // Debounce: iOS fires visibility + focus + online in a burst.
+    const recover = () => {
+      if (timer !== undefined) window.clearTimeout(timer);
+      timer = window.setTimeout(run, 300);
     };
 
     const onVisible = () => { if (document.visibilityState === "visible") recover(); };

@@ -71,6 +71,7 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
 
     const finishPull = () => {
       startYRef.current = null;
+      detachBlocking();
       if (distanceRef.current < TRIGGER_DISTANCE || refreshingRef.current) {
         setDistance(0);
         return;
@@ -90,18 +91,18 @@ export function PullToRefresh({ children }: { children: ReactNode }) {
     };
 
     const cancelPull = () => {
+      detachBlocking();
       if (refreshingRef.current) return;
       startYRef.current = null;
       setDistance(0);
     };
 
     scroller.addEventListener("touchstart", onTouchStart, { passive: true });
-    scroller.addEventListener("touchmove", onTouchMove, { passive: false });
     scroller.addEventListener("touchend", finishPull);
     scroller.addEventListener("touchcancel", cancelPull);
     return () => {
+      detachBlocking();
       scroller.removeEventListener("touchstart", onTouchStart);
-      scroller.removeEventListener("touchmove", onTouchMove);
       scroller.removeEventListener("touchend", finishPull);
       scroller.removeEventListener("touchcancel", cancelPull);
     };

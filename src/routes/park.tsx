@@ -83,8 +83,24 @@ function ParkPage() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
+    type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
+    let cancelled = false;
+    const apply = (data: Row) => {
+      setEditing(true);
+      setExistingId(data.id);
+      setRo(data.ro_number ?? "");
+      setModel(data.car_model ?? "");
+      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
+      setNotes(data.notes ?? "");
+      setStaged(!!data.is_staged);
+      setSavedPos(data.lot_position ?? null);
+      setBayTech(data.bay_tech ?? null);
+    };
+    // Paint instantly from the lot list already in memory, then verify live.
+    const cached = queryClient.getQueryData<Row[]>(["parked-cars"]);
+    const hit = cached?.find((c) => (idParam ? c.id === idParam : !!roParam && c.ro_number === roParam));
+    if (hit) apply(hit);
     const load = async () => {
-      type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
       let data: Row | null = null;
       if (idParam) {
         const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
@@ -93,7 +109,7 @@ function ParkPage() {
         const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
         data = (r.data as Row | null) ?? null;
       }
-      if (!data) return;
+      if (!data || cancelled) return;
       setEditing(true);
       setExistingId(data.id);
       setRo(data.ro_number ?? "");

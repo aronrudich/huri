@@ -34,7 +34,16 @@ function ThreadPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
-  const [msgs, setMsgs] = useState<Msg[]>([]);
+  // Seed from the inbox's cached messages so bubbles show on the first frame;
+  // the live fetch below replaces them right after.
+  const [msgs, setMsgs] = useState<Msg[]>(() => {
+    if (!user) return [];
+    const seen = new Map<string, Msg>();
+    queryClient.getQueriesData<MessageRow[]>({ queryKey: ["messages", user.id] }).forEach(([, rows]) => {
+      rows?.forEach((m) => { if (m.thread_id === threadId) seen.set(m.id, m as unknown as Msg); });
+    });
+    return Array.from(seen.values()).sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+  });
   const { data: profiles = {} } = useQuery({ ...directoryQuery(), enabled: !!user });
   const { data: roles = {} } = useQuery({ ...rolesQuery(), enabled: !!user });
   const [threadCutoffs, setThreadCutoffs] = useState(() => loadThreadCutoffs());

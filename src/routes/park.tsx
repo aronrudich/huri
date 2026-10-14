@@ -10,7 +10,7 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { LotMap } from "@/components/LotMap";
 import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarHistory } from "@/components/CarHistory";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
@@ -48,6 +48,7 @@ export const Route = createFileRoute("/park")({
 });
 
 function ParkPage() {
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
   const { ro: roParam, id: idParam, spot: spotParam, from: fromParam } = Route.useSearch();

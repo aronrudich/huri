@@ -110,18 +110,11 @@ function ParkPage() {
         data = (r.data as Row | null) ?? null;
       }
       if (!data || cancelled) return;
-      setEditing(true);
-      setExistingId(data.id);
-      setRo(data.ro_number ?? "");
-      setModel(data.car_model ?? "");
-      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
-      setNotes(data.notes ?? "");
-      setStaged(!!data.is_staged);
-      setSavedPos(data.lot_position ?? null);
-      setBayTech(data.bay_tech ?? null);
+      apply(data);
     };
     void load();
-  }, [roParam, idParam]);
+    return () => { cancelled = true; };
+  }, [roParam, idParam, queryClient]);
 
   // Loaded up front: powers both the map overlay and the blocking section.
   useEffect(() => {

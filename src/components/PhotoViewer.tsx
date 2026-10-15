@@ -41,14 +41,8 @@ export function PhotoViewer({
     if (photos.length === 0) onClose();
   }, [photos.length, onClose]);
 
-  // Preload neighbours so swiping is instant.
-  useEffect(() => {
-    if (!urls) return;
-    [index - 1, index + 1].forEach((i) => {
-      const u = photos[i] && urls[photos[i].storage_path];
-      if (u) { const img = new Image(); img.src = u; }
-    });
-  }, [index, urls, photos]);
+  // Photos load on demand; show a placeholder until the current one arrives.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   const photo = photos[index];
   if (!photo) return null;

@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, Briefcase, Shuffle } from "lucide-react";
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
+import { formatBuildId } from "@/lib/build-id";
 
 import { supabase } from "@/integrations/supabase/client";
 import { clearPersistedQueryCache } from "@/lib/query-persist";
@@ -421,6 +422,9 @@ function ProfilePage() {
 
       <p className="mt-6 px-5 text-center text-xs text-muted-foreground">
         Install Huri: open this page in Safari/Chrome → Share → Add to Home Screen.
+      </p>
+      <p className="mt-2 px-5 text-center text-[11px] text-muted-foreground/70">
+        Version {formatBuildId()}
       </p>
 
       {confirmLeave && (

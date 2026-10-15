@@ -14,6 +14,8 @@ import path from "path";
 const serverEnv = loadEnv(process.env.NODE_ENV ?? "development", process.cwd(), "");
 Object.assign(process.env, serverEnv);
 
+const BUILD_ID = new Date().toISOString();
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
@@ -21,6 +23,9 @@ export default defineConfig({
     server: { entry: "server" },
   },
   vite: {
+    // One timestamp per build, shared by the app and server bundles, so open
+    // phones can detect a newer published version.
+    define: { __BUILD_ID__: JSON.stringify(BUILD_ID) },
     resolve: {
       alias: {
         // Pin entities to the hoisted v4.5.0 copy; nested v7 breaks SSR.

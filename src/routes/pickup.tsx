@@ -23,7 +23,7 @@ import { dealershipSettingsQuery } from "@/lib/settings";
 
 /** Claimed submissions leave the list 30 minutes after the claim. */
 /** Fallback used until the company's own claim-hide setting loads. */
-const DEFAULT_CLAIM_HIDE_MS = 30 * 60 * 1000;
+const DEFAULT_CLAIM_HIDE_MS = 60 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 
 
@@ -392,8 +392,13 @@ function PickupPage() {
     const claimed = visiblePickups
       .filter((p) => p.status === "claimed")
       .sort((a, b) => new Date(b.claimed_at ?? b.created_at).getTime() - new Date(a.claimed_at ?? a.created_at).getTime());
-    return [...ready, ...claimed, ...upcoming];
-  }, [visiblePickups, nowTick]);
+    const shared = [...ready, ...claimed, ...upcoming];
+    // The signed-in user's own submissions are pinned on their screen only.
+    const uid = user?.id;
+    if (!uid) return shared;
+    return [...shared.filter((p) => p.requested_by === uid), ...shared.filter((p) => p.requested_by !== uid)];
+  }, [visiblePickups, nowTick, user?.id]);
+  const mineCount = user ? sortedPickups.filter((p) => p.requested_by === user.id).length : 0;
 
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">

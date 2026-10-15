@@ -35,6 +35,7 @@ import { Route as BusinessOnboardingReviewInquiryIdRouteImport } from './routes/
 import { Route as BusinessOnboardingTokenRouteImport } from './routes/business-onboarding.$token'
 import { Route as LlegarSlugRouteImport } from './routes/llegar.$slug'
 import { Route as ThreadThreadIdRouteImport } from './routes/thread.$threadId'
+import { Route as ApiPublicVersionRouteImport } from './routes/api/public/version'
 import { Route as ApiPublicAvatarIdRouteImport } from './routes/api/public/avatar/$id'
 import { Route as ApiPublicHooksMilestoneRouteImport } from './routes/api/public/hooks/milestone'
 import { Route as ApiPublicHooksStaleCarsRouteImport } from './routes/api/public/hooks/stale-cars'
@@ -174,6 +175,11 @@ const ThreadThreadIdRoute = ThreadThreadIdRouteImport.update({
   path: '/thread/$threadId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVersionRoute = ApiPublicVersionRouteImport.update({
+  id: '/api/public/version',
+  path: '/api/public/version',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicAvatarIdRoute = ApiPublicAvatarIdRouteImport.update({
   id: '/api/public/avatar/$id',
   path: '/api/public/avatar/$id',
@@ -239,6 +245,7 @@ export interface FileRoutesByFullPath {
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -274,6 +281,7 @@ export interface FileRoutesByTo {
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -310,6 +318,7 @@ export interface FileRoutesById {
   '/business-onboarding/$token': typeof BusinessOnboardingTokenRoute
   '/llegar/$slug': typeof LlegarSlugRoute
   '/thread/$threadId': typeof ThreadThreadIdRoute
+  '/api/public/version': typeof ApiPublicVersionRoute
   '/api/public/avatar/$id': typeof ApiPublicAvatarIdRoute
   '/api/public/hooks/milestone': typeof ApiPublicHooksMilestoneRoute
   '/api/public/hooks/stale-cars': typeof ApiPublicHooksStaleCarsRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
+    | '/api/public/version'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
@@ -382,6 +392,7 @@ export interface FileRouteTypes {
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
+    | '/api/public/version'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
@@ -417,6 +428,7 @@ export interface FileRouteTypes {
     | '/business-onboarding/$token'
     | '/llegar/$slug'
     | '/thread/$threadId'
+    | '/api/public/version'
     | '/api/public/avatar/$id'
     | '/api/public/hooks/milestone'
     | '/api/public/hooks/stale-cars'
@@ -453,6 +465,7 @@ export interface RootRouteChildren {
   BusinessOnboardingTokenRoute: typeof BusinessOnboardingTokenRoute
   LlegarSlugRoute: typeof LlegarSlugRoute
   ThreadThreadIdRoute: typeof ThreadThreadIdRoute
+  ApiPublicVersionRoute: typeof ApiPublicVersionRoute
   ApiPublicAvatarIdRoute: typeof ApiPublicAvatarIdRoute
   ApiPublicHooksMilestoneRoute: typeof ApiPublicHooksMilestoneRoute
   ApiPublicHooksStaleCarsRoute: typeof ApiPublicHooksStaleCarsRoute
@@ -646,6 +659,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ThreadThreadIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/version': {
+      id: '/api/public/version'
+      path: '/api/public/version'
+      fullPath: '/api/public/version'
+      preLoaderRoute: typeof ApiPublicVersionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/avatar/$id': {
       id: '/api/public/avatar/$id'
       path: '/api/public/avatar/$id'
@@ -726,6 +746,7 @@ const rootRouteChildren: RootRouteChildren = {
   BusinessOnboardingTokenRoute: BusinessOnboardingTokenRoute,
   LlegarSlugRoute: LlegarSlugRoute,
   ThreadThreadIdRoute: ThreadThreadIdRoute,
+  ApiPublicVersionRoute: ApiPublicVersionRoute,
   ApiPublicAvatarIdRoute: ApiPublicAvatarIdRoute,
   ApiPublicHooksMilestoneRoute: ApiPublicHooksMilestoneRoute,
   ApiPublicHooksStaleCarsRoute: ApiPublicHooksStaleCarsRoute,

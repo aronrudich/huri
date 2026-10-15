@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
@@ -498,9 +498,16 @@ function PickupPage() {
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
 
           const isStaged = !!p.is_staged;
-          // Everyone can cancel their own submission; technicians can only cancel
-          // their own so nobody kills another employee's request.
-          const canCancel = !isSpectator && ((!!user && p.requested_by === user.id) || canCancelAnyRole(profile?.role_name));
+          // Mirrors the database rule: management overrides; valets cancel only
+          // their own claims; techs only their own unclaimed submissions; everyone
+          // else only their own submissions.
+          const myRole = profile?.role_name;
+          const canCancel = !isSpectator && !!user && (
+            isUpperManagementRole(myRole) || !!profile?.is_owner ||
+            (isValetRole(myRole) ? p.claimed_by === user.id
+              : isTechRole(myRole) ? p.requested_by === user.id && p.status === "unclaimed"
+              : p.requested_by === user.id)
+          );
           // Every card looks the same; only this small pill is colored so the
           // list stays uniform and the type still reads at a glance.
           // The customer set this time themselves from the link their advisor

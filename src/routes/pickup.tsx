@@ -507,10 +507,11 @@ function PickupPage() {
           // their own claims; techs only their own unclaimed submissions; everyone
           // else only their own submissions.
           const myRole = profile?.role_name;
-          const canCancel = !isSpectator && !!user && (
-            isUpperManagementRole(myRole) || !!profile?.is_owner ||
-            (isValetRole(myRole) ? false
-              : isTechRole(myRole) ? p.requested_by === user.id && p.status === "unclaimed"
+          // Valets are checked first and never get a full Cancel; with no
+          // profile loaded yet the button stays hidden.
+          const canCancel = !!user && !!profile && !isSpectator && !isValetRole(myRole) && (
+            isUpperManagementRole(myRole) || !!profile.is_owner ||
+            (isTechRole(myRole) ? p.requested_by === user.id && p.status === "unclaimed"
               : p.requested_by === user.id)
           );
           // Every card looks the same; only this small pill is colored so the

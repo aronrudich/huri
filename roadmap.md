@@ -33,3 +33,6 @@
 ## Pickup list (Oct 15)
 - [x] Own active submissions pinned at top with "Your submissions" divider (submitter's screen only)
 - [x] Claimed pickups stay 60 minutes before automatic removal (schedule unchanged)
+
+## Stale phones
+- [x] Open apps check for a newer published version and reload themselves (not while typing or with a sheet open); version shown on Profile

@@ -504,7 +504,7 @@ function PickupPage() {
           const myRole = profile?.role_name;
           const canCancel = !isSpectator && !!user && (
             isUpperManagementRole(myRole) || !!profile?.is_owner ||
-            (isValetRole(myRole) ? p.claimed_by === user.id
+            (isValetRole(myRole) ? false
               : isTechRole(myRole) ? p.requested_by === user.id && p.status === "unclaimed"
               : p.requested_by === user.id)
           );

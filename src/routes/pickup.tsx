@@ -13,7 +13,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
 import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
-import { canCancelAnyRole, canSeeKind, isSpectatorRole, isValetRole } from "@/lib/roles";
+import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";

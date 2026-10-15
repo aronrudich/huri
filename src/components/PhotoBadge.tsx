@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Camera } from "lucide-react";
 import { type CarPhoto, hasUnseenPhotos, markPhotosSeen, useSignedPhotoUrls } from "@/lib/car-photos";
 import { PhotoViewer } from "@/components/PhotoViewer";

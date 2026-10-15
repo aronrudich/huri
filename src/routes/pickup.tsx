@@ -469,7 +469,7 @@ function PickupPage() {
         )}
         {sortedPickups.map((p, idx) => {
           const upcoming = isUpcoming(p);
-          const firstUpcoming = upcoming && (idx === 0 || !isUpcoming(sortedPickups[idx - 1]));
+          const firstUpcoming = upcoming && (idx === mineCount || idx === 0 || !isUpcoming(sortedPickups[idx - 1]));
           const isParts = p.kind === "parts";
           // Wash confirmations follow the RO #, so the whole list can show it.
           const isWashed = !isParts && !!p.ro_number && washedRos.has(p.ro_number.trim());
@@ -563,7 +563,15 @@ function PickupPage() {
 
           return (
             <Fragment key={p.id}>
-            {firstUpcoming && (
+            {mineCount > 0 && idx === 0 && (
+              <li className="px-1 pt-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                Your submissions
+              </li>
+            )}
+            {mineCount > 0 && idx === mineCount && (
+              <li aria-hidden className="py-1"><div className="border-t-2 border-dashed border-border" /></li>
+            )}
+            {firstUpcoming && idx >= mineCount && (
               <li className="px-1 pt-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 Upcoming Arrivals
               </li>

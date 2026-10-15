@@ -15,6 +15,13 @@
       "when": 1792073386070,
       "tag": "0001_valets_no_full_cancel",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792074335190,
+      "tag": "0002_claimed_pickups_stay_60_minutes",
+      "breakpoints": true
     }
   ]
 }

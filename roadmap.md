@@ -29,3 +29,7 @@
 ## NAA lot-map sandbox
 - [x] Private `/lot/naa-preview` test page with all 588 mock stalls, five zones, pan/zoom, search, filters, vehicle details, and tandem-blocker previews
 - [x] Keep the sandbox frontend-only and isolated from JCD's `/lot`, company data, onboarding, and permanent company code
+
+## Pickup list (Oct 15)
+- [x] Own active submissions pinned at top with "Your submissions" divider (submitter's screen only)
+- [x] Claimed pickups stay 60 minutes before automatic removal (schedule unchanged)

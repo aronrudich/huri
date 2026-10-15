@@ -23,7 +23,7 @@ export type DealershipSettings = {
 export const SETTINGS_DEFAULTS = {
   flagged_days: 14,
   reminder_minutes: 5,
-  claim_hide_minutes: 30,
+  claim_hide_minutes: 60,
   timezone: "America/Los_Angeles",
   enable_wash: true,
   enable_parts: true,

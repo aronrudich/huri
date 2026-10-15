@@ -20,6 +20,7 @@ import { IOSInstallHint } from "@/components/IOSInstallHint";
 import { PendingGate } from "@/components/PendingGate";
 import { TabPrefetcher } from "@/components/TabPrefetcher";
 import { useRealtimeRecovery } from "@/lib/realtime-recovery";
+import { useAppUpdate } from "@/lib/app-update";
 import { PullToRefresh } from "@/components/PullToRefresh";
 
 function NotFoundComponent() {
@@ -118,6 +119,10 @@ function SWRegistrar() {
   return null;
 }
 
+function AppUpdater() {
+  useAppUpdate();
+  return null;
+}
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
@@ -125,6 +130,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <SWRegistrar />
+        <AppUpdater />
         <PushSync />
         <RealtimeRecovery />
         <TabPrefetcher />

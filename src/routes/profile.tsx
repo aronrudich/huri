@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { ArrowLeft, LogOut, Bell, UserX, Crown, Pencil, Search, Trash2, Check, X as XIcon, Briefcase, Shuffle } from "lucide-react";
 import { ChangeRoleSheet } from "@/components/ChangeRoleSheet";
+import { formatBuildId } from "@/lib/build-id";
 
 import { supabase } from "@/integrations/supabase/client";
 import { clearPersistedQueryCache } from "@/lib/query-persist";

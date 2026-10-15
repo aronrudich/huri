@@ -122,11 +122,23 @@ export function PhotoViewer({
           </button>
         )}
         <figure className="min-w-0 flex-1 text-center">
-          {url ? (
-            <img src={url} alt="Car photo" className="mx-auto max-h-[70vh] w-full rounded-2xl object-contain" />
-          ) : (
-            <div className="mx-auto grid h-64 place-items-center text-sm text-white/60">Loading photo…</div>
-          )}
+          <div className="relative">
+            {loadedSrc !== url && (
+              <div className="mx-auto grid h-64 place-items-center">
+                <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" aria-label="Loading photo" />
+              </div>
+            )}
+            {url && (
+              <img
+                key={url}
+                src={url}
+                alt="Car photo"
+                decoding="async"
+                onLoad={() => setLoadedSrc(url)}
+                className={`mx-auto max-h-[70vh] w-full rounded-2xl object-contain ${loadedSrc === url ? "" : "hidden"}`}
+              />
+            )}
+          </div>
           <figcaption className="mt-3 text-xs text-white/70">
             {[who, format(new Date(photo.created_at), "MMM d, yyyy · h:mm a")].filter(Boolean).join(" · ")}
           </figcaption>

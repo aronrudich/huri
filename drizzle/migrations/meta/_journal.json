@@ -36,6 +36,13 @@
       "when": 1792134398506,
       "tag": "0004_car_photos_uploader_set_null",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792134678836,
+      "tag": "0005_lock_pickup_claim_fields",
+      "breakpoints": true
     }
   ]
 }

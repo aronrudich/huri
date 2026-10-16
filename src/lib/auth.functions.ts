@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { Database } from "@/integrations/supabase/types";
+import { isReservedEmail } from "./support-emails";
 
 const emailPasswordSchema = z.object({
   email: z.string().email(),
@@ -39,6 +40,7 @@ function createAuthClient(key: string) {
 export const confirmEmailForValidCredentials = createServerFn({ method: "POST" })
   .inputValidator((data) => emailPasswordSchema.parse(data))
   .handler(async ({ data }) => {
+    if (isReservedEmail(data.email)) throw new Error("This account can't be confirmed here.");
     const publishableKey =
       process.env.SUPABASE_PUBLISHABLE_KEY ||
       process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
@@ -91,6 +93,7 @@ export const confirmEmailForValidCredentials = createServerFn({ method: "POST" }
 export const createConfirmedAccount = createServerFn({ method: "POST" })
   .inputValidator((data) => confirmedSignupSchema.parse(data))
   .handler(async ({ data }) => {
+    if (isReservedEmail(data.email)) throw new Error("That email already has an account. Try signing in instead.");
     /**
      * New accounts wait in the approval queue: an Admin or the
      * owner must approve them. (Role-change requests always require approval.)

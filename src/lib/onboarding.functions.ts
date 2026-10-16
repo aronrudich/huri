@@ -3,7 +3,7 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { draftSchema, draftStats, MAX_DRAFT_BYTES } from "./onboarding-schema";
 
-const SUPPORT = ["aron@huri.team", "aron@oremor.net"];
+import { SUPPORT_EMAILS as SUPPORT } from "./support-emails";
 const LINK_DAYS = 30;
 const BASE_URL = "https://huri.team";
 

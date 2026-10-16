@@ -29,6 +29,13 @@
       "when": 1792075977614,
       "tag": "0003_only_claimer_can_unclaim",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792134398506,
+      "tag": "0004_car_photos_uploader_set_null",
+      "breakpoints": true
     }
   ]
 }

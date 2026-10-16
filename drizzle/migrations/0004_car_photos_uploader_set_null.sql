@@ -1,0 +1,2 @@
+ALTER TABLE public.car_photos DROP CONSTRAINT IF EXISTS car_photos_uploaded_by_fkey;
+ALTER TABLE public.car_photos ADD CONSTRAINT car_photos_uploaded_by_fkey FOREIGN KEY (uploaded_by) REFERENCES auth.users(id) ON DELETE SET NULL;

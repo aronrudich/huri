@@ -65,7 +65,7 @@ export const signedPhotoUrlsQuery = (paths: string[]) => {
   return queryOptions({
     queryKey: ["car-photo-urls", list.join(",")],
     enabled: list.length > 0,
-    staleTime: 30 * 60_000,
+    staleTime: 45 * 60_000,
     queryFn: async (): Promise<Record<string, string>> => {
       const { data, error } = await supabase.storage
         .from(CAR_PHOTO_BUCKET)
@@ -81,6 +81,52 @@ export const signedPhotoUrlsQuery = (paths: string[]) => {
 };
 
 export const useSignedPhotoUrls = (paths: string[]) => useQuery(signedPhotoUrlsQuery(paths));
+
+/** Thumbnail path for a full-size photo path: `{ro}/{uuid}.jpg` -> `{ro}/{uuid}_thumb.jpg`. */
+export const thumbOf = (path: string) => path.replace(/\.jpg$/i, "_thumb.jpg");
+
+/**
+ * Signed URLs for the lightweight thumbnails behind a set of full-size paths.
+ * Legacy photos (uploaded before thumbnails existed) have no `_thumb.jpg` in
+ * storage, so their signed URL comes back missing — we fall back to signing
+ * the full-size path for those. The returned map is keyed by the FULL-SIZE
+ * path so callers can keep using `storage_path` as the lookup key.
+ */
+export const signedThumbUrlsQuery = (paths: string[]) => {
+  const list = Array.from(new Set(paths)).sort();
+  return queryOptions({
+    queryKey: ["car-photo-thumb-urls", list.join(",")],
+    enabled: list.length > 0,
+    staleTime: 45 * 60_000,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const thumbs = list.map(thumbOf);
+      const { data, error } = await supabase.storage
+        .from(CAR_PHOTO_BUCKET)
+        .createSignedUrls(thumbs, 60 * 60);
+      if (error) throw error;
+      const byThumb: Record<string, string> = {};
+      (data ?? []).forEach((row) => {
+        if (row.path && row.signedUrl) byThumb[row.path] = row.signedUrl;
+      });
+      const missing = list.filter((p) => !byThumb[thumbOf(p)]);
+      let fallback: Record<string, string> = {};
+      if (missing.length > 0) {
+        const res = await supabase.storage.from(CAR_PHOTO_BUCKET).createSignedUrls(missing, 60 * 60);
+        (res.data ?? []).forEach((row) => {
+          if (row.path && row.signedUrl) fallback[row.path] = row.signedUrl;
+        });
+      }
+      const map: Record<string, string> = {};
+      list.forEach((p) => {
+        const url = byThumb[thumbOf(p)] ?? fallback[p];
+        if (url) map[p] = url;
+      });
+      return map;
+    },
+  });
+};
+
+export const useSignedThumbUrls = (paths: string[]) => useQuery(signedThumbUrlsQuery(paths));
 
 /**
  * Phone cameras produce 4-6 MB files; the lot's connection does not. Shrink to a
@@ -108,16 +154,20 @@ export async function shrinkImage(file: File, maxEdge = 1600, quality = 0.82): P
   }
 }
 
-/** Upload one photo and attach it to the RO. */
+/** Upload one photo (plus its small thumbnail) and attach it to the RO. */
 export async function uploadCarPhoto(file: File, ro: string, userId: string) {
   const target = normalizeRo(ro);
   if (!target) throw new Error("Add the RO # before attaching a photo");
-  const blob = await shrinkImage(file);
+  // Resize once on the phone: a 1600px master for the full-screen viewer and a
+  // ~160px thumbnail for list badges, so lists never download the big file.
+  const [blob, thumb] = await Promise.all([shrinkImage(file), shrinkImage(file, 160, 0.75)]);
   const path = `${target}/${crypto.randomUUID()}.jpg`;
-  const { error: upErr } = await supabase.storage
-    .from(CAR_PHOTO_BUCKET)
-    .upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (upErr) throw upErr;
+  const [upFull, upThumb] = await Promise.all([
+    supabase.storage.from(CAR_PHOTO_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }),
+    supabase.storage.from(CAR_PHOTO_BUCKET).upload(thumbOf(path), thumb, { contentType: "image/jpeg", upsert: false }),
+  ]);
+  if (upFull.error) throw upFull.error;
+  if (upThumb.error) throw upThumb.error;
   const { error } = await supabase
     .from("car_photos")
     .insert({ ro_number: target, storage_path: path, uploaded_by: userId } as never);
@@ -127,7 +177,7 @@ export async function uploadCarPhoto(file: File, ro: string, userId: string) {
 export async function deleteCarPhoto(photo: CarPhoto) {
   const { error } = await supabase.from("car_photos").delete().eq("id", photo.id);
   if (error) throw error;
-  await supabase.storage.from(CAR_PHOTO_BUCKET).remove([photo.storage_path]);
+  await supabase.storage.from(CAR_PHOTO_BUCKET).remove([photo.storage_path, thumbOf(photo.storage_path)]);
 }
 
 /* ---------- "already looked at it" tracking, so the glow stops pulsing ---------- */

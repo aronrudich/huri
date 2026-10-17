@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Camera, X } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { carPhotosQuery, markPhotosSeen, uploadCarPhoto, useSignedPhotoUrls } from "@/lib/car-photos";
+import { carPhotosQuery, markPhotosSeen, uploadCarPhoto, useSignedThumbUrls } from "@/lib/car-photos";
 import { PhotoViewer } from "@/components/PhotoViewer";
 
 /**
@@ -28,7 +28,8 @@ export function CarPhotos({
   const hasRo = /^\d{6}$/.test(target);
   const qc = useQueryClient();
   const { data: photos = [] } = useQuery(carPhotosQuery(hasRo ? target : ""));
-  const { data: urls } = useSignedPhotoUrls(photos.map((p) => p.storage_path));
+  // The grid shows tiny thumbnails; full-res loads only in the viewer.
+  const { data: urls } = useSignedThumbUrls(photos.map((p) => p.storage_path));
   const [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<{ file: File; url: string }[]>([]);
   const [viewerAt, setViewerAt] = useState<number | null>(null);
@@ -81,7 +82,7 @@ export function CarPhotos({
               aria-label="Open photo full screen"
             >
               {urls?.[p.storage_path] ? (
-                <img src={urls[p.storage_path]} alt="Car photo" className="h-full w-full object-cover" />
+                <img src={urls[p.storage_path]} alt="Car photo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full w-full place-items-center bg-warning/15 text-warning">
                   <Camera className="h-5 w-5" />

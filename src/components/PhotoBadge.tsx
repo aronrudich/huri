@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
-import { type CarPhoto, hasUnseenPhotos, markPhotosSeen, useSignedPhotoUrls } from "@/lib/car-photos";
+import { type CarPhoto, hasUnseenPhotos, markPhotosSeen, useSignedThumbUrls } from "@/lib/car-photos";
 import { PhotoViewer } from "@/components/PhotoViewer";
 
 /**
@@ -24,9 +24,10 @@ export function PhotoBadge({
   const [open, setOpen] = useState(false);
   const [unseen, setUnseen] = useState(() => hasUnseenPhotos(photos));
   const first = photos[0];
-  // Same paths (and cache key) the viewer uses; only the first photo's thumbnail
-  // is shown (lazily). Other photos download only when opened.
-  const { data: urls } = useSignedPhotoUrls(photos.map((p) => p.storage_path));
+  // Badges load the tiny ~6 KB thumbnails, never the 1600px masters; the full
+  // image downloads only when the viewer opens. Legacy photos without a
+  // thumbnail fall back to the full-size URL inside the query.
+  const { data: urls } = useSignedThumbUrls(photos.map((p) => p.storage_path));
   if (!first) return null;
   const thumb = urls?.[first.storage_path];
 

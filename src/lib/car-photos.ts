@@ -154,16 +154,20 @@ export async function shrinkImage(file: File, maxEdge = 1600, quality = 0.82): P
   }
 }
 
-/** Upload one photo and attach it to the RO. */
+/** Upload one photo (plus its small thumbnail) and attach it to the RO. */
 export async function uploadCarPhoto(file: File, ro: string, userId: string) {
   const target = normalizeRo(ro);
   if (!target) throw new Error("Add the RO # before attaching a photo");
-  const blob = await shrinkImage(file);
+  // Resize once on the phone: a 1600px master for the full-screen viewer and a
+  // ~160px thumbnail for list badges, so lists never download the big file.
+  const [blob, thumb] = await Promise.all([shrinkImage(file), shrinkImage(file, 160, 0.75)]);
   const path = `${target}/${crypto.randomUUID()}.jpg`;
-  const { error: upErr } = await supabase.storage
-    .from(CAR_PHOTO_BUCKET)
-    .upload(path, blob, { contentType: "image/jpeg", upsert: false });
-  if (upErr) throw upErr;
+  const [upFull, upThumb] = await Promise.all([
+    supabase.storage.from(CAR_PHOTO_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }),
+    supabase.storage.from(CAR_PHOTO_BUCKET).upload(thumbOf(path), thumb, { contentType: "image/jpeg", upsert: false }),
+  ]);
+  if (upFull.error) throw upFull.error;
+  if (upThumb.error) throw upThumb.error;
   const { error } = await supabase
     .from("car_photos")
     .insert({ ro_number: target, storage_path: path, uploaded_by: userId } as never);
@@ -173,7 +177,7 @@ export async function uploadCarPhoto(file: File, ro: string, userId: string) {
 export async function deleteCarPhoto(photo: CarPhoto) {
   const { error } = await supabase.from("car_photos").delete().eq("id", photo.id);
   if (error) throw error;
-  await supabase.storage.from(CAR_PHOTO_BUCKET).remove([photo.storage_path]);
+  await supabase.storage.from(CAR_PHOTO_BUCKET).remove([photo.storage_path, thumbOf(photo.storage_path)]);
 }
 
 /* ---------- "already looked at it" tracking, so the glow stops pulsing ---------- */

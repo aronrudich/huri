@@ -9,7 +9,7 @@ import { getArrivalInfo, markCustomerArrived, submitArrival } from "@/lib/arrive
 /**
  * Customer-facing arrival screen. No sign-in, no navigation, no app chrome:
  * the customer taps the link their advisor texted them, scrolls to the time
- * they'll show up. The car shows on the valets' pickup list and opens for claiming 20 minutes before that time.
+ * they'll show up. The car shows on the valets' pickup list and opens for claiming 30 minutes before that time.
  */
 export const Route = createFileRoute("/llegar/$slug")({
   // A numeric ?ro=190246 arrives as a number, so accept either and keep the
@@ -225,9 +225,9 @@ function ArrivePage() {
   const ro = search.ro === undefined ? undefined : String(search.ro);
   const { slug } = Route.useParams();
 
-  // Default to about 20 minutes from now, or whatever the customer picked before.
+  // Default to about 30 minutes from now, or whatever the customer picked before.
   const initial = useMemo(() => {
-    const base = info?.currentEta ? new Date(info.currentEta) : new Date(Date.now() + 20 * 60_000);
+    const base = info?.currentEta ? new Date(info.currentEta) : new Date(Date.now() + 30 * 60_000);
     return partsIn(info?.timezone ?? "America/Los_Angeles", base);
   }, [info?.currentEta, info?.timezone]);
   const today = info?.today ?? initial.date;

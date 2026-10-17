@@ -43,6 +43,13 @@
       "when": 1792134678836,
       "tag": "0005_lock_pickup_claim_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792278565226,
+      "tag": "0006_claim_window_30_minutes",
+      "breakpoints": true
     }
   ]
 }

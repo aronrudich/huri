@@ -140,7 +140,17 @@ export function PhotoViewer({
         )}
         <figure className="min-w-0 flex-1 text-center">
           <div className="relative">
-            {loadedSrc !== url && (
+            {/* Instant placeholder: the cached thumbnail, softly blurred, so the
+                viewer never shows a blank screen while the master downloads. */}
+            {loadedSrc !== url && thumb && (
+              <img
+                src={thumb}
+                alt=""
+                aria-hidden
+                className="mx-auto max-h-[70vh] w-full rounded-2xl object-contain blur-sm"
+              />
+            )}
+            {loadedSrc !== url && !thumb && (
               <div className="mx-auto grid h-64 place-items-center">
                 <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" aria-label="Loading photo" />
               </div>

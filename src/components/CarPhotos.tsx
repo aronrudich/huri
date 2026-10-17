@@ -82,7 +82,7 @@ export function CarPhotos({
               aria-label="Open photo full screen"
             >
               {urls?.[p.storage_path] ? (
-                <img src={urls[p.storage_path]} alt="Car photo" className="h-full w-full object-cover" />
+                <img src={urls[p.storage_path]} alt="Car photo" loading="lazy" decoding="async" className="h-full w-full object-cover" />
               ) : (
                 <span className="grid h-full w-full place-items-center bg-warning/15 text-warning">
                   <Camera className="h-5 w-5" />

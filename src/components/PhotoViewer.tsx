@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { directoryQuery } from "@/lib/queries";
-import { type CarPhoto, deleteCarPhoto, useSignedPhotoUrls } from "@/lib/car-photos";
+import { type CarPhoto, deleteCarPhoto, useSignedPhotoUrls, useSignedThumbUrls } from "@/lib/car-photos";
 
 /**
  * Full-screen car photo viewer. Swipe (or tap the arrows) to move between the
@@ -30,7 +30,11 @@ export function PhotoViewer({
   const [index, setIndex] = useState(Math.min(startIndex, Math.max(0, photos.length - 1)));
   const [busy, setBusy] = useState(false);
   const startX = useRef<number | null>(null);
-  const { data: urls } = useSignedPhotoUrls(photos.map((p) => p.storage_path));
+  const paths = photos.map((p) => p.storage_path);
+  // Thumbnails are already cached from the badges, so the viewer can paint
+  // instantly; the 1600px master downloads in the background and swaps in.
+  const { data: thumbs } = useSignedThumbUrls(paths);
+  const { data: urls } = useSignedPhotoUrls(paths);
   const { data: directory } = useQuery(directoryQuery());
 
   useEffect(() => {
@@ -41,12 +45,25 @@ export function PhotoViewer({
     if (photos.length === 0) onClose();
   }, [photos.length, onClose]);
 
+  // Prefetch the full-size images for the photos next to the current one so
+  // swiping left/right is instant.
+  useEffect(() => {
+    [index - 1, index + 1].forEach((i) => {
+      const src = photos[i] ? urls?.[photos[i].storage_path] : undefined;
+      if (src) {
+        const img = new Image();
+        img.src = src;
+      }
+    });
+  }, [index, photos, urls]);
+
   // Photos load on demand; show a placeholder until the current one arrives.
   const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
 
   const photo = photos[index];
   if (!photo) return null;
   const url = urls?.[photo.storage_path];
+  const thumb = thumbs?.[photo.storage_path];
   const who = photo.uploaded_by ? directory?.[photo.uploaded_by]?.name : null;
 
   const move = (delta: number) => {

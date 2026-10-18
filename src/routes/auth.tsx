@@ -196,7 +196,7 @@ function AuthPage() {
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
           <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-10 w-auto" />
-          <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
+          <p className="mt-1 text-sm text-muted-foreground">Time Is Money</p>
         </div>
 
         <div className="rounded-2xl bg-card p-6 shadow-sm">
@@ -457,10 +457,10 @@ function BusinessForm() {
             rows={4}
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
-          <p className="mt-1 text-[11px] text-muted-foreground">Tell us anything that would help us understand your property, lots, or workflow.</p>
+          <p className="mt-1 text-[11px] text-muted-foreground">Tell us anything that would help us understand your business</p>
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
-          {busy ? "Sending…" : "Contact Huri"}
+          {busy ? "Submitting…" : "Submit"}
         </button>
       </form>
       {done && (

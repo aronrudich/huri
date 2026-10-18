@@ -73,7 +73,7 @@ function ResetPasswordPage() {
       <div className="mx-auto max-w-md px-5 py-12">
         <div className="mb-8 text-center">
           <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-10 w-auto" />
-          <p className="mt-1 text-sm text-muted-foreground">Lot Management</p>
+          <p className="mt-1 text-sm text-muted-foreground">Time Is Money</p>
         </div>
 
         <div className="rounded-2xl bg-card p-6 shadow-sm">

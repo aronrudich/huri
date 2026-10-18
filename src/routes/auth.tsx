@@ -471,12 +471,15 @@ function BusinessForm() {
           onClick={() => setDone(false)}
         >
           <div
-            className="w-full max-w-sm space-y-4 rounded-2xl border border-border bg-card p-6 text-center shadow-xl"
+            className="max-h-[90vh] w-full max-w-md space-y-4 overflow-y-auto rounded-2xl border border-border bg-card p-6 text-center shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-xl font-bold">Thank you!</h2>
-            <p className="text-base font-medium text-foreground">We've received your information.</p>
-            <p className="text-sm font-semibold text-primary">We will contact you in a Huri</p>
+            <h2 className="text-xl font-bold">Thank you very much!</h2>
+            <p className="text-sm font-semibold text-primary">We will contact you in a Huri.</p>
+            <p className="text-sm text-muted-foreground">
+              In the meantime, watch this demonstration to learn more about Huri
+            </p>
+            <DemoVideo />
             <button
               onClick={() => setDone(false)}
               className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground"

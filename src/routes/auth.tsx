@@ -492,3 +492,29 @@ function BusinessForm() {
     </>
   );
 }
+
+const DEMO_VIDEO_SRC = "/huri-demo.mp4";
+
+function DemoVideo() {
+  const [unavailable, setUnavailable] = useState(false);
+
+  if (unavailable) {
+    return (
+      <div className="grid aspect-video w-full place-items-center rounded-xl border border-border bg-muted px-5 text-center">
+        <p className="text-xs text-muted-foreground">Demonstration video coming soon.</p>
+      </div>
+    );
+  }
+
+  return (
+    <video
+      controls
+      playsInline
+      preload="metadata"
+      onError={() => setUnavailable(true)}
+      className="aspect-video w-full rounded-xl bg-black"
+    >
+      <source src={DEMO_VIDEO_SRC} type="video/mp4" onError={() => setUnavailable(true)} />
+    </video>
+  );
+}

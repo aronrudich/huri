@@ -66,7 +66,8 @@ export function useRealtimeRecovery() {
     // Debounce: iOS fires visibility + focus + online in a burst.
     const recover = () => {
       if (timer !== undefined) window.clearTimeout(timer);
-      timer = window.setTimeout(run, 300);
+      // Small random spread so a whole shift unlocking at once doesn't stampede.
+      timer = window.setTimeout(run, 300 + Math.random() * 1200);
     };
 
     const onVisible = () => { if (document.visibilityState === "visible") recover(); };
@@ -94,7 +95,8 @@ export function handleChannelStatus(status: string) {
   // Cap the self-healing attempts so a persistently failing channel can't loop.
   if (retries.length >= 4) return;
   retries.push(now);
-  const delay = 2000 * retries.length;
+  // Random 1.5–4s jitter so every phone doesn't reconnect at the same instant.
+  const delay = 2000 * retries.length + 1500 + Math.random() * 2500;
   setTimeout(() => {
     if (typeof document === "undefined" || document.visibilityState === "visible") {
       bumpRealtimeGeneration();

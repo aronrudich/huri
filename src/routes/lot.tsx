@@ -62,7 +62,7 @@ function LotPage() {
 
   // Cars and open submissions come from the shared query cache, so switching
   // back to this tab paints the previous map instantly.
-  const { data: carsData = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: carsData = [], isError: carsLoadFailed } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const cars = carsData as ParkedCar[];
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];
@@ -345,7 +345,9 @@ function LotPage() {
           ))}
           {filteredFreeform.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-               {tab === "cp" ? "No cars in CP." : "No cars in BL."}
+               {carsLoadFailed && cars.length === 0
+                 ? "Loading cars… reconnecting to Huri."
+                 : tab === "cp" ? "No cars in CP." : "No cars in BL."}
             </li>
           )}
         </ul>

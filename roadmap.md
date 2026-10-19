@@ -38,3 +38,10 @@
 
 ## Stale phones
 - [x] Open apps check for a newer published version and reload themselves (not while typing or with a sheet open); version shown on Profile
+
+## Outage hardening (Oct 19)
+- [x] Database moved from Tiny to Small (Tiny was running out of memory)
+- [x] Lists never show "empty" when the server can't be reached; reconnect banner instead
+- [x] Staggered retries/reconnects so phones don't all hit the server at once; lot screen patches single cars instead of reloading the whole lot
+- [x] Archive and reminder jobs restored to every minute; old job log trimmed daily
+- [x] Business page uses explainer video v6

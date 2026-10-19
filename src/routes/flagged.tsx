@@ -48,7 +48,7 @@ function FlaggedPage() {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
 
-  const { data: cars = [], isPending } = useQuery({
+  const { data: cars = [], isPending, isError } = useQuery({
     ...flaggedCarsQuery(),
     enabled: !!user && allowed,
   });
@@ -87,7 +87,7 @@ function FlaggedPage() {
         Cars untouched for {flaggedDays} days or longer, newest first. Updated every morning at 5 AM.
       </p>
 
-      {isPending ? (
+      {isPending || (isError && cars.length === 0) ? (
         <div className="px-4">
           <ListSkeleton />
         </div>

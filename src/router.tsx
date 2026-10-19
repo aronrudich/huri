@@ -13,8 +13,11 @@ export const getRouter = () => {
         // so focus doesn't fire a second burst of every query at unlock.
         refetchOnWindowFocus: false,
         refetchOnReconnect: true,
-        retry: 2,
-        retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+        // Keep retrying until the server answers, but spread phones out with
+        // random jitter so a recovering database isn't hit by every phone at
+        // the same instant. Existing data stays on screen the whole time.
+        retry: 6,
+        retryDelay: (attempt) => Math.min(3000 * 2 ** attempt, 30_000) + Math.random() * 5000,
       },
     },
   });

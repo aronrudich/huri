@@ -22,6 +22,7 @@ import { TabPrefetcher } from "@/components/TabPrefetcher";
 import { useRealtimeRecovery } from "@/lib/realtime-recovery";
 import { useAppUpdate } from "@/lib/app-update";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { ConnectionBanner } from "@/components/ConnectionBanner";
 
 function NotFoundComponent() {
   return (
@@ -141,6 +142,7 @@ function RootComponent() {
         <NotificationGate />
         <IOSInstallHint />
         <PendingGate />
+        <ConnectionBanner />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

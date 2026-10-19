@@ -71,8 +71,22 @@ function LotPage() {
   useEffect(() => {
     if (!user) return;
     const chan = supabase.channel("lot-all-spots")
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, () => {
-        void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+      // Patch the one changed car instead of re-downloading the whole lot on
+      // every phone for every move — that burst is what overloads the server.
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+        const row = payload.new as ParkedCar | undefined;
+        const oldId = (payload.old as { id?: string } | undefined)?.id;
+        queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
+          if (!cur) return cur;
+          if (payload.eventType === "DELETE") {
+            if (!oldId) { void queryClient.invalidateQueries({ queryKey: ["parked-cars"] }); return cur; }
+            return cur.filter((c) => c.id !== oldId);
+          }
+          if (!row?.id) { void queryClient.invalidateQueries({ queryKey: ["parked-cars"] }); return cur; }
+          return cur.some((c) => c.id === row.id)
+            ? cur.map((c) => (c.id === row.id ? { ...c, ...row } : c))
+            : [...cur, row];
+        });
       })
       .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
         void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });

@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
 import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
-import explainerVideo from "@/assets/huri-explainer.mp4.asset.json";
-import explainerWebm from "@/assets/huri-explainer.webm.asset.json";
-import explainerPreview from "@/assets/huri-explainer-preview.jpg.asset.json";
+import explainerVideo from "@/assets/huri-explainer-v6.mp4.asset.json";
+import explainerWebm from "@/assets/huri-explainer-v6.webm.asset.json";
+import explainerPreview from "@/assets/huri-explainer-v6-preview.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -450,7 +450,7 @@ function BusinessForm() {
             <Play className="h-8 w-8 rounded-full bg-primary p-2 text-primary-foreground" aria-hidden="true" />
           </span>
         </span>
-        <span className="pr-3 text-sm font-semibold">Watch 3-minute explainer</span>
+        <span className="pr-3 text-sm font-semibold">Watch 4-minute explainer</span>
       </button>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />

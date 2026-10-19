@@ -13,6 +13,7 @@ import { ROLE_OPTIONS } from "@/lib/roles";
 import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import explainerVideo from "@/assets/huri-explainer.mp4.asset.json";
+import explainerWebm from "@/assets/huri-explainer.webm.asset.json";
 import explainerPreview from "@/assets/huri-explainer-preview.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
@@ -573,7 +574,8 @@ function DemoVideo({ autoPlay = false }: { autoPlay?: boolean }) {
       onError={() => setUnavailable(true)}
       className="aspect-video max-h-[80dvh] w-full bg-muted object-contain"
     >
-      <source src={DEMO_VIDEO_SRC} type="video/mp4" onError={() => setUnavailable(true)} />
+      <source src={DEMO_VIDEO_SRC} type={'video/mp4; codecs="avc1.640028, mp4a.40.2"'} />
+      <source src={explainerWebm.url} type="video/webm" />
     </video>
   );
 }

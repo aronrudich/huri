@@ -50,6 +50,13 @@
       "when": 1792278565226,
       "tag": "0006_claim_window_30_minutes",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792453364677,
+      "tag": "0007_restore_minute_jobs_and_trim_job_log",
+      "breakpoints": true
     }
   ]
 }

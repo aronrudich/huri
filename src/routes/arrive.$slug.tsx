@@ -5,6 +5,8 @@ import { z } from "zod";
 import { Check, LoaderCircle } from "lucide-react";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import { getArrivalInfo, markCustomerArrived, submitArrival } from "@/lib/arrive.functions";
+import { isServiceTimeOpen, isServiceOpenAt, SERVICE_CLOSED_MESSAGE } from "@/lib/service-hours";
+import { ArrivalActionButton, ArrivalHoursNotice } from "@/components/ArrivalHours";
 
 /**
  * Customer-facing arrival screen. No sign-in, no navigation, no app chrome:
@@ -25,11 +27,11 @@ export const Route = createFileRoute("/arrive/$slug")({
   },
   head: () => ({
     meta: [
-      { title: "Vehicle Ready for Pickup" },
+      { title: "Huri · Vehicle Ready for Pickup" },
       { name: "description", content: "Tap to confirm your arrival time and we'll have your vehicle pulled up and waiting." },
-      { property: "og:title", content: "Vehicle Ready for Pickup" },
+      { property: "og:title", content: "Huri · Vehicle Ready for Pickup" },
       { property: "og:description", content: "Tap to confirm your arrival time and we'll have your vehicle pulled up and waiting." },
-      { name: "twitter:title", content: "Vehicle Ready for Pickup" },
+      { name: "twitter:title", content: "Huri · Vehicle Ready for Pickup" },
       { name: "twitter:description", content: "Tap to confirm your arrival time and we'll have your vehicle pulled up and waiting." },
       { property: "og:image", content: "https://huri.team/icon-512.png" },
       { name: "twitter:image", content: "https://huri.team/icon-512.png" },
@@ -244,7 +246,24 @@ function ArrivePage() {
   const submitArrivalFn = useServerFn(submitArrival);
   const markCustomerArrivedFn = useServerFn(markCustomerArrived);
 
+  const [now, setNow] = useState<Date | null>(null);
+  useEffect(() => {
+    const update = () => setNow(new Date());
+    update();
+    const timer = window.setInterval(update, 15_000);
+    window.addEventListener("focus", update);
+    document.addEventListener("visibilitychange", update);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", update);
+      document.removeEventListener("visibilitychange", update);
+    };
+  }, []);
+  const isOpen = isServiceTimeOpen(date, hour, minute, meridiem);
+  const isOpenNow = !!info && !!now && isServiceOpenAt(info.timezone, now);
+
   const submit = async () => {
+    if (busy || !isOpen) return;
     setBusy(true);
     setError(null);
     try {
@@ -253,21 +272,22 @@ function ArrivePage() {
       setDone(true);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
-      setError(msg.includes("passed") || msg.includes("later day") ? msg : "We couldn't save your arrival time. Please try again.");
+      setError(msg === SERVICE_CLOSED_MESSAGE ? SERVICE_CLOSED_MESSAGE : msg.includes("passed") || msg.includes("later day") ? msg : "We couldn't save your arrival time. Please try again.");
     } finally {
       setBusy(false);
     }
   };
 
   const arriveNow = async () => {
+    if (busy || !info || !ro || !isServiceOpenAt(info.timezone, new Date())) return;
     setBusy(true);
     setError(null);
     try {
       await markCustomerArrivedFn({ data: { slug, ro } });
       setAlreadyHere(true);
       setDone(true);
-    } catch {
-      setError("We couldn't notify the team that you're here. Please try again or contact your advisor.");
+    } catch (e) {
+      setError(e instanceof Error && e.message === SERVICE_CLOSED_MESSAGE ? "The service department is closed right now." : "We couldn't notify the team that you're here. Please try again or contact your advisor.");
     } finally {
       setBusy(false);
     }
@@ -377,24 +397,28 @@ function ArrivePage() {
 
           {error && <p className="mt-4 text-center text-sm text-destructive">{error}</p>}
 
-          <button
+          {!isOpen && <ArrivalHoursNotice />}
+          <ArrivalActionButton
             type="button"
             onClick={submit}
-            disabled={busy}
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-primary py-4 text-base font-semibold text-primary-foreground disabled:opacity-60"
+            disabled={busy || !isOpen}
+            muted={!isOpen}
+            className="mt-7 rounded-2xl py-4 text-base"
           >
             {busy && <LoaderCircle className="h-4 w-4 animate-spin" />}
             {info.currentEta ? "Update Arrival Time" : "Confirm Arrival Time"}
-          </button>
-          <button
+          </ArrivalActionButton>
+          <ArrivalActionButton
             type="button"
             onClick={arriveNow}
-            disabled={busy || !ro}
-            className="mt-2.5 flex w-full items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-sm font-semibold text-foreground disabled:opacity-50"
+            disabled={busy || !ro || !isOpenNow}
+            muted
+            className="mt-2.5 rounded-xl py-2.5 text-sm disabled:opacity-50"
           >
             {busy && <LoaderCircle className="h-4 w-4 animate-spin" />}
             I'm already here
-          </button>
+          </ArrivalActionButton>
+          {now && !isOpenNow && <p role="status" className="mt-2 text-center text-xs text-muted-foreground">The service department is closed right now.</p>}
         </div>
       )}
       <footer className="mt-8 pb-4 text-center text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireServiceOpenAt } from "./service-hours";
 
 /**
  * Customer-facing arrival flow. These functions are deliberately public: the
@@ -84,6 +85,7 @@ export const submitArrival = createServerFn({ method: "POST" })
     if (data.date < companyToday(company.timezone)) throw new Error("Please pick today or a later day.");
 
     const eta = resolveEta(company.timezone, data.date, data.hour, data.minute, data.meridiem);
+    requireServiceOpenAt(company.timezone, eta);
     if (eta.getTime() < Date.now() - 5 * 60_000) throw new Error("That time has already passed.");
     const ro = data.ro?.trim() || null;
     const etaIso = eta.toISOString();
@@ -172,10 +174,11 @@ export const markCustomerArrived = createServerFn({ method: "POST" })
     const { notifyValetsOfArrival } = await import("./arrive.server");
     const { data: company } = await supabaseAdmin
       .from("dealerships")
-      .select("id")
+      .select("id, timezone")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!company) throw new Error("This arrival link is no longer active.");
+    requireServiceOpenAt(company.timezone, new Date());
 
     const { data: request } = await supabaseAdmin
       .from("pickup_requests")

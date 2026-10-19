@@ -345,7 +345,9 @@ function LotPage() {
           ))}
           {filteredFreeform.length === 0 && (
             <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-               {tab === "cp" ? "No cars in CP." : "No cars in BL."}
+               {carsLoadFailed && cars.length === 0
+                 ? "Loading cars… reconnecting to Huri."
+                 : tab === "cp" ? "No cars in CP." : "No cars in BL."}
             </li>
           )}
         </ul>

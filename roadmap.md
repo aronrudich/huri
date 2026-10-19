@@ -1,5 +1,5 @@
 # Roadmap
-- [ ] Enforce customer arrival service hours on both languages and server writes; verify boundaries and disabled controls.
+- [x] Enforce customer arrival service hours on both languages and server writes; verified opening/closing boundaries, disabled controls, and direct closed-hours rejection.
 - [x] Business explainer: shared video asset, desktop side-by-side player, mobile full-screen viewing, helper-text removal, and layout/playback verification.
 - [x] Replace legacy browser and home-screen icons with the approved wordmark and verify the served files.
 

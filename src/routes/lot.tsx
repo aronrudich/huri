@@ -62,7 +62,7 @@ function LotPage() {
 
   // Cars and open submissions come from the shared query cache, so switching
   // back to this tab paints the previous map instantly.
-  const { data: carsData = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: carsData = [], isError: carsLoadFailed } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const cars = carsData as ParkedCar[];
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];

@@ -571,7 +571,7 @@ function DemoVideo({ autoPlay = false }: { autoPlay?: boolean }) {
       autoPlay={autoPlay}
       poster={explainerPreview.url}
       preload="metadata"
-      onError={() => setUnavailable(true)}
+      onError={(event) => { if (event.target === event.currentTarget) setUnavailable(true); }}
       className="aspect-video max-h-[80dvh] w-full bg-muted object-contain"
     >
       <source src={DEMO_VIDEO_SRC} type={'video/mp4; codecs="avc1.640028, mp4a.40.2"'} />

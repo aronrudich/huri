@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { Play, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
 import { loginWithPasswordFallback } from "@/lib/password-login.functions";
@@ -11,12 +12,18 @@ import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
 import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
+import explainerVideo from "@/assets/huri-explainer.mp4.asset.json";
+import explainerPreview from "@/assets/huri-explainer-preview.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Sign in · Huri" },
       { name: "description", content: "Sign in or register for Huri." },
+      { property: "og:title", content: "Sign in · Huri" },
+      { property: "og:description", content: "Sign in, register with your company code, or introduce your business to Huri." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
@@ -193,14 +200,14 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
 
-      <div className="mx-auto max-w-md px-5 py-12">
+      <div className={`mx-auto px-5 py-12 ${mode === "business" ? "max-w-5xl" : "max-w-md"}`}>
         <div className="mb-8 text-center">
           <img src={huriLogo.url} alt="Huri" className="mx-auto mb-3 h-10 w-auto" />
           <p className="mt-1 text-sm text-muted-foreground">Time Is Money</p>
         </div>
 
-        <div className="rounded-2xl bg-card p-6 shadow-sm">
-          <div className="mb-6 flex rounded-full bg-muted p-1 text-sm font-medium">
+        <div className={mode === "business" ? "" : "rounded-2xl bg-card p-6 shadow-sm"}>
+          <div className={`mb-6 flex rounded-full bg-muted p-1 text-sm font-medium ${mode === "business" ? "md:max-w-md" : ""}`}>
             <button
               type="button"
               onClick={() => setMode("login")}
@@ -395,6 +402,7 @@ function Field({
 }
 
 function BusinessForm() {
+  const [watching, setWatching] = useState(false);
   const [email, setEmail] = useState("");
   const [contactName, setContactName] = useState("");
   const [name, setName] = useState("");
@@ -429,6 +437,20 @@ function BusinessForm() {
 
   return (
     <>
+      <div className="grid items-start gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+      <button
+        type="button"
+        onClick={() => setWatching(true)}
+        className="flex w-full items-center gap-3 overflow-hidden rounded-lg border border-border bg-card text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+      >
+        <span className="relative h-20 w-28 shrink-0">
+          <img src={explainerPreview.url} alt="Huri explainer preview" className="h-full w-full object-cover" />
+          <span className="absolute inset-0 grid place-items-center bg-foreground/20">
+            <Play className="h-8 w-8 rounded-full bg-primary p-2 text-primary-foreground" aria-hidden="true" />
+          </span>
+        </span>
+        <span className="pr-3 text-sm font-semibold">Watch 3-minute explainer</span>
+      </button>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />
         <Field label="Your Name" value={contactName} onChange={(v) => setContactName(v.slice(0, 120))} autoComplete="name" required />
@@ -457,12 +479,17 @@ function BusinessForm() {
             rows={4}
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
-          <p className="mt-1 text-[11px] text-muted-foreground">Tell us anything that would help us understand your business</p>
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit"}
         </button>
       </form>
+      <aside className="hidden min-w-0 overflow-hidden rounded-lg border border-border bg-card md:sticky md:top-6 md:block">
+        <h2 className="border-b border-border px-5 py-4 text-lg font-semibold">See how Huri works</h2>
+        <DemoVideo />
+      </aside>
+      </div>
+      {watching && <ExplainerModal onClose={() => setWatching(false)} />}
       {done && (
         <div
           className="fixed inset-0 z-50 grid place-items-center bg-foreground/40 p-6"
@@ -493,9 +520,39 @@ function BusinessForm() {
   );
 }
 
-const DEMO_VIDEO_SRC = "/huri-demo.mp4";
+const DEMO_VIDEO_SRC = explainerVideo.url;
 
-function DemoVideo() {
+function ExplainerModal({ onClose }: { onClose: () => void }) {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    dialog.showModal();
+    return () => dialog.close();
+  }, []);
+
+  return (
+    <dialog
+      ref={dialogRef}
+      aria-labelledby="explainer-title"
+      onCancel={onClose}
+      onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
+      className="fixed inset-0 m-auto h-dvh max-h-dvh w-screen max-w-none bg-background p-0 text-foreground backdrop:bg-foreground/60 md:h-auto md:max-w-4xl md:rounded-lg"
+    >
+      <div className="flex h-full flex-col justify-center safe-top safe-bottom">
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+          <h2 id="explainer-title" className="text-base font-semibold">See how Huri works</h2>
+          <button type="button" onClick={onClose} aria-label="Close video" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <X className="h-5 w-5" aria-hidden="true" />
+          </button>
+        </div>
+        <DemoVideo autoPlay />
+      </div>
+    </dialog>
+  );
+}
+
+function DemoVideo({ autoPlay = false }: { autoPlay?: boolean }) {
   const [unavailable, setUnavailable] = useState(false);
 
   if (unavailable) {
@@ -510,9 +567,11 @@ function DemoVideo() {
     <video
       controls
       playsInline
+      autoPlay={autoPlay}
+      poster={explainerPreview.url}
       preload="metadata"
       onError={() => setUnavailable(true)}
-      className="aspect-video w-full rounded-xl bg-black"
+      className="aspect-video max-h-[80dvh] w-full bg-muted object-contain"
     >
       <source src={DEMO_VIDEO_SRC} type="video/mp4" onError={() => setUnavailable(true)} />
     </video>

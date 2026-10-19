@@ -89,7 +89,9 @@ function PickupPage() {
   const claimHideMs = settings ? settings.claim_hide_minutes * 60_000 : DEFAULT_CLAIM_HIDE_MS;
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
-  const { data: pickups = [], isPending: pickupsPending } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
+  const { data: pickups = [], isPending: pickupsPending, isError: pickupsLoadFailed } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
+  // Only a failure with nothing loaded counts; otherwise the last list stays.
+  const pickupsError = pickupsLoadFailed && pickups.length === 0;
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
   // Photos attached to any car on the list, so cards can glow when one exists.
@@ -459,10 +461,12 @@ function PickupPage() {
       )}
 
       <ul className="space-y-2 px-3 pt-1">
-        {pickupsPending && sortedPickups.length === 0 && (
-          <li className="rounded-2xl bg-background px-5 py-12" aria-hidden />
+        {(pickupsPending || pickupsError) && sortedPickups.length === 0 && (
+          <li className="rounded-2xl bg-background px-5 py-12 text-center text-sm text-muted-foreground">
+            {pickupsError ? "Loading pickups… reconnecting to Huri." : ""}
+          </li>
         )}
-        {!pickupsPending && sortedPickups.length === 0 && (
+        {!pickupsPending && !pickupsError && sortedPickups.length === 0 && (
           <li className="rounded-2xl bg-background px-5 py-12 text-center text-sm text-muted-foreground">
             No active pickups.
           </li>

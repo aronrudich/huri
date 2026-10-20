@@ -45,3 +45,7 @@
 - [x] Staggered retries/reconnects so phones don't all hit the server at once; lot screen patches single cars instead of reloading the whole lot
 - [x] Archive and reminder jobs restored to every minute; old job log trimmed daily
 - [x] Business page uses explainer video v6
+
+## Explainer music and clean preview (Oct 19)
+- [ ] Replace v6 music with a subtle uplifting bed, preserve narration/visuals, and export/register v7 MP4, WebM, and poster.
+- [ ] Remove video instructional labels and verify standalone mobile preview, desktop player, and full-screen playback.

@@ -17,7 +17,14 @@ import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 
 export const Route = createFileRoute("/thread/$threadId")({
-  head: () => ({ meta: [{ title: "Thread · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Thread · Huri" },
+    { name: "description", content: "Read and reply to your company conversation in Huri." },
+    { property: "og:title", content: "Thread · Huri" },
+    { property: "og:description", content: "Read and reply to your company conversation in Huri." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ThreadPage,
 });
 

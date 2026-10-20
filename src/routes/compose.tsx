@@ -11,7 +11,14 @@ import { HuriLogo } from "@/components/BottomBar";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 
 export const Route = createFileRoute("/compose")({
-  head: () => ({ meta: [{ title: "Compose · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Compose · Huri" },
+    { name: "description", content: "Send a message to your company team in Huri." },
+    { property: "og:title", content: "Compose · Huri" },
+    { property: "og:description", content: "Send a message to your company team in Huri." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ComposePage,
 });
 

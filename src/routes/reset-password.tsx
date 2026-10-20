@@ -10,6 +10,10 @@ export const Route = createFileRoute("/reset-password")({
     meta: [
       { title: "Set a new password · Huri" },
       { name: "description", content: "Create a new password for your Huri account." },
+      { property: "og:title", content: "Set a new password · Huri" },
+      { property: "og:description", content: "Create a new password for your Huri account." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ResetPasswordPage,

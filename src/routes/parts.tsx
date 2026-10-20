@@ -11,7 +11,14 @@ import { isSpectatorRole } from "@/lib/roles";
 
 
 export const Route = createFileRoute("/parts")({
-  head: () => ({ meta: [{ title: "Request Parts · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Request Parts · Huri" },
+    { name: "description", content: "Request parts delivery for a repair order in Huri." },
+    { property: "og:title", content: "Request Parts · Huri" },
+    { property: "og:description", content: "Request parts delivery for a repair order in Huri." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: PartsPage,
 });
 

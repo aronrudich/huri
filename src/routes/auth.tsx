@@ -442,15 +442,13 @@ function BusinessForm() {
       <button
         type="button"
         onClick={() => setWatching(true)}
-        className="flex w-full items-center gap-3 overflow-hidden rounded-lg border border-border bg-card text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
+        aria-label="Play Huri explainer video"
+        className="relative block aspect-video w-full overflow-hidden rounded-xl border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
       >
-        <span className="relative h-20 w-28 shrink-0">
-          <img src={explainerPreview.url} alt="Huri explainer preview" className="h-full w-full object-cover" />
-          <span className="absolute inset-0 grid place-items-center bg-foreground/20">
-            <Play className="h-8 w-8 rounded-full bg-primary p-2 text-primary-foreground" aria-hidden="true" />
-          </span>
+        <img src={explainerPreview.url} alt="" className="h-full w-full object-cover" />
+        <span className="absolute inset-0 grid place-items-center bg-foreground/20">
+          <Play className="h-14 w-14 rounded-full bg-primary p-4 text-primary-foreground" aria-hidden="true" />
         </span>
-        <span className="pr-3 text-sm font-semibold">Watch 4-minute explainer</span>
       </button>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />
@@ -486,7 +484,6 @@ function BusinessForm() {
         </button>
       </form>
       <aside className="hidden min-w-0 overflow-hidden rounded-lg border border-border bg-card md:sticky md:top-6 md:block">
-        <h2 className="border-b border-border px-5 py-4 text-lg font-semibold">See how Huri works</h2>
         <DemoVideo />
       </aside>
       </div>
@@ -535,14 +532,13 @@ function ExplainerModal({ onClose }: { onClose: () => void }) {
   return (
     <dialog
       ref={dialogRef}
-      aria-labelledby="explainer-title"
+      aria-label="Huri explainer video"
       onCancel={onClose}
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       className="fixed inset-0 m-auto h-dvh max-h-dvh w-screen max-w-none bg-background p-0 text-foreground backdrop:bg-foreground/60 md:h-auto md:max-w-4xl md:rounded-lg"
     >
       <div className="flex h-full flex-col justify-center safe-top safe-bottom">
-        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <h2 id="explainer-title" className="text-base font-semibold">See how Huri works</h2>
+        <div className="flex items-center justify-end border-b border-border px-4 py-3">
           <button type="button" onClick={onClose} aria-label="Close video" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>

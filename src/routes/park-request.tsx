@@ -19,6 +19,8 @@ export const Route = createFileRoute("/park-request")({
       { name: "description", content: "Ask a valet to come to your bay and park a car." },
       { property: "og:title", content: "Request A Park · Huri" },
       { property: "og:description", content: "Ask a valet to come to your bay and park a car." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ParkRequestPage,

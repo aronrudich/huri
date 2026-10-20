@@ -24,6 +24,10 @@ export const Route = createFileRoute("/inbox")({
     meta: [
       { title: "Inbox · Huri" },
       { name: "description", content: "Huri messages and daily lot digests." },
+      { property: "og:title", content: "Inbox · Huri" },
+      { property: "og:description", content: "Huri messages and daily lot digests." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: InboxPage,

@@ -14,7 +14,14 @@ import { CarPhotos } from "@/components/CarPhotos";
 type PickupNewSearch = { staged?: boolean; ro?: string };
 
 export const Route = createFileRoute("/pickup-new")({
-  head: () => ({ meta: [{ title: "New Pickup · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "New Pickup · Huri" },
+    { name: "description", content: "Submit a vehicle pickup or staging request in Huri." },
+    { property: "og:title", content: "New Pickup · Huri" },
+    { property: "og:description", content: "Submit a vehicle pickup or staging request in Huri." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (s: Record<string, unknown>): PickupNewSearch => ({
     staged: s.staged === true || s.staged === "true" ? true : undefined,
     ro: typeof s.ro === "string" ? s.ro : undefined,

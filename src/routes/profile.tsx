@@ -29,7 +29,14 @@ import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole } from "@/lib/roles";
 
 export const Route = createFileRoute("/profile")({
-  head: () => ({ meta: [{ title: "Profile · Huri" }] }),
+  head: () => ({ meta: [
+    { title: "Profile · Huri" },
+    { name: "description", content: "Manage your Huri profile and notification preferences." },
+    { property: "og:title", content: "Profile · Huri" },
+    { property: "og:description", content: "Manage your Huri profile and notification preferences." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ProfilePage,
 });
 

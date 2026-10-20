@@ -12,6 +12,8 @@ export const Route = createFileRoute("/bring-me")({
       { name: "description", content: "Ask a valet to bring you a car or parts." },
       { property: "og:title", content: "Bring Me · Huri" },
       { property: "og:description", content: "Ask a valet to bring you a car or parts." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: BringMePage,

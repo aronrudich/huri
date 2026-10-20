@@ -5,3 +5,4 @@
 - Keep public customer-arrival writes inside validated server functions scoped by company slug and RO; this prevents one company link from affecting another company's requests.
 - Share the pure service-hours validator between customer arrival pages and server writes; this prevents different operating-hour rules across languages or direct requests.
 - All Business-page explainer players share one CDN asset pointer and poster; this keeps replacements consistent without oversized repository videos.
+- Only the scheduled database archive completes expired pickup requests; browser timers may filter display but must not persist completion, so devices cannot race the company archive rule.

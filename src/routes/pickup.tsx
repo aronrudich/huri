@@ -18,12 +18,10 @@ import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
 import { dealershipSettingsQuery } from "@/lib/settings";
+import { claimHideMilliseconds, isClaimWithinWindow } from "@/lib/pickup-window";
 
 
 
-/** Claimed submissions leave the list 30 minutes after the claim. */
-/** Fallback used until the company's own claim-hide setting loads. */
-const DEFAULT_CLAIM_HIDE_MS = 60 * 60 * 1000;
 /** One claim at a time: a valet waits this long before claiming another. */
 
 
@@ -86,7 +84,7 @@ function PickupPage() {
   const queryClient = useQueryClient();
   // Each company sets how long a claimed submission stays on the list.
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
-  const claimHideMs = settings ? settings.claim_hide_minutes * 60_000 : DEFAULT_CLAIM_HIDE_MS;
+  const claimHideMs = claimHideMilliseconds(settings?.claim_hide_minutes);
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
   const { data: pickups = [], isPending: pickupsPending, isError: pickupsLoadFailed } = useQuery({ ...pickupsQuery<Pickup>(), enabled: !!user });
@@ -236,31 +234,7 @@ function PickupPage() {
     return () => { supabase.removeChannel(chan); };
   }, [profile, realtimeGen]);
 
-  // Auto-archive claimed pickups/parts after the company's configured number of
-  // minutes without changing their
-  // saved spot snapshot. The car's destination (Bay / CP / Wash / Unknown) is
-  // applied server-side when the submission leaves the list, and no car is ever
-  // deleted.
-
-  useEffect(() => {
-    const archiveExpired = () => {
-      const now = Date.now();
-      pickups.forEach((p) => {
-        if (p.status === "claimed" && p.claimed_at && now - new Date(p.claimed_at).getTime() >= claimHideMs) {
-          supabase
-            .from("pickup_requests")
-            .update({ status: "completed", completed_at: new Date().toISOString() })
-            .eq("id", p.id)
-            .then(() => loadCars());
-        }
-      });
-    };
-    archiveExpired();
-    const t = setInterval(() => {
-      archiveExpired();
-    }, 30000);
-    return () => clearInterval(t);
-  }, [pickups, claimHideMs]);
+  // Expired requests are completed only by the database's scheduled archive.
 
   // Keeps the "in 18m" countdown on customer arrival cards honest.
   const [nowTick, setNowTick] = useState(() => Date.now());
@@ -305,11 +279,11 @@ function PickupPage() {
     () => pickups.filter((p) => {
       if (!canSeeKind(profile?.role_name, p.kind)) return false;
       if (p.status === "claimed" && p.claimed_at) {
-        return Date.now() - new Date(p.claimed_at).getTime() < claimHideMs;
+        return isClaimWithinWindow(p.claimed_at, nowTick, claimHideMs);
       }
       return true;
     }),
-    [pickups, profile, claimHideMs],
+    [pickups, profile, claimHideMs, nowTick],
   );
 
   const matches = useMemo(() => {

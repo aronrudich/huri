@@ -39,6 +39,11 @@
 ## Stale phones
 - [x] Open apps check for a newer published version and reload themselves (not while typing or with a sheet open); version shown on Profile
 
+## Pickup archive and install popup (Oct 20)
+- [x] Remove browser auto-archiving; retain company-specific display timing; verified JCD's 60-minute server archive and every-minute schedule. Eleven tests pass and build OK.
+- [x] Remove the iOS install popup; verified iPhone sign-in and registration, and signed-out pickup redirect.
+- [ ] Verify the signed-in pickup screen; blocked until the requesting user signs in (no matching account available for automatic preview sign-in).
+
 ## Outage hardening (Oct 19)
 - [x] Database moved from Tiny to Small (Tiny was running out of memory)
 - [x] Lists never show "empty" when the server can't be reached; reconnect banner instead

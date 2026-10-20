@@ -47,5 +47,5 @@
 - [x] Business page uses explainer video v6
 
 ## Explainer music and clean preview (Oct 19)
-- [ ] Replace v6 music with a subtle uplifting bed, preserve narration/visuals, and export/register v7 MP4, WebM, and poster.
+- [x] Replace v6 music with a subtle uplifting bed and export/register v7 MP4, WebM, and poster; identical video packets, measured music 19.9 dB below speech, and browser playback verified. Listening quality remains unverified because no audio listening tool is available.
 - [x] Remove video instructional labels and verify standalone mobile preview, desktop player, and full-screen playback.

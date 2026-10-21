@@ -57,6 +57,13 @@
       "when": 1792453364677,
       "tag": "0007_restore_minute_jobs_and_trim_job_log",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792593826387,
+      "tag": "0008_exclude_over_eight_hour_claims_from_milestone",
+      "breakpoints": true
     }
   ]
 }

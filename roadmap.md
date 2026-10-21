@@ -62,6 +62,6 @@
 - [x] Tech pickups no longer exempt a car left in the bay from the −2 unlogged deduction
 - [x] Explainer v8 (intro card + ETA privacy line) on the Business tab
 
-## Unified narration revision
-- [x] Corrected unified-narrator video (v10) reviewed: one voice, opening/closing cards, full ETA privacy demo.
-- [x] v10 MP4/WebM/cover registered; Business page plays it on desktop and mobile.
+## Unified narration revision (abandoned)
+- [x] v8/v9/v10 unified-narration attempts rejected (v10 was "totally different"); the 0:47 ETA privacy addition was abandoned.
+- [x] Business tab reverted to approved explainer v7 (v7 MP4/WebM/cover).

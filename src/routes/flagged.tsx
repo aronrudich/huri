@@ -65,6 +65,7 @@ function FlaggedPage() {
     if (!error) void queryClient.invalidateQueries({ queryKey: ["flagged-cars"] });
   };
 
+  if (!user) return <div className="min-h-screen bg-surface" />;
   if (!loading && user && !allowed) {
     return (
       <div className="min-h-screen bg-surface px-4 pb-32 safe-top">

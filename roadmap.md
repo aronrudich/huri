@@ -60,4 +60,4 @@
 - [x] Signed-out visitors go straight to sign-in with no pickup-screen flash
 - [x] Reports count and average every claim (no 20-minute cap; "Slowest" shown)
 - [x] Tech pickups no longer exempt a car left in the bay from the −2 unlogged deduction
-- [ ] Explainer v8 (intro card + 0:47 ETA privacy line) — rendering, then swap into Business tab
+- [x] Explainer v8 (intro card + ETA privacy line) on the Business tab

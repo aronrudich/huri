@@ -1,6 +1,6 @@
 // Reports — claim volume and claim speed per employee.
 // Days run 6:30 AM → 6:30 PM Pacific, so "Today" resets at 6:30 AM.
-// Every claim counts toward totals and averages, however long it took.
+// Claims strictly over eight hours are excluded before all report aggregation.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -78,7 +78,7 @@ function ReportsPage() {
   }, [user, loading, navigate]);
 
   const { data, isPending, error } = useQuery({
-    queryKey: ["report", range, custom.start, custom.end, hours.start, hours.end],
+    queryKey: ["report", "eight-hour-cutoff", range, custom.start, custom.end, hours.start, hours.end],
     enabled: !!user && allowed && customReady,
     staleTime: 60_000,
     queryFn: () =>
@@ -390,7 +390,7 @@ function ReportsPage() {
             </section>
 
             <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-              Days start at 6:30 AM Pacific. Every claim counts toward totals and averages.
+              Days start at 6:30 AM Pacific.
             </p>
               </>
             ) : (

@@ -1,5 +1,6 @@
 # Roadmap
-- [ ] Exclude claims strictly over eight hours from all reporting and scoring; preserve operational history and verify boundary tests and signed-in Reports.
+- [x] Exclude claims strictly over eight hours through one reporting/scoring gate (including submission credit and custody penalties); preserve history, update milestone counts, and verify 15 tests. Current data has 21 excluded claims; no separate PDF/export calculator exists.
+- [ ] Verify signed-in Reports with the eight-hour cutoff; blocked because the requesting user has no matching app account for automatic sign-in.
 - [x] Enforce customer arrival service hours on both languages and server writes; verified opening/closing boundaries, disabled controls, and direct closed-hours rejection.
 - [x] Business explainer: shared video asset, desktop side-by-side player, mobile full-screen viewing, helper-text removal, and layout/playback verification.
 - [x] Replace legacy browser and home-screen icons with the approved wordmark and verify the served files.

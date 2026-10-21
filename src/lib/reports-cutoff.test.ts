@@ -1,3 +1,4 @@
+/// <reference types="bun" />
 import { expect, mock, test } from "bun:test";
 
 // Exercise the real aggregation handler without making network calls or writes.

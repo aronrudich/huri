@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
 import { normalizeSpot, adjacentSpots, lotOf } from "@/lib/lot";
+import { isReportEligible } from "@/lib/report-eligibility";
 import {
   shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
@@ -138,11 +139,9 @@ export const getReport = createServerFn({ method: "POST" })
     }
 
 
-    // Canceled requests never count toward any stat. "picked_up" rows come from the
-    // "Car Has Been Picked Up" shortcut — they are bookkeeping, not real requests.
-    let list = (rows ?? []).filter(
-      (r) => r.status !== "canceled" && r.status !== "cancelled" && r.status !== "picked_up",
-    );
+    // One eligibility gate precedes every count, timing, submission and point stat.
+    // Claims strictly over eight hours stay in history but contribute nothing here.
+    let list = rows.filter(isReportEligible);
 
     // Optional custom hour window: keep only submissions whose Pacific hour of
     // creation falls inside [startHour, endHour). Per-row math keeps DST correct.
@@ -292,7 +291,7 @@ export const getReport = createServerFn({ method: "POST" })
       events.some((e) =>
         e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
         e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
-    const live = rows.filter((r) => r.status !== "canceled" && r.status !== "cancelled");
+    const live = rows.filter(isReportEligible);
     // Custody lookback: a car can enter a tech's bay days before someone finds it
     // unlogged. Load up to 30 days of earlier requests/events for in-range cars.
     const priorRows: Row[] = [];
@@ -313,7 +312,7 @@ export const getReport = createServerFn({ method: "POST" })
             .order("id", { ascending: true })
             .range(offset, offset + PAGE - 1);
           if (error) throw error;
-          priorRows.push(...((batch ?? []) as Row[]).filter((r) => r.status !== "canceled" && r.status !== "cancelled"));
+          priorRows.push(...((batch ?? []) as Row[]).filter(isReportEligible));
           if (!batch || batch.length < PAGE) break;
         }
         for (let offset = 0; offset < 200_000; offset += PAGE) {

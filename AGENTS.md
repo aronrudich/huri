@@ -1,4 +1,5 @@
 # Architecture rules
+- Use the shared report eligibility predicate before request-based statistics and scoring, including custody lookbacks; this keeps totals, rankings and downstream exports consistent without changing operational history.
 - Generate public browser and install icons from the approved wordmark and version their URLs together; this keeps cached icons consistent with the in-app brand.
 
 - Keep experimental company lot previews in isolated frontend-only routes with deterministic mock data until explicit activation; this prevents test layouts from affecting live tenant data or established company maps.

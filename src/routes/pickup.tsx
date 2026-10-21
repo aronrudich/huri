@@ -376,6 +376,7 @@ function PickupPage() {
   }, [visiblePickups, nowTick, user?.id]);
   const mineCount = user ? sortedPickups.filter((p) => p.requested_by === user.id).length : 0;
 
+  if (!user) return <div className="min-h-screen bg-surface" />;
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-3 backdrop-blur">

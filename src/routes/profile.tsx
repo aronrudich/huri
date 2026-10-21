@@ -223,6 +223,7 @@ function ProfilePage() {
 
   const totalPending = pending.accounts.length + pending.roleChanges.length;
 
+  if (!user) return <div className="min-h-screen bg-surface" />;
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top safe-bottom">
       <header className="flex items-center gap-2 px-4 pb-3 pt-4">
@@ -427,10 +428,7 @@ function ProfilePage() {
         </button>
       </section>
 
-      <p className="mt-6 px-5 text-center text-xs text-muted-foreground">
-        Install Huri: open this page in Safari/Chrome → Share → Add to Home Screen.
-      </p>
-      <p className="mt-2 px-5 text-center text-[11px] text-muted-foreground/70">
+      <p className="mt-6 px-5 text-center text-[11px] text-muted-foreground/70">
         Version {formatBuildId()}
       </p>
 

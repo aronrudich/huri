@@ -12,9 +12,9 @@ import { toast } from "sonner";
 import { ROLE_OPTIONS } from "@/lib/roles";
 import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
-import explainerVideo from "@/assets/huri-explainer-v7.mp4.asset.json";
-import explainerWebm from "@/assets/huri-explainer-v7.webm.asset.json";
-import explainerPreview from "@/assets/huri-explainer-v7-cover.jpg.asset.json";
+import explainerVideo from "@/assets/huri-explainer-v8.mp4.asset.json";
+import explainerWebm from "@/assets/huri-explainer-v8.webm.asset.json";
+import explainerPreview from "@/assets/huri-explainer-v8-cover.jpg.asset.json";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -354,13 +354,6 @@ function AuthPage() {
           </p>
         </div>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Tap{" "}
-          <Link to="/pickup" className="text-primary">
-            Share → Add to Home Screen
-          </Link>{" "}
-          after signing in to install Huri.
-        </p>
       </div>
     </div>
   );

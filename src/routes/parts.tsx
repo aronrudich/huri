@@ -56,6 +56,7 @@ function PartsPage() {
     }
   };
 
+  if (!user) return <div className="min-h-screen bg-surface" />;
   return (
     <div className="min-h-screen bg-surface safe-top safe-bottom">
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b border-border bg-background/95 px-4 py-3 backdrop-blur">

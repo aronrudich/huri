@@ -14,6 +14,7 @@ export type EmployeeStat = {
   claims: number;
   avgMs: number | null;
   fastestMs: number | null;
+  slowestMs: number | null;
   anomalies: number;
   byKind: Record<string, number>;
   points: number;
@@ -52,8 +53,6 @@ export type ReportData = {
   totalPoints: number;
 };
 
-/** Claims slower than this are anomalies: counted, but never averaged. */
-const ANOMALY_MS = 20 * 60_000;
 
 /** Pickups are split by who asked: technicians vs. customer-facing staff. */
 const isTechSource = (role: string | null | undefined) =>
@@ -161,7 +160,7 @@ export const getReport = createServerFn({ method: "POST" })
       row: r,
       ms: new Date(r.claimed_at as string).getTime() - new Date(r.created_at).getTime(),
     }));
-    const clean = durations.filter((d) => d.ms >= 0 && d.ms <= ANOMALY_MS);
+    const clean = durations.filter((d) => d.ms >= 0);
 
     const avg = (values: number[]) =>
       values.length ? Math.round(values.reduce((a, b) => a + b, 0) / values.length) : null;
@@ -375,7 +374,6 @@ export const getReport = createServerFn({ method: "POST" })
         for (let j = i + 1; j < list.length; j++) {
           const n = list[j];
           if (n.created_at <= arrived) continue;
-          if (kindOf(n) === "pickup_tech" && n.requested_by === tech) continue; // still in the bay
           ender = n;
           break;
         }
@@ -426,7 +424,7 @@ export const getReport = createServerFn({ method: "POST" })
       entry.claims += 1;
       const k = kindOf(row);
       entry.byKind[k] = (entry.byKind[k] ?? 0) + 1;
-      if (ms >= 0 && ms <= ANOMALY_MS) entry.clean.push(ms);
+      if (ms >= 0) entry.clean.push(ms);
       else entry.anomalies += 1;
       perEmployee.set(id, entry);
     });
@@ -505,6 +503,7 @@ export const getReport = createServerFn({ method: "POST" })
         claims: entry?.claims ?? 0,
         avgMs: entry ? avg(entry.clean) : null,
         fastestMs: entry && entry.clean.length ? Math.min(...entry.clean) : null,
+        slowestMs: entry && entry.clean.length ? Math.max(...entry.clean) : null,
         anomalies: entry?.anomalies ?? 0,
         byKind: entry?.byKind ?? {},
         points: Math.round((pointsByEmployee.get(id) ?? 0) * 10) / 10,
@@ -521,7 +520,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (row.claimed_at && row.claimed_by) {
         entry.claimed += 1;
         const ms = new Date(row.claimed_at).getTime() - new Date(row.created_at).getTime();
-        if (ms >= 0 && ms <= ANOMALY_MS) entry.clean.push(ms);
+        if (ms >= 0) entry.clean.push(ms);
       }
       perKind.set(k, entry);
     });

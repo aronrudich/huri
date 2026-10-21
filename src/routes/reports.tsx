@@ -1,6 +1,6 @@
 // Reports — claim volume and claim speed per employee.
 // Days run 6:30 AM → 6:30 PM Pacific, so "Today" resets at 6:30 AM.
-// Claims slower than 20 minutes are counted but never averaged (anomalies).
+// Every claim counts toward totals and averages, however long it took.
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -354,7 +354,7 @@ function ReportsPage() {
                       <div className="mt-2 grid grid-cols-3 gap-2 border-t border-border pt-2 text-center">
                         <Mini label="Avg" value={formatDuration(e.avgMs)} />
                         <Mini label="Fastest" value={formatDuration(e.fastestMs)} />
-                        <Mini label="Over 20m" value={String(e.anomalies)} />
+                        <Mini label="Slowest" value={formatDuration(e.slowestMs)} />
                       </div>
                     </li>
                   ))}
@@ -390,8 +390,7 @@ function ReportsPage() {
             </section>
 
             <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-              Days start at 6:30 AM Pacific. Claims over 20 minutes still count toward totals
-              but are left out of every average.
+              Days start at 6:30 AM Pacific. Every claim counts toward totals and averages.
             </p>
               </>
             ) : (

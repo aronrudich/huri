@@ -54,3 +54,10 @@
 ## Explainer music and clean preview (Oct 19)
 - [x] Replace v6 music with a subtle uplifting bed and export/register v7 MP4, WebM, and poster; identical video packets, measured music 19.9 dB below speech, and browser playback verified. Listening quality remains unverified because no audio listening tool is available.
 - [x] Remove video instructional labels and verify standalone mobile preview, desktop player, and full-screen playback.
+
+## Oct 20 batch
+- [x] No install hints anywhere (sign-in and Profile text removed)
+- [x] Signed-out visitors go straight to sign-in with no pickup-screen flash
+- [x] Reports count and average every claim (no 20-minute cap; "Slowest" shown)
+- [x] Tech pickups no longer exempt a car left in the bay from the −2 unlogged deduction
+- [x] Explainer v8 (intro card + ETA privacy line) on the Business tab

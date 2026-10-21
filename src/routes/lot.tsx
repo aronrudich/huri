@@ -231,6 +231,7 @@ function LotPage() {
 
   const filled = tab === "sv" ? spots.filter((s) => byPos[s]).length : 0;
 
+  if (!user) return <div className="min-h-screen bg-surface" />;
   return (
     <div className="min-h-screen bg-surface pb-32 safe-top">
       <header className="sticky top-0 z-10 bg-surface/95 px-4 pb-3 pt-3 backdrop-blur">

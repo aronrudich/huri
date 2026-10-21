@@ -63,5 +63,5 @@
 - [x] Explainer v8 (intro card + ETA privacy line) on the Business tab
 
 ## Unified narration revision
-- [ ] Finish the corrected unified-narrator video against the uploaded Oct 21 brief: 1.25× natural-pitch pacing, opening/closing brand cards, complete ETA privacy demonstration, and balanced acoustic/piano music. Pending video task `sub_7emrny5m`.
-- [ ] Review returned video and qualifications, register versioned MP4/WebM/poster assets, and verify Business-page playback on desktop and mobile before replacing the current video.
+- [x] Corrected unified-narrator video (v10) reviewed: one voice, opening/closing cards, full ETA privacy demo.
+- [x] v10 MP4/WebM/cover registered; Business page plays it on desktop and mobile.

@@ -473,10 +473,10 @@ function BusinessForm() {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 3000))}
-            rows={7}
+            rows={6}
             required
-            placeholder={"Ex. Our dealership has three parking areas.\n\nBack Lot - parking spots numbered 1-120\n\nCustomer Parking - parking spots with no numbers\n\nService Lot - parking spots numbered 1-147"}
-            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary placeholder:text-muted-foreground/70"
+            placeholder={"Ex. Our dealership has three parking areas:\nBack Lot - parking spots numbered 1-120\nSide Lot - parking spots w/o numbers\nService Lot - parking spots numbered 1-147"}
+            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base leading-snug outline-none focus:border-primary placeholder:text-muted-foreground/70"
           />
 
         </div>

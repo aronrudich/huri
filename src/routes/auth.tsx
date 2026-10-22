@@ -473,10 +473,12 @@ function BusinessForm() {
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 3000))}
-            rows={4}
+            rows={7}
             required
-            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
+            placeholder={"Ex. Our dealership has three parking areas.\n\nBack Lot - parking spots numbered 1-120\n\nCustomer Parking - parking spots with no numbers\n\nService Lot - parking spots numbered 1-147"}
+            className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary placeholder:text-muted-foreground/70"
           />
+
         </div>
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Submitting…" : "Submit"}

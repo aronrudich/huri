@@ -14,7 +14,7 @@ export function BusinessAddress({ value, onChange }: { value: Addr; onChange: (a
 
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-muted-foreground">Address</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">Business Address</label>
       <div className="space-y-2">
         <input value={value.street} onChange={(e) => setF("street")(e.target.value.slice(0, 200))} placeholder="Street address" autoComplete="street-address" className={inputCls} />
         <div className="grid grid-cols-2 gap-2">

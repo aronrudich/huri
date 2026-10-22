@@ -344,55 +344,27 @@ export const getReport = createServerFn({ method: "POST" })
     byRo.forEach((list) => list.sort((a, b) => a.created_at.localeCompare(b.created_at)));
     // a) Park request claimed but no real spot logged from claim until 30 min
     //    after it left the list. Anchored at claim, never only at the late archive time.
+    const movesFor = (dealer: string, ro: string, evs: Ev[]) =>
+      evs.filter((e) => e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro)
+        .map((e) => ({ actor_id: e.actor_id, created_at: e.created_at, dest: destOf(e) }));
+    const asCustody = (r: Row) => ({ ...r, kind: kindOf(r) }) as unknown as CustodyRow;
     live.forEach((r) => {
-      if (kindOf(r) !== "park" || r.status !== "completed" || !r.claimed_by || !r.claimed_at || !r.ro_number) return;
-      if (!inHours(r.claimed_at)) return;
-      const endMs = Math.max(
-        new Date(r.claimed_at).getTime() + 30 * 60_000,
-        r.completed_at ? new Date(r.completed_at).getTime() + 30 * 60_000 : 0,
-      );
-      if (!realMoveIn(r.dealership_id, r.ro_number, r.claimed_at, new Date(endMs).toISOString())) {
-        addPts(r.claimed_by, -2, UNLOGGED);
-      }
+      if (kindOf(r) !== "park" || !r.ro_number || !r.claimed_at || !inHours(r.claimed_at)) return;
+      const who = parkClaimDeduction(asCustody(r), movesFor(r.dealership_id, r.ro_number, events));
+      if (who) addPts(who, UNLOGGED_POINTS, UNLOGGED);
     });
-    // b) Car left a tech's bay with no hand-off, judged once per BAY STAY.
-    //    Consecutive tech pickups by the same tech are one stay. A park or wash
-    //    request, or the tech logging a real spot, clears the stay; otherwise the
-    //    first request from anyone else shows (via its snapshot) where the car was.
-    const isRealSpot = (d: string | null) =>
-      !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY ");
+    // b) Tech-bay custody, judged once per bay stay; see unlogged-custody.ts.
     byRo.forEach((list) => {
-      for (let i = 0; i < list.length; i++) {
-        const r = list[i];
-        if (kindOf(r) !== "pickup_tech" || r.status !== "completed" || !r.requested_by) continue;
-        const tech = r.requested_by;
-        const prev = i > 0 ? list[i - 1] : null;
-        if (prev && kindOf(prev) === "pickup_tech" && prev.requested_by === tech) continue; // same stay
-        const arrived = r.claimed_at ?? r.created_at;
-        let ender: Row | null = null;
-        for (let j = i + 1; j < list.length; j++) {
-          const n = list[j];
-          if (n.created_at <= arrived) continue;
-          ender = n;
-          break;
-        }
-        if (!ender) continue; // still in custody
-        const k = kindOf(ender);
-        if (k === "park" || k === "wash") continue; // proper hand-off
+      const first = list[0];
+      if (!first?.ro_number) return;
+      const moves = movesFor(first.dealership_id, first.ro_number, custodyEvents);
+      bayCustodyDeductions(list.map(asCustody), moves).forEach(({ tech, ender }) => {
         // Dated when someone else finds the car unlogged, not when it entered the bay.
-        if (start && ender.created_at < start.toISOString()) continue;
-        if (end && ender.created_at >= end.toISOString()) continue;
-        if (!inHours(ender.created_at)) continue;
-        const selfLogged = custodyEvents.some((e) =>
-          e.actor_id === tech && e.event_type !== "deleted" && e.dealership_id === r.dealership_id &&
-          e.ro_number === r.ro_number && e.created_at >= arrived && e.created_at <= ender!.created_at &&
-          isRealSpot(destOf(e)));
-        if (selfLogged) continue;
-        const snap = (ender.lot_position ?? "").trim().toUpperCase() || "UNKNOWN";
-        if (snap === "UNKNOWN" || snap === "BAY" || snap.startsWith("BAY ")) {
-          addPts(tech, -2, UNLOGGED);
-        }
-      }
+        if (start && ender.created_at < start.toISOString()) return;
+        if (end && ender.created_at >= end.toISOString()) return;
+        if (!inHours(ender.created_at)) return;
+        addPts(tech, UNLOGGED_POINTS, UNLOGGED);
+      });
     });
     // Moves to UNKNOWN are never penalized: historically most were automatic
     // customer-pickup archives and spot-displacement bumps, not employee choices.

@@ -137,6 +137,7 @@ function AuthPage() {
     const cleanEmail = email.trim().toLowerCase();
     if (!cleanEmail || !/^\S+@\S+\.\S+$/.test(cleanEmail)) return toast.error("Enter a valid email");
     if (!password) return toast.error("Password is required");
+    if (password.length < 6) return toast.error("Password must be at least 6 characters");
     const finalRole = role === "Other" ? otherRole.trim() : role;
     if (!finalRole) return toast.error("Please specify your role");
     const cleanCode = companyCode.trim().toUpperCase();
@@ -292,6 +293,9 @@ function AuthPage() {
                 required
                 autoComplete="new-password"
               />
+              <p className="mb-3 text-[11px] text-muted-foreground">
+                Any password of 6 or more characters works.
+              </p>
 
               <div>
                 <label className="mb-1 block text-xs font-medium text-muted-foreground">Company Code</label>

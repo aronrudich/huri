@@ -49,6 +49,7 @@ function ResetPasswordPage() {
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!password) return toast.error("Enter a new password");
+    if (password.length < 6) return toast.error("Password must be at least 6 characters");
     setBusy(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
@@ -126,6 +127,9 @@ function ResetPasswordPage() {
                   autoComplete="new-password"
                   className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
                 />
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  Any password of 6 or more characters works.
+                </p>
               </div>
               <button
                 disabled={busy}

@@ -7,7 +7,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { spotsForLot, lotOf, normalizeSpot, spotBadge, locationLabel, isPickupMapRequest, type LotId } from "@/lib/lot";
-import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
@@ -301,7 +300,6 @@ function LotPage() {
         </p>
       </header>
 
-      <PeopleSearchResults q={q} />
 
 
 

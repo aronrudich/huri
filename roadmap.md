@@ -53,6 +53,12 @@
 - [x] Archive and reminder jobs restored to every minute; old job log trimmed daily
 - [x] Business page uses explainer video v6
 
+## Messaging removal and simple passwords (Oct 21)
+- [x] Bottom bar is exactly 3 tabs (Pickup, Lot, Profile); unread badge and message polling removed; tab prefetcher updated
+- [x] /inbox, /compose, /thread/$threadId redirect to /pickup (verified signed-out: they land on sign-in via the pickup guard, never render a messaging screen)
+- [x] Password minimum is 6 characters of any kind everywhere (registration, reset, profile change, server signup validator) with helper text; no complexity rules
+- [ ] Verify the signed-in bottom bar shows exactly 3 tabs; blocked until the requesting user signs in (no matching account available for automatic preview sign-in)
+
 ## Explainer music and clean preview (Oct 19)
 - [x] Replace v6 music with a subtle uplifting bed and export/register v7 MP4, WebM, and poster; identical video packets, measured music 19.9 dB below speech, and browser playback verified. Listening quality remains unverified because no audio listening tool is available.
 - [x] Remove video instructional labels and verify standalone mobile preview, desktop player, and full-screen playback.

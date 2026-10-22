@@ -420,6 +420,7 @@ function BusinessForm() {
     if (!name.trim()) return toast.error("Business name is required");
     if (!type) return toast.error("Choose Dealership or Auction");
     if (!addrComplete(addr)) return toast.error("Enter street, city, state and ZIP");
+    if (!message.trim()) return toast.error("Tell us about your business and parking layout");
     setBusy(true);
     try {
       await submitBusinessInquiry({ data: { email: cleanEmail, contactName: contactName.trim(), businessName: name.trim(), businessType: type, message: message.trim(), submissionKey: key, address: { street: addr.street.trim(), city: addr.city.trim(), state: addr.state.trim(), zip: addr.zip.trim(), formatted: addr.formatted || undefined, lat: addr.lat, lng: addr.lng } } });
@@ -468,11 +469,12 @@ function BusinessForm() {
         </div>
         <BusinessAddress value={addr} onChange={setAddr} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business (optional)</label>
+          <label className="mb-1 block text-xs font-medium text-muted-foreground">Tell us about your business and parking layout</label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value.slice(0, 3000))}
             rows={4}
+            required
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>
@@ -498,10 +500,6 @@ function BusinessForm() {
           >
             <h2 className="text-xl font-bold">Thank you very much!</h2>
             <p className="text-sm font-semibold text-primary">We will contact you in a Huri.</p>
-            <p className="text-sm text-muted-foreground">
-              In the meantime, watch this demonstration to learn more about Huri
-            </p>
-            <DemoVideo />
             <button
               onClick={() => setDone(false)}
               className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground"

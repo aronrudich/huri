@@ -10,6 +10,8 @@ const emailPasswordSchema = z.object({
 });
 
 const confirmedSignupSchema = emailPasswordSchema.extend({
+  // Bare engine minimum: any 6+ characters, no complexity rules.
+  password: z.string().min(6),
   fullName: z.string().trim().min(1).max(120),
   nickname: z.string().trim().max(120).optional(),
   roleName: z.string().trim().min(1).max(120),

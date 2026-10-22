@@ -1,15 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Inbox, Car, List, User, ChevronDown } from "lucide-react";
+import { Car, List, User, ChevronDown } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
-import { useHasUnreadMessages } from "@/lib/use-unread";
 import { useQuery } from "@tanstack/react-query";
 import { actionsForRole, type ActionId } from "@/lib/roles";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
-export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "profile" }) {
-  const hasUnread = useHasUnreadMessages();
+export function BottomBar({ active }: { active: "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (
     <Link
       to={to}
@@ -26,20 +24,6 @@ export function BottomBar({ active }: { active: "inbox" | "pickup" | "lot" | "pr
       className="fixed inset-x-0 bottom-0 z-50 flex border-t border-border bg-background/95 backdrop-blur safe-bottom"
       style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
     >
-      {item(
-        "inbox",
-        "/inbox",
-        <span className="relative inline-flex">
-          <Inbox className="h-6 w-6" />
-          {hasUnread && (
-            <span
-              aria-label="Unread messages"
-              className="absolute right-[3px] top-[7px] h-2 w-2 rounded-full bg-destructive ring-2 ring-background"
-            />
-          )}
-        </span>,
-        "Inbox",
-      )}
       {item("pickup", "/pickup", <Car className="h-6 w-6" />, "Pickup")}
       {item("lot", "/lot", <List className="h-6 w-6" />, "Lot")}
       {item("profile", "/profile", <User className="h-6 w-6" />, "Profile")}

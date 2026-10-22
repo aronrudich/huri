@@ -82,6 +82,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
 
   const savePassword = async () => {
     if (!newPass) return toast.error("Enter a new password");
+    if (newPass.length < 6) return toast.error("Password must be at least 6 characters");
     if (newPass !== confirmPass) return toast.error("Passwords don't match");
     setBusy(true);
     const { error } = await supabase.auth.updateUser({ password: newPass });
@@ -183,7 +184,7 @@ export function EditProfileSheet({ profile, onClose, onSaved }: Props) {
               <Field label="Confirm new password">
                 <input type="password" value={confirmPass} onChange={(e) => setConfirmPass(e.target.value)} className="input" autoComplete="new-password" />
               </Field>
-              <p className="text-xs text-muted-foreground">Any password works.</p>
+              <p className="text-xs text-muted-foreground">Any password of 6 or more characters works.</p>
               <PrimaryBtn busy={busy} onClick={savePassword}>Update password</PrimaryBtn>
             </div>
           )}

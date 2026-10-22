@@ -77,3 +77,6 @@
 ## Business onboarding example text (Oct 21)
 - [x] Parking-layout note box shows a light-grey multiline example ("Ex. Our dealership has three parking areas:" plus Back Lot 1-120 / Side Lot w/o numbers / Service Lot 1-147) with single line breaks, leading-snug and 6 rows; verified on phone and desktop that no line wraps and there are no blank gaps; clears on typing; 3,000-character cap, required field, and empty-submit blocking verified unchanged.
 
+
+## QA fix (Oct 22)
+- Removed the dead People section from Pickup/Lot search and the retired messaging query code behind it.

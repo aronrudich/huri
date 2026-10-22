@@ -11,7 +11,6 @@ import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMa
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
-import { PeopleSearchResults } from "@/components/PeopleSearchResults";
 import { LotMap } from "@/components/LotMap";
 import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
@@ -399,9 +398,8 @@ function PickupPage() {
         </p>
       </header>
 
-      <PeopleSearchResults q={q} />
-
       {q.trim() && (
+
 
         <ul className="mx-3 mb-3 overflow-hidden rounded-2xl bg-background">
           {matches.length === 0 && waitingForLiveSearch && (

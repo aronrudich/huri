@@ -1,6 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { getDirectory, getMessageRecipients } from "@/lib/directory.functions";
+import { getDirectory } from "@/lib/directory.functions";
 
 /**
  * A phone that falls asleep mid-request leaves the fetch hanging forever, which
@@ -15,7 +15,6 @@ const timeoutSignal = (signal?: AbortSignal, ms = 10_000): AbortSignal => {
 
 export type DirectoryMap = Record<string, { name: string; avatarUrl: string | null }>;
 export type RolesMap = Record<string, string>;
-export type RecipientHit = { id: string; name: string; avatarUrl: string | null };
 
 /** id -> display name + avatar for every profile visible to the caller. */
 export const directoryQuery = () =>
@@ -124,44 +123,6 @@ export const pickupsQuery = <T,>() =>
         .abortSignal(timeoutSignal(signal));
       if (error) throw error;
       return (data ?? []) as T[];
-    },
-  });
-
-export type MessageRow = {
-  id: string;
-  thread_id: string;
-  sender_id: string | null;
-  recipient_id: string | null;
-  recipient_role_id: string | null;
-  body: string;
-  created_at: string;
-  read_at?: string | null;
-};
-
-/** Every message the signed-in user can see (direct, sent, or to one of their roles). */
-export const messagesQuery = (userId: string, roleIds: string[]) =>
-  queryOptions({
-    queryKey: ["messages", userId, [...roleIds].sort().join(",")],
-    staleTime: 30_000,
-    // Keep the previous list on screen while a new key (role loaded) fetches,
-    // so the inbox never flashes its "no messages yet" empty state.
-    placeholderData: (prev: MessageRow[] | undefined) => prev,
-    queryFn: async ({ signal }: { signal: AbortSignal }): Promise<MessageRow[]> => {
-      const parts = [
-        `recipient_id.eq.${userId}`,
-        `sender_id.eq.${userId}`,
-        `thread_id.like.group:*:${userId}`,
-      ];
-      if (roleIds.length) parts.push(`recipient_role_id.in.(${roleIds.join(",")})`);
-      const { data, error } = await supabase
-        .from("messages")
-        .select("*")
-        .or(parts.join(","))
-        .order("created_at", { ascending: false })
-        .limit(200)
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []) as MessageRow[];
     },
   });
 

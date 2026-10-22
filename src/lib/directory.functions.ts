@@ -18,25 +18,6 @@ export const avatarUrlFor = (
   version?: string | null,
 ): string | null => (hasAvatar ? `/api/public/avatar/${id}?v=${version ?? ""}` : null);
 
-export const getMessageRecipients = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    // Single round trip: the function scopes to the caller's dealership itself.
-    const { data, error } = await supabaseAdmin.rpc("message_recipients_for", {
-      _uid: context.userId,
-    });
-    if (error) throw error;
-
-    return (data ?? []).map((person) => ({
-      id: person.id,
-      fullName: person.full_name,
-      nickname: person.nickname,
-      roleName: person.role_name,
-      avatarUrl: avatarUrlFor(person.id, person.has_avatar, person.avatar_version),
-    }));
-  });
-
 export const getDirectory = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {

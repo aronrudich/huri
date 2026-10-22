@@ -75,5 +75,5 @@
 - [x] Business tab reverted to approved explainer v7 (v7 MP4/WebM/cover).
 
 ## Business onboarding example text (Oct 21)
-- [x] Parking-layout note box shows a light-grey multiline example (three parking areas with Back Lot / Customer Parking / Service Lot spot ranges) that clears on typing; 3,000-character cap, required field, and empty-submit blocking verified unchanged.
+- [x] Parking-layout note box shows a light-grey multiline example ("Ex. Our dealership has three parking areas:" plus Back Lot 1-120 / Side Lot w/o numbers / Service Lot 1-147) with single line breaks, leading-snug and 6 rows; verified on phone and desktop that no line wraps and there are no blank gaps; clears on typing; 3,000-character cap, required field, and empty-submit blocking verified unchanged.
 

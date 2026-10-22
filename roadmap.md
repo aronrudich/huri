@@ -73,3 +73,7 @@
 ## Unified narration revision (abandoned)
 - [x] v8/v9/v10 unified-narration attempts rejected (v10 was "totally different"); the 0:47 ETA privacy addition was abandoned.
 - [x] Business tab reverted to approved explainer v7 (v7 MP4/WebM/cover).
+
+## Business onboarding example text (Oct 21)
+- [x] Parking-layout note box shows a light-grey multiline example (three parking areas with Back Lot / Customer Parking / Service Lot spot ranges) that clears on typing; 3,000-character cap, required field, and empty-submit blocking verified unchanged.
+

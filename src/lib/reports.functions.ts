@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { canViewReports } from "@/lib/roles";
 import { normalizeSpot, adjacentSpots, lotOf } from "@/lib/lot";
+import { bayCustodyDeductions, parkClaimDeduction, UNLOGGED_POINTS, type CustodyRow } from "@/lib/unlogged-custody";
 import { isReportEligible } from "@/lib/report-eligibility";
 import {
   shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
@@ -287,10 +288,6 @@ export const getReport = createServerFn({ method: "POST" })
     });
     // ---- unlogged locations (-1 each; automatic Huri moves never count) -----
     const UNLOGGED = "Unlogged locations";
-    const realMoveIn = (dealer: string, ro: string, from: string, to: string) =>
-      events.some((e) =>
-        e.actor_id && e.event_type !== "deleted" && e.dealership_id === dealer && e.ro_number === ro &&
-        e.created_at >= from && e.created_at <= to && (() => { const d = destOf(e); return !!d && d !== "UNKNOWN" && d !== "TAKEN" && d !== "WASH" && d !== "BAY" && !d.startsWith("BAY "); })());
     const live = rows.filter(isReportEligible);
     // Custody lookback: a car can enter a tech's bay days before someone finds it
     // unlogged. Load up to 30 days of earlier requests/events for in-range cars.

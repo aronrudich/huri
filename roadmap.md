@@ -80,3 +80,8 @@
 
 ## QA fix (Oct 22)
 - Removed the dead People section from Pickup/Lot search and the retired messaging query code behind it.
+
+## Measured database optimization (Oct 23)
+- [x] Measure project usage, expensive queries, existing indexes, and scheduled work; results in database-optimization-report.md.
+- [x] Add ordered snapshot and company/RO/date request-history indexes; preserve recovery refreshes, permissions, scoring and all data.
+- [x] Verify both indexes, faster same-query plans and identical result checksums; all 26 regression tests pass. No measured credit reduction claimed; no publishing.

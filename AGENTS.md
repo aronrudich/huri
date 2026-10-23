@@ -1,4 +1,5 @@
 # Architecture rules
+- Preserve company/RO/date history indexes and the ordered location-snapshot index when changing report queries; they avoid unnecessary scans without dropping history or weakening recovery freshness.
 - Use the shared report eligibility predicate before request-based statistics and scoring, including custody lookbacks; this keeps totals, rankings and downstream exports consistent without changing operational history.
 - Generate public browser and install icons from the approved wordmark and version their URLs together; this keeps cached icons consistent with the in-app brand.
 

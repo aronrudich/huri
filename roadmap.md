@@ -1,4 +1,11 @@
 # Roadmap
+## Lot completeness and car details (Oct 27)
+- [x] Load every active car with pagination; preserve TAKEN history and live updates, including targeted TAKEN lookups for open pickup context.
+- [x] Preserve existing model/notes on location-only saves; restored JCD RO #193626 model to Jeep GC without changing SV 3.
+- [x] Auto-load six-digit RO details without replacing user-entered details or selected spot; refresh Lot cache after save.
+- [x] 32 regression tests pass; build OK; current database has 719 active cars and 43 occupied SV spots; signed-out Lot safely redirects with no runtime errors.
+- [ ] Verify signed-in Park-to-Lot flow and occupied colors; blocked because no app account matches the requesting user for automatic preview sign-in. User must sign in to the preview. Frontend changes not published; database fix already applied.
+
 - [x] Exclude claims strictly over eight hours through one reporting/scoring gate (including submission credit and custody penalties); preserve history, update milestone counts, and verify 15 tests. Current data has 21 excluded claims; no separate PDF/export calculator exists.
 - [ ] Verify signed-in Reports with the eight-hour cutoff; blocked because the requesting user has no matching app account for automatic sign-in.
 - [x] Enforce customer arrival service hours on both languages and server writes; verified opening/closing boundaries, disabled controls, and direct closed-hours rejection.

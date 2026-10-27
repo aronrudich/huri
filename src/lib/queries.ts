@@ -77,6 +77,28 @@ export const parkedCarsQuery = () =>
 
 export type FlaggedCarRow = ParkedCarRow & { flagged_at: string | null };
 
+/** Preserve pickup context for TAKEN cars without downloading all historical rows. */
+export const pickupTakenCarsQuery = (ros: string[]) => {
+  const uniqueRos = [...new Set(ros.filter(Boolean))].sort();
+  return queryOptions({
+    queryKey: ["pickup-taken-cars", uniqueRos],
+    staleTime: 60_000,
+    queryFn: async ({ signal }): Promise<ParkedCarRow[]> => {
+      const rows: ParkedCarRow[] = [];
+      for (let offset = 0; offset < uniqueRos.length; offset += 100) {
+        rows.push(...await loadAllCarPages<ParkedCarRow>((from, to) => supabase
+          .from("parked_cars")
+          .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at, bay_tech, notes_updated_at")
+          .eq("lot_position", "TAKEN")
+          .in("ro_number", uniqueRos.slice(offset, offset + 100))
+          .order("id", { ascending: true }).range(from, to)
+          .abortSignal(timeoutSignal(signal))));
+      }
+      return rows;
+    },
+  });
+};
+
 /** Cars flagged by the daily 5 AM check as sitting 14+ days, newest first. */
 export const flaggedCarsQuery = () =>
   queryOptions({

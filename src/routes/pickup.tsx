@@ -10,7 +10,8 @@ import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMapRequest } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery } from "@/lib/queries";
+import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery } from "@/lib/queries";
+import { isActiveCar } from "@/lib/car-loading";
 import { LotMap } from "@/components/LotMap";
 import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
@@ -90,6 +91,9 @@ function PickupPage() {
   // Only a failure with nothing loaded counts; otherwise the last list stays.
   const pickupsError = pickupsLoadFailed && pickups.length === 0;
   const { data: allCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const { data: takenPickupCars = [] } = useQuery({
+    ...pickupTakenCarsQuery(pickups.map((p) => p.ro_number ?? "")), enabled: !!user,
+  });
   const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
   // Photos attached to any car on the list, so cards can glow when one exists.
   const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(pickups.map((p) => p.ro_number ?? "")));
@@ -107,9 +111,9 @@ function PickupPage() {
   });
   const carsByRo = useMemo(() => {
     const byRo: Record<string, ParkedCar> = {};
-    allCars.forEach((c) => { if (c.ro_number) byRo[c.ro_number] = c; });
+    [...takenPickupCars, ...allCars].forEach((c) => { if (c.ro_number) byRo[c.ro_number] = c; });
     return byRo;
-  }, [allCars]);
+  }, [allCars, takenPickupCars]);
   const carsByPos = useMemo(() => {
     const byPos: Record<string, ParkedCar> = {};
     allCars.forEach((c) => {
@@ -180,6 +184,9 @@ function PickupPage() {
       .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
+        if (!row || !isActiveCar(row) || takenPickupCars.some((c) => c.id === row.id)) {
+          void queryClient.invalidateQueries({ queryKey: ["pickup-taken-cars"] });
+        }
         queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
           const list = cur ?? [];
           if (payload.eventType === "DELETE") {
@@ -187,6 +194,7 @@ function PickupPage() {
             return list.filter((c) => c.id !== oldId);
           }
           if (!row?.id) { void loadCars(); return list; }
+          if (!isActiveCar(row)) return list.filter((c) => c.id !== row.id);
           return list.some((c) => c.id === row.id)
             ? list.map((c) => (c.id === row.id ? row : c))
             : [...list, row];
@@ -194,7 +202,7 @@ function PickupPage() {
       })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient, realtimeGen]);
+  }, [user, queryClient, realtimeGen, takenPickupCars]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.

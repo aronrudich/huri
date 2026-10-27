@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getDirectory } from "@/lib/directory.functions";
+import { loadAllCarPages } from "@/lib/car-loading";
 
 /**
  * A phone that falls asleep mid-request leaves the fetch hanging forever, which
@@ -58,18 +59,19 @@ export type ParkedCarRow = {
   notes_updated_at?: string | null;
 };
 
-/** Every car currently tracked in Huri. */
+/** Every active car; TAKEN records remain available through direct RO/history reads. */
 export const parkedCarsQuery = () =>
   queryOptions({
     queryKey: ["parked-cars"],
     staleTime: 60_000,
     queryFn: async ({ signal }): Promise<ParkedCarRow[]> => {
-      const { data, error } = await supabase
+      return loadAllCarPages<ParkedCarRow>((from, to) => supabase
         .from("parked_cars")
         .select("id, tag_number, ro_number, car_model, lot_position, notes, is_staged, located_at, bay_tech, notes_updated_at")
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []) as ParkedCarRow[];
+        .neq("lot_position", "TAKEN")
+        .order("id", { ascending: true })
+        .range(from, to)
+        .abortSignal(timeoutSignal(signal)));
     },
   });
 

@@ -15,6 +15,8 @@ import { dealershipSettingsQuery } from "@/lib/settings";
 import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
 import { uploadCarPhoto } from "@/lib/car-photos";
+import { parkedCarsQuery, type ParkedCarRow } from "@/lib/queries";
+import { mergeLoadedCarDetails } from "@/lib/car-loading";
 
 import { format } from "date-fns";
 
@@ -70,7 +72,17 @@ function ParkPage() {
   // Wash record for this RO — it stays with the RO forever, wherever the car goes.
   const [washedAt, setWashedAt] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
-  const [carsBySpot, setCarsBySpot] = useState<Record<string, MapCar>>({});
+  const detailEdits = useRef({ model: false, notes: false, pos: !!spotParam });
+  const formValues = useRef({ model, notes, pos });
+  formValues.current = { model, notes, pos };
+  const { data: mapCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
+  const carsBySpot = useMemo(() => {
+    const by: Record<string, MapCar> = {};
+    mapCars.forEach((c) => {
+      if (!["UNKNOWN", "TAKEN"].includes(c.lot_position)) by[c.lot_position.toUpperCase()] = c;
+    });
+    return by;
+  }, [mapCars]);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
   // Photos taken before the car has an RO # / has been saved.
   const pendingPhotos = useRef<File[]>([]);
@@ -84,52 +96,39 @@ function ParkPage() {
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
   useEffect(() => {
-    type Row = { id: string; ro_number: string | null; car_model: string | null; lot_position: string; notes: string | null; is_staged?: boolean | null; bay_tech?: string | null };
+    if (!user) return;
+    const targetRo = ro.trim();
+    if (!idParam && !/^\d{6}$/.test(targetRo)) return;
     let cancelled = false;
-    const apply = (data: Row) => {
+    const apply = (data: ParkedCarRow) => {
+      if (cancelled) return;
+      const details = mergeLoadedCarDetails(formValues.current, data, detailEdits.current);
       setEditing(true);
       setExistingId(data.id);
-      setRo(data.ro_number ?? "");
-      setModel(data.car_model ?? "");
-      setPos(data.lot_position === "UNKNOWN" ? "" : data.lot_position);
-      setNotes(data.notes ?? "");
+      if (idParam) setRo(data.ro_number ?? "");
+      setModel(details.model);
+      setPos(details.pos);
+      setNotes(details.notes);
       setStaged(!!data.is_staged);
       setSavedPos(data.lot_position ?? null);
       setBayTech(data.bay_tech ?? null);
     };
     // Paint instantly from the lot list already in memory, then verify live.
-    const cached = queryClient.getQueryData<Row[]>(["parked-cars"]);
-    const hit = cached?.find((c) => (idParam ? c.id === idParam : !!roParam && c.ro_number === roParam));
+    const cached = queryClient.getQueryData<ParkedCarRow[]>(["parked-cars"]);
+    const hit = cached?.find((c) => idParam ? c.id === idParam : c.ro_number === targetRo);
     if (hit) apply(hit);
     const load = async () => {
-      let data: Row | null = null;
-      if (idParam) {
-        const r = await supabase.from("parked_cars").select("*").eq("id", idParam).maybeSingle();
-        data = (r.data as Row | null) ?? null;
-      } else if (roParam) {
-        const r = await supabase.from("parked_cars").select("*").eq("ro_number", roParam).maybeSingle();
-        data = (r.data as Row | null) ?? null;
-      }
+      const request = supabase.from("parked_cars").select("*");
+      const { data, error } = await (idParam ? request.eq("id", idParam) : request.eq("ro_number", targetRo))
+        .abortSignal(AbortSignal.timeout(10_000)).maybeSingle();
+      if (cancelled) return;
+      if (error) { toast.error("Could not load this car's details. Please try again."); return; }
       if (!data || cancelled) return;
       apply(data);
     };
     void load();
     return () => { cancelled = true; };
-  }, [roParam, idParam, queryClient]);
-
-  // Loaded up front: powers both the map overlay and the blocking section.
-  useEffect(() => {
-    supabase
-      .from("parked_cars")
-      .select("id, ro_number, car_model, lot_position, notes, is_staged")
-      .then(({ data }) => {
-        const by: Record<string, MapCar> = {};
-        ((data as MapCar[]) ?? []).forEach((c) => {
-          if (c.lot_position && c.lot_position !== "UNKNOWN" && c.lot_position !== "TAKEN") by[c.lot_position.toUpperCase()] = c;
-        });
-        setCarsBySpot(by);
-      });
-  }, [savedPos]);
+  }, [ro, idParam, queryClient, user]);
 
   // "Washed" is tied to the RO #, so it follows the car through every later move.
   useEffect(() => {
@@ -163,12 +162,13 @@ function ParkPage() {
     let targetId = existingId;
 
     // Look up an existing car with this RO (case-insensitive) so we update it rather than create a duplicate.
-    const { data: existing } = await supabase
+    const { data: existing, error: lookupError } = await supabase
       .from("parked_cars")
       .select("id, lot_position, car_model")
       .ilike("ro_number", normalizedRo)
       .maybeSingle();
-    if (existing && existing.id !== existingId) {
+    if (lookupError) return toast.error("Could not verify this car. Please try again.");
+    if (existing && (existing.id !== existingId || (!roParam && !idParam))) {
       const existingSpot = existing.lot_position?.toUpperCase();
       const bothReal =
         existingSpot && !["BL", "CP", "UNKNOWN", "TAKEN"].includes(existingSpot) &&
@@ -194,7 +194,7 @@ function ParkPage() {
       _ro_number: normalizedRo,
       _position: normalizedPos,
       _car_model: model.trim() || null,
-      _notes: notes.trim() || null,
+      _notes: detailEdits.current.notes ? notes.trim() : notes.trim() || null,
       _confirm_displace: false,
     };
     let { data: result, error } = await supabase.rpc("assign_lot_position", {
@@ -237,6 +237,7 @@ function ParkPage() {
     }
 
     toast.success(editing ? "Car updated" : "Car logged");
+    await queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
     goBack();
   };
 
@@ -253,19 +254,28 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={setRo} inputMode="numeric" maxLength={6} />
-        <LocationPicker required value={pos} onChange={setPos} />
+        <Field label="RO Number" required value={ro} onChange={(value) => {
+          setRo(value);
+          setExistingId(null);
+          setEditing(false);
+          setSavedPos(null);
+          setBayTech(null);
+          setStaged(false);
+          if (!detailEdits.current.model) setModel("");
+          if (!detailEdits.current.notes) setNotes("");
+        }} inputMode="numeric" maxLength={6} />
+        <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (
           <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
             <CheckCircle2 className="h-4 w-4" /> Washed · {format(new Date(washedAt), "MMM d, yyyy")}
           </p>
         )}
-        {!hideModel && <Field label="Car Model" value={model} onChange={setModel} />}
+        {!hideModel && <Field label="Car Model" value={model} onChange={(value) => { detailEdits.current.model = true; setModel(value); }} />}
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
           <textarea
-            value={notes} onChange={(e) => setNotes(e.target.value)} rows={3}
+            value={notes} onChange={(e) => { detailEdits.current.notes = true; setNotes(e.target.value); }} rows={3}
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>

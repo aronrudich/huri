@@ -11,6 +11,7 @@ import { LotMap } from "@/components/LotMap";
 import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
+import { isActiveCar } from "@/lib/car-loading";
 
 
 
@@ -82,6 +83,7 @@ function LotPage() {
             return cur.filter((c) => c.id !== oldId);
           }
           if (!row?.id) { void queryClient.invalidateQueries({ queryKey: ["parked-cars"] }); return cur; }
+          if (!isActiveCar(row)) return cur.filter((c) => c.id !== row.id);
           return cur.some((c) => c.id === row.id)
             ? cur.map((c) => (c.id === row.id ? { ...c, ...row } : c))
             : [...cur, row];

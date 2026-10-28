@@ -64,6 +64,7 @@ const writeCachedProfile = (profile: Profile | null) => {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const identity = useRef<string | null>(null);
+  const currentUser = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,6 +82,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loadProfile = async (uid: string) => {
     const { data: existing } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+    if(currentUser.current !== uid) return;
     if (existing) {
       applyProfile(existing as Profile);
       return;
@@ -115,6 +117,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      currentUser.current = s?.user.id ?? null;
       if (identity.current && s?.user.id !== identity.current.split("|")[0]) applyProfile(null);
       setSession(s);
       if (s?.user) {
@@ -170,6 +173,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Paint immediately from the stored session plus the cached profile,
         // then verify the user and refresh the profile in the background.
         setSession(data.session);
+        currentUser.current = data.session.user.id;
         const cached = readCachedProfile(data.session.user.id);
         if (cached) setProfile(cached);
         finish();

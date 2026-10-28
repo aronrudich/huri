@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { locationChoice, normalizeSpot, type LocationChoice } from "@/lib/lot";
+import { useAuth } from "@/lib/auth-context";
+import { useQuery } from "@tanstack/react-query";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { companyLocationsQuery } from "@/lib/company-locations";
 
 type LocationPickerProps = {
   value: string;
@@ -21,6 +25,9 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
 const TAKEN_OPTION = { id: "TAKEN" as LocationChoice, label: "Taken", detail: "Taken by Customer" };
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
+  const { profile } = useAuth();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const { data: rules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<LocationChoice>(() => locationChoice(value));
   const [detail, setDetail] = useState(() => {
@@ -66,6 +73,12 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
 
 
   const selected = choice === "TAKEN" ? TAKEN_OPTION : OPTIONS.find((option) => option.id === choice);
+
+  if (settings && settings.company_code !== "JCD29854") return <div>
+    <label className="mb-1 block text-xs font-medium text-muted-foreground">Location</label>
+    <input value={value} onChange={(e)=>onChange(e.target.value)} maxLength={60} required={required} list="company-location-options" className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base" />
+    <datalist id="company-location-options">{[...rules.map((r)=>r.label),"BAY","WASH","UNKNOWN"].map((label)=><option key={label} value={label} />)}</datalist>
+  </div>;
 
   return (
     <div ref={rootRef}>

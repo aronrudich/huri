@@ -7,6 +7,7 @@ import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import { getArrivalInfo, markCustomerArrived, submitArrival } from "@/lib/arrive.functions";
 import { isServiceTimeOpen, isServiceOpenAt, SERVICE_CLOSED_MESSAGE } from "@/lib/service-hours";
 import { ArrivalActionButton, ArrivalHoursNotice } from "@/components/ArrivalHours";
+import { ArrivalLanguageSwitch } from "@/components/ArrivalLanguageSwitch";
 
 /**
  * Customer-facing arrival screen. No sign-in, no navigation, no app chrome:
@@ -33,8 +34,6 @@ export const Route = createFileRoute("/llegar/$slug")({
       { property: "og:description", content: "Confirme su hora estimada de llegada para tener su vehículo listo y esperándolo." },
       { name: "twitter:title", content: "Huri · Vehículo listo para recoger" },
       { name: "twitter:description", content: "Confirme su hora estimada de llegada para tener su vehículo listo y esperándolo." },
-      { property: "og:image", content: "https://huri.team/icon-512.png" },
-      { name: "twitter:image", content: "https://huri.team/icon-512.png" },
       { name: "twitter:card", content: "summary_large_image" },
       { property: "og:type", content: "website" },
       { name: "robots", content: "noindex" },
@@ -259,8 +258,8 @@ function ArrivePage() {
       document.removeEventListener("visibilitychange", update);
     };
   }, []);
-  const isOpen = isServiceTimeOpen(date, hour, minute, meridiem);
-  const isOpenNow = !!info && !!now && isServiceOpenAt(info.timezone, now);
+  const isOpen = isServiceTimeOpen(date, hour, minute, meridiem, info?.operatingHours);
+  const isOpenNow = !!info && !!now && isServiceOpenAt(info.timezone, now, info.operatingHours);
 
   const submit = async () => {
     if (busy || !isOpen) return;
@@ -279,7 +278,7 @@ function ArrivePage() {
   };
 
   const arriveNow = async () => {
-    if (busy || !info || !ro || !isServiceOpenAt(info.timezone, new Date())) return;
+    if (busy || !info || !ro || !isServiceOpenAt(info.timezone, new Date(), info.operatingHours)) return;
     setBusy(true);
     setError(null);
     try {
@@ -309,6 +308,7 @@ function ArrivePage() {
     <div className="flex min-h-screen flex-col items-center bg-surface px-6 pb-16 pt-14 safe-top safe-bottom overscroll-none select-none">
       <img src={huriLogo.url} alt="Huri" className="h-10 w-auto" />
 
+      <ArrivalLanguageSwitch spanish />
       {done ? (
         <div className="mt-14 w-full max-w-sm rounded-3xl bg-background p-8 text-center shadow-xl">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/10">
@@ -397,7 +397,7 @@ function ArrivePage() {
 
           {error && <p className="mt-4 text-center text-sm text-destructive">{error}</p>}
 
-          {!isOpen && <ArrivalHoursNotice spanish />}
+          {!isOpen && <ArrivalHoursNotice spanish hours={info.operatingHours} />}
           <ArrivalActionButton
             type="button"
             onClick={submit}

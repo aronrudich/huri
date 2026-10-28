@@ -130,6 +130,10 @@ export const setEmployeeRole = createServerFn({ method: "POST" })
 export const deleteOwnAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
+    const { data: profile, error: profileError } = await context.supabase.from("profiles")
+      .select("is_owner, dealership_id").eq("id", context.userId).single();
+    if (profileError) throw new Error("Could not verify account deletion");
+    if (profile.is_owner) throw new Error("You must transfer ownership to another administrator before deleting your account.");
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.deleteUser(context.userId);
     if (error) throw new Error(error.message);
@@ -160,13 +164,8 @@ export const transferOwnership = createServerFn({ method: "POST" })
     const { dealershipId } = await assertOwner(context.userId);
     if (data.userId === context.userId) throw new Error("Already the owner.");
     await targetInDealership(data.userId, dealershipId);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { error: e1 } = await supabaseAdmin.from("profiles")
-      .update({ is_owner: false }).eq("id", context.userId);
-    if (e1) throw new Error(e1.message);
-    const { error: e2 } = await supabaseAdmin.from("profiles")
-      .update({ is_owner: true, status: "approved" }).eq("id", data.userId);
-    if (e2) throw new Error(e2.message);
+    const { error } = await context.supabase.rpc("transfer_company_ownership", { _user_id: data.userId });
+    if (error) throw new Error(error.message);
     return { ok: true };
   });
 

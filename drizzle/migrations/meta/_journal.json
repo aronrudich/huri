@@ -141,6 +141,13 @@
       "when": 1793158565913,
       "tag": "0019_huri_owner_guard_application_table",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1793158630265,
+      "tag": "0020_huri_assignment_normalized_collision",
+      "breakpoints": true
     }
   ]
 }

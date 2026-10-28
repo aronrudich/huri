@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireServiceOpenAt } from "./service-hours";
+import { parseServiceHours, type ServiceHours } from "./company-configuration";
 
 /**
  * Customer-facing arrival flow. These functions are deliberately public: the
@@ -10,7 +11,7 @@ import { requireServiceOpenAt } from "./service-hours";
  */
 
 const slugSchema = z.string().trim().toLowerCase().min(2).max(40).regex(/^[a-z0-9-]+$/);
-const roSchema = z.string().trim().max(32).regex(/^[A-Za-z0-9-]*$/).optional();
+const roSchema = z.string().trim().max(32).regex(/^[A-Za-z0-9_-]*$/).optional();
 
 /** Arrivals open for claiming this long before the customer's time. */
 export const ARRIVAL_LEAD_MS = 30 * 60_000;
@@ -21,6 +22,7 @@ export type ArrivalInfo = {
   /** ISO time already chosen on a previous visit, so reopening the link keeps it. */
   currentEta: string | null;
   timezone: string;
+  operatingHours: ServiceHours;
   /** Today on the company's clock, YYYY-MM-DD. */
   today: string;
 };
@@ -33,7 +35,7 @@ export const getArrivalInfo = createServerFn({ method: "GET" })
     const { companyToday } = await import("./arrive.server");
     const { data: company } = await supabaseAdmin
       .from("dealerships")
-      .select("id, name, timezone")
+      .select("id, name, timezone, operating_hours")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!company) return null;
@@ -58,6 +60,7 @@ export const getArrivalInfo = createServerFn({ method: "GET" })
       ro: data.ro ?? null,
       currentEta,
       timezone: company.timezone,
+      operatingHours: parseServiceHours(company.operating_hours),
       today: companyToday(company.timezone),
     };
   });
@@ -78,14 +81,14 @@ export const submitArrival = createServerFn({ method: "POST" })
 
     const { data: company } = await supabaseAdmin
       .from("dealerships")
-      .select("id, timezone")
+      .select("id, timezone, operating_hours")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!company) throw new Error("We could not find that dealership.");
     if (data.date < companyToday(company.timezone)) throw new Error("Please pick today or a later day.");
 
     const eta = resolveEta(company.timezone, data.date, data.hour, data.minute, data.meridiem);
-    requireServiceOpenAt(company.timezone, eta);
+    requireServiceOpenAt(company.timezone, eta, company.operating_hours);
     if (eta.getTime() < Date.now() - 5 * 60_000) throw new Error("That time has already passed.");
     const ro = data.ro?.trim() || null;
     const etaIso = eta.toISOString();
@@ -174,11 +177,11 @@ export const markCustomerArrived = createServerFn({ method: "POST" })
     const { notifyValetsOfArrival } = await import("./arrive.server");
     const { data: company } = await supabaseAdmin
       .from("dealerships")
-      .select("id, timezone")
+      .select("id, timezone, operating_hours")
       .eq("slug", data.slug)
       .maybeSingle();
     if (!company) throw new Error("This arrival link is no longer active.");
-    requireServiceOpenAt(company.timezone, new Date());
+    requireServiceOpenAt(company.timezone, new Date(), company.operating_hours);
 
     const { data: request } = await supabaseAdmin
       .from("pickup_requests")

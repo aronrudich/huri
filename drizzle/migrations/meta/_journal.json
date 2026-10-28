@@ -99,6 +99,13 @@
       "when": 1793157925035,
       "tag": "0013_huri_owner_lifecycle_guards",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793158035934,
+      "tag": "0014_huri_physical_location_configuration",
+      "breakpoints": true
     }
   ]
 }

@@ -352,6 +352,38 @@ export type Database = {
           },
         ]
       }
+      company_location_rules: {
+        Row: {
+          blockers: string[]
+          capacity: number
+          dealership_id: string
+          label: string
+          lot_name: string
+        }
+        Insert: {
+          blockers?: string[]
+          capacity?: number
+          dealership_id: string
+          label: string
+          lot_name?: string
+        }
+        Update: {
+          blockers?: string[]
+          capacity?: number
+          dealership_id?: string
+          label?: string
+          lot_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_location_rules_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_map_lots: {
         Row: {
           category: string | null
@@ -1187,6 +1219,10 @@ export type Database = {
           role_id: string
           role_name: string
         }[]
+      }
+      is_physical_company_spot: {
+        Args: { _company: string; _label: string }
+        Returns: boolean
       }
       log_car_event: {
         Args: {

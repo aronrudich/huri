@@ -127,6 +127,13 @@
       "when": 1793158438183,
       "tag": "0017_huri_legacy_upload_compatibility",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793158480061,
+      "tag": "0018_huri_atomic_owner_transfer_order",
+      "breakpoints": true
     }
   ]
 }

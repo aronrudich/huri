@@ -15,6 +15,8 @@ import {
   type DealershipSettings,
 } from "@/lib/settings";
 import { customerArrivalTemplate } from "@/lib/arrive-link";
+import { parseServiceHours, type ServiceHours } from "@/lib/company-configuration";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -41,6 +43,9 @@ type Draft = {
   enable_wash: boolean;
   enable_parts: boolean;
   enable_staging: boolean;
+  operating_hours: ServiceHours;
+  shift_start_minutes: string;
+  ro_format: "six_digits" | "flexible";
 };
 
 const toDraft = (s: DealershipSettings): Draft => ({
@@ -51,6 +56,9 @@ const toDraft = (s: DealershipSettings): Draft => ({
   enable_wash: s.enable_wash,
   enable_parts: s.enable_parts,
   enable_staging: s.enable_staging,
+  operating_hours: parseServiceHours(s.operating_hours),
+  shift_start_minutes: String(s.shift_start_minutes),
+  ro_format: s.ro_format,
 });
 
 function SettingsPage() {
@@ -125,6 +133,9 @@ function SettingsPage() {
         enable_wash: draft.enable_wash,
         enable_parts: draft.enable_parts,
         enable_staging: draft.enable_staging,
+        operating_hours: draft.operating_hours,
+        shift_start_minutes: Number(draft.shift_start_minutes),
+        ro_format: draft.ro_format,
       })
       .eq("id", settings.id);
     setSaving(false);
@@ -263,13 +274,32 @@ function SettingsPage() {
           </section>
 
           <div className="mx-3 mt-5">
-            <button
+            <section className="mb-5 space-y-3">
+              <h2 className="text-sm font-semibold">Service hours</h2>
+              {draft.operating_hours.map((day, index) => <div key={index} className="flex flex-wrap items-center gap-2">
+                <label className="w-24 text-sm">{["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][index]}</label>
+                <input type="checkbox" aria-label={`${["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][index]} open`} checked={!!day} onChange={(e) => setDraft({ ...draft, operating_hours: draft.operating_hours.map((d, i) => i === index ? e.target.checked ? { open: 390, close: 1080 } : null : d) })} />
+                {day && (["open", "close"] as const).map((key) => <input key={key} type="time" aria-label={`${index} ${key}`} value={`${String(Math.floor(day[key] / 60)).padStart(2, "0")}:${String(day[key] % 60).padStart(2, "0")}`} className="rounded-lg border border-input bg-background p-2 text-sm" onChange={(e) => {
+                  const [h, m] = e.target.value.split(":").map(Number);
+                  setDraft({ ...draft, operating_hours: draft.operating_hours.map((d, i) => i === index && d ? { ...d, [key]: h * 60 + m } : d) });
+                }} />)}
+              </div>)}
+              <label className="block text-sm">Reporting day starts
+                <input type="time" className="ml-3 rounded-lg border border-input bg-background p-2" value={`${String(Math.floor(Number(draft.shift_start_minutes) / 60)).padStart(2, "0")}:${String(Number(draft.shift_start_minutes) % 60).padStart(2, "0")}`} onChange={(e) => { const [h, m] = e.target.value.split(":").map(Number); setDraft({ ...draft, shift_start_minutes: String(h * 60 + m) }); }} />
+              </label>
+              <label className="block text-sm">Repair order format
+                <select value={draft.ro_format} onChange={(e) => setDraft({ ...draft, ro_format: e.target.value === "flexible" ? "flexible" : "six_digits" })} className="ml-3 rounded-lg border border-input bg-background p-2">
+                  <option value="six_digits">6 digits</option><option value="flexible">3–10 letters, digits, hyphens or underscores</option>
+                </select>
+              </label>
+            </section>
+            <Button
               onClick={save}
               disabled={saving}
               className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
             >
               {saving ? "Saving…" : "Save"}
-            </button>
+            </Button>
           </div>
         </>
       ) : (

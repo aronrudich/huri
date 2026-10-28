@@ -110,9 +110,14 @@ export const getReport = createServerFn({ method: "POST" })
     if (!allowed) throw new Error("Reports are not available for your role.");
 
     if (!me) throw new Error("No company for this account");
+    const { data: company, error: companyError } = await supabase.from("dealerships")
+      .select("timezone, shift_start_minutes").eq("id", me.dealership_id).single();
+    if (companyError) throw companyError;
+    const timeZone = company.timezone;
+    const shiftMinutes = company.shift_start_minutes;
     const custom = data.range === "custom" && data.start && data.end;
-    const start = custom && data.start ? shiftDayStart(data.start) : shiftWindowStart(data.range);
-    const end = custom && data.end ? shiftDayEnd(data.end) : null;
+    const start = custom && data.start ? shiftDayStart(data.start, timeZone, shiftMinutes) : shiftWindowStart(data.range, new Date(), timeZone, shiftMinutes);
+    const end = custom && data.end ? shiftDayEnd(data.end, timeZone, shiftMinutes) : null;
 
     // The Data API caps any single read at 1000 rows, which silently truncated
     // "all time" history. Page through until a short batch comes back.
@@ -151,7 +156,7 @@ export const getReport = createServerFn({ method: "POST" })
       const from = data.startHour;
       const to = data.endHour;
       list = list.filter((r) => {
-        const h = pacificHour(new Date(r.created_at));
+        const h = pacificHour(new Date(r.created_at), timeZone);
         return h >= from && h < to;
       });
     }
@@ -254,7 +259,7 @@ export const getReport = createServerFn({ method: "POST" })
     durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
     const inHours = (iso: string) =>
       !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||
-      (pacificHour(new Date(iso)) >= data.startHour && pacificHour(new Date(iso)) < data.endHour!);
+      (pacificHour(new Date(iso), timeZone) >= data.startHour && data.endHour !== undefined && pacificHour(new Date(iso), timeZone) < data.endHour);
     // Technicians earn +0.3 for every request they submit (car, parts, park, wash).
     list.forEach((r) => {
       if (!r.requested_by || !isTechSource(r.source_role)) return;

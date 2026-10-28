@@ -18,8 +18,8 @@ const SHIFT_START_HOUR = 6;
 const SHIFT_START_MIN = 30;
 
 /** Minutes that Pacific time is offset from UTC at a given instant (e.g. -420). */
-function offsetMinutes(at: Date): number {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: TZ, timeZoneName: "longOffset" })
+function offsetMinutes(at: Date, timeZone = TZ): number {
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone, timeZoneName: "longOffset" })
     .formatToParts(at);
   const name = parts.find((p) => p.type === "timeZoneName")?.value ?? "GMT-08:00";
   const match = /GMT([+-])(\d{2}):(\d{2})/.exec(name);
@@ -29,9 +29,9 @@ function offsetMinutes(at: Date): number {
 }
 
 /** Pacific wall-clock date parts for an instant. */
-function laParts(at: Date) {
+function laParts(at: Date, timeZone = TZ) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
-    timeZone: TZ, year: "numeric", month: "2-digit", day: "2-digit",
+    timeZone, year: "numeric", month: "2-digit", day: "2-digit",
     hour: "2-digit", minute: "2-digit", hour12: false,
   });
   const map: Record<string, string> = {};
@@ -43,35 +43,36 @@ function laParts(at: Date) {
 }
 
 /** Convert a Pacific wall-clock time to the matching UTC instant. */
-function laWallToUtc(year: number, month: number, day: number, hour: number, minute: number): Date {
+function laWallToUtc(year: number, month: number, day: number, hour: number, minute: number, timeZone = TZ): Date {
   const naive = Date.UTC(year, month - 1, day, hour, minute);
-  let guess = new Date(naive - offsetMinutes(new Date(naive)) * 60_000);
-  guess = new Date(naive - offsetMinutes(guess) * 60_000);
+  let guess = new Date(naive - offsetMinutes(new Date(naive), timeZone) * 60_000);
+  guess = new Date(naive - offsetMinutes(guess, timeZone) * 60_000);
   return guess;
 }
 
 /** Start of the current shift day (today's 6:30 AM Pacific, or yesterday's before then). */
-export function currentShiftStart(now = new Date()): Date {
-  const p = laParts(now);
+export function currentShiftStart(now = new Date(), timeZone = TZ, shiftMinutes = 390): Date {
+  const p = laParts(now, timeZone);
+  const hour = Math.floor(shiftMinutes / 60), minute = shiftMinutes % 60;
   const beforeShift =
-    p.hour < SHIFT_START_HOUR || (p.hour === SHIFT_START_HOUR && p.minute < SHIFT_START_MIN);
-  const base = laWallToUtc(p.year, p.month, p.day, SHIFT_START_HOUR, SHIFT_START_MIN);
-  return beforeShift ? new Date(base.getTime() - 24 * 3600_000) : base;
+    p.hour < hour || (p.hour === hour && p.minute < minute);
+  const date = new Date(Date.UTC(p.year, p.month - 1, p.day - (beforeShift ? 1 : 0)));
+  return laWallToUtc(date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate(), hour, minute, timeZone);
 }
 
 /** Window start for a range key; null means "all time" (or a custom range). */
-export function shiftWindowStart(range: RangeKey, now = new Date()): Date | null {
+export function shiftWindowStart(range: RangeKey, now = new Date(), timeZone = TZ, shiftMinutes = 390): Date | null {
   if (range === "all" || range === "custom") return null;
-  const today = currentShiftStart(now);
+  const today = currentShiftStart(now, timeZone, shiftMinutes);
   const daysBack = range === "day" ? 0 : range === "week" ? 6 : 29;
 
   if (daysBack === 0) return today;
   // Step back whole days from the Pacific wall clock so DST shifts stay on 6:30.
-  const p = laParts(new Date(today.getTime() + 12 * 3600_000));
+  const p = laParts(today, timeZone);
   const stepped = new Date(Date.UTC(p.year, p.month - 1, p.day - daysBack));
   return laWallToUtc(
     stepped.getUTCFullYear(), stepped.getUTCMonth() + 1, stepped.getUTCDate(),
-    SHIFT_START_HOUR, SHIFT_START_MIN,
+    Math.floor(shiftMinutes / 60), shiftMinutes % 60, timeZone,
   );
 }
 
@@ -83,32 +84,32 @@ export function isDayKey(value: unknown): value is string {
 }
 
 /** 6:30 AM Pacific on the given calendar day ("YYYY-MM-DD"). */
-export function shiftDayStart(day: string): Date {
+export function shiftDayStart(day: string, timeZone = TZ, shiftMinutes = 390): Date {
   const m = ISO_DAY.exec(day);
   if (!m) throw new Error("Invalid date");
-  return laWallToUtc(Number(m[1]), Number(m[2]), Number(m[3]), SHIFT_START_HOUR, SHIFT_START_MIN);
+  return laWallToUtc(Number(m[1]), Number(m[2]), Number(m[3]), Math.floor(shiftMinutes / 60), shiftMinutes % 60, timeZone);
 }
 
 /** 6:30 AM Pacific the morning after the given calendar day — exclusive end. */
-export function shiftDayEnd(day: string): Date {
+export function shiftDayEnd(day: string, timeZone = TZ, shiftMinutes = 390): Date {
   const m = ISO_DAY.exec(day);
   if (!m) throw new Error("Invalid date");
   const stepped = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + 1));
   return laWallToUtc(
     stepped.getUTCFullYear(), stepped.getUTCMonth() + 1, stepped.getUTCDate(),
-    SHIFT_START_HOUR, SHIFT_START_MIN,
+    Math.floor(shiftMinutes / 60), shiftMinutes % 60, timeZone,
   );
 }
 
 /** Today's Pacific calendar day as "YYYY-MM-DD". */
-export function pacificToday(now = new Date()): string {
-  const p = laParts(now);
+export function pacificToday(now = new Date(), timeZone = TZ): string {
+  const p = laParts(now, timeZone);
   return `${p.year}-${String(p.month).padStart(2, "0")}-${String(p.day).padStart(2, "0")}`;
 }
 
 /** Pacific hour (0–23) of an instant — used for the custom hour filter. */
-export function pacificHour(at: Date): number {
-  return laParts(at).hour;
+export function pacificHour(at: Date, timeZone = TZ): number {
+  return laParts(at, timeZone).hour;
 }
 
 /** "Aug 12" for a day key. */

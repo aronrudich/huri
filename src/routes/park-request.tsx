@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { isValidRo } from "@/lib/company-configuration";
 // "Park" = ask a valet to come to the bay and park the technician's car.
 // This is NOT the same as "New" (/park), which only logs a car into the system.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -29,6 +32,7 @@ export const Route = createFileRoute("/park-request")({
 function ParkRequestPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
@@ -42,7 +46,7 @@ function ParkRequestPage() {
     e.preventDefault();
     if (!user) return;
     if (!ro.trim()) return toast.error("RO # is required");
-    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
     try {
@@ -83,9 +87,9 @@ function ParkRequestPage() {
           </label>
           <input
             value={ro}
-            onChange={(e) => setRo(e.target.value.replace(/\D/g, "").slice(0, 6))}
-            inputMode="numeric"
-            maxLength={6}
+            onChange={(e) => setRo(settings?.ro_format === "flexible" ? e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10) : e.target.value.replace(/\D/g, "").slice(0, 6))}
+            inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"}
+            maxLength={settings?.ro_format === "flexible" ? 10 : 6}
             autoFocus
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
@@ -99,7 +103,7 @@ function ParkRequestPage() {
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>
-        {/^\d{6}$/.test(ro.trim()) && (
+        {isValidRo(ro, settings?.ro_format) && (
           <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
         )}
 

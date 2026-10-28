@@ -14,8 +14,6 @@ export const RANGE_LABELS: Record<RangeKey, string> = {
 
 
 const TZ = "America/Los_Angeles";
-const SHIFT_START_HOUR = 6;
-const SHIFT_START_MIN = 30;
 
 /** Minutes that Pacific time is offset from UTC at a given instant (e.g. -420). */
 function offsetMinutes(at: Date, timeZone = TZ): number {

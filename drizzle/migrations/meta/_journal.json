@@ -134,6 +134,13 @@
       "when": 1793158480061,
       "tag": "0018_huri_atomic_owner_transfer_order",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1793158565913,
+      "tag": "0019_huri_owner_guard_application_table",
+      "breakpoints": true
     }
   ]
 }

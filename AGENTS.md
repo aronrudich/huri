@@ -9,4 +9,10 @@
 - Keep public customer-arrival writes inside validated server functions scoped by company slug and RO; this prevents one company link from affecting another company's requests.
 - Share the pure service-hours validator between customer arrival pages and server writes; this prevents different operating-hour rules across languages or direct requests.
 - All Business-page explainer players share one CDN asset pointer and poster; this keeps replacements consistent without oversized repository videos.
-- Only the scheduled database archive completes expired pickup requests; browser timers may filter display but must not persist completion, so devices cannot race the company archive rule.- Unlogged-location deductions come only from the shared custody rules in src/lib/unlogged-custody.ts; this keeps one deduction per missed spot across every report.
+- Only the scheduled database archive completes expired pickup requests using the company's configured window; browser timers must not persist completion, so devices cannot race the archive rule.
+- Unlogged-location deductions come only from the shared custody rules in src/lib/unlogged-custody.ts; this keeps one deduction per missed spot across every report.
+- Page collection reads with deterministic ordering and scope realtime inserts/updates to the current company; this prevents truncated lists and cross-company patches.
+- Store new photo objects under company-qualified paths and authorize legacy paths through company photo records; this prevents duplicate-RO collisions while retaining existing photos.
+- Provision the first owner only through the authenticated Support approval flow and transfer ownership atomically; ordinary signups remain pending.
+- Define physical exclusivity and blockers through explicit company location rules, retaining JCD's established fallback; never infer exclusivity from arbitrary text.
+- Share validated company service hours, RO formats, timezone and report boundaries across client and server paths; defaults preserve existing company behavior.

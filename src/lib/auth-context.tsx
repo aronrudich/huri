@@ -81,8 +81,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const loadProfile = async (uid: string) => {
-    const { data: existing } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
+    const { data: existing, error } = await supabase.from("profiles").select("*").eq("id", uid).maybeSingle();
     if(currentUser.current !== uid) return;
+    if (error) return; // A temporary read failure must not replace a cached profile.
     if (existing) {
       applyProfile(existing as Profile);
       return;
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { data: authData } = await supabase.auth.getUser();
     const authUser = authData.user;
-    if (!authUser) { applyProfile(null); return; }
+    if (currentUser.current !== uid || authUser?.id !== uid) return;
 
     const fallbackName =
       (authUser.user_metadata?.full_name as string | undefined)?.trim() ||
@@ -112,6 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       )
       .select("*")
       .maybeSingle();
+    if (currentUser.current !== uid) return;
     applyProfile((created as Profile) ?? null);
   };
 
@@ -175,7 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(data.session);
         currentUser.current = data.session.user.id;
         const cached = readCachedProfile(data.session.user.id);
-        if (cached) setProfile(cached);
+        if (cached) applyProfile(cached);
         finish();
 
         void loadProfile(data.session.user.id).catch(() => {});

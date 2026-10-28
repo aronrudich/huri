@@ -534,6 +534,35 @@ export type Database = {
           },
         ]
       }
+      company_owner_grants: {
+        Row: {
+          created_at: string
+          dealership_id: string
+          granted_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dealership_id: string
+          granted_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dealership_id?: string
+          granted_by?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_owner_grants_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealerships: {
         Row: {
           business_type: string
@@ -1190,6 +1219,14 @@ export type Database = {
           nickname: string
           role_name: string
         }[]
+      }
+      provision_first_company_owner: {
+        Args: { _inquiry_id: string; _user_id: string }
+        Returns: undefined
+      }
+      transfer_company_ownership: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

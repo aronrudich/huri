@@ -8,7 +8,9 @@ import { getHelpIdentity } from "@/lib/help.functions";
 import {
   activateOnboardingCompany, approveOnboardingMap, getOnboardingReview, requestOnboardingChanges,
   saveReviewDraft, saveReviewerNotes, sendActivationEmail,
+  provisionFirstOwner,
 } from "@/lib/onboarding.functions";
+import { Button } from "@/components/ui/button";
 import type { Draft } from "@/lib/onboarding-schema";
 import { AddressSection, BarcodeSection, LotsSection, PropertySection, ReviewSummary, RowsSpotsSection } from "@/components/OnboardingSections";
 
@@ -41,6 +43,7 @@ function ReviewPage() {
   const approveFn = useServerFn(approveOnboardingMap);
   const activateFn = useServerFn(activateOnboardingCompany);
   const emailFn = useServerFn(sendActivationEmail);
+  const ownerFn = useServerFn(provisionFirstOwner);
   const qc = useQueryClient();
   const { data: who, isLoading: whoLoading } = useQuery({ queryKey: ["help-identity"], queryFn: () => identity() });
   const { data, isLoading } = useQuery({ queryKey: ["onboarding-review", inquiryId], enabled: !!who?.isSupport, queryFn: () => load({ data: { inquiryId } }) });
@@ -106,6 +109,7 @@ function ReviewPage() {
               <button onClick={() => { navigator.clipboard.writeText(company.code); toast.success("Code copied"); }} className="rounded-full bg-background p-2" aria-label="Copy code"><Copy className="h-4 w-4" /></button>
             </div>
             <p className="mt-1 text-xs text-muted-foreground">Activated {new Date(created?.activatedAt ?? data.inquiry.activated_at ?? Date.now()).toLocaleString()}{data.inquiry.activation_emailed_at ? ` · Code last emailed ${new Date(data.inquiry.activation_emailed_at).toLocaleString()}` : ""}</p>
+            <Button disabled={busy} className="mt-3" onClick={() => confirm(`Approve ${data.inquiry.email} as this company's first owner?`) && run(() => ownerFn({ data: { inquiryId } }), "First owner approved")}>Approve first owner</Button>
             <div className="mt-3 flex gap-2">
               <input value={emailTo} onChange={(e) => setEmailTo(e.target.value.slice(0, 254))} className="flex-1 rounded-xl border border-input bg-background px-3 py-2 text-sm" />
               <button disabled={busy} onClick={() => confirm(`Email code ${company.code} to ${emailTo}?`) && run(() => emailFn({ data: { inquiryId, email: emailTo } }), "Activation email sent")}

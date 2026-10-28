@@ -12,6 +12,7 @@ import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery } from "@/lib/queries";
 import { isActiveCar } from "@/lib/car-loading";
+import { isCompanyEvent } from "@/lib/tenant-events";
 import { LotMap } from "@/components/LotMap";
 import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
@@ -19,6 +20,8 @@ import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { claimHideMilliseconds, isClaimWithinWindow } from "@/lib/pickup-window";
+import { companyLocationsQuery, blockersForLocation } from "@/lib/company-locations";
+import { CompanyLotGrid } from "@/components/CompanyLotGrid";
 
 
 
@@ -84,6 +87,8 @@ function PickupPage() {
   const queryClient = useQueryClient();
   // Each company sets how long a claimed submission stays on the list.
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const { data: locationRules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
+  const isJcd = settings?.company_code === "JCD29854";
   const claimHideMs = claimHideMilliseconds(settings?.claim_hide_minutes);
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
@@ -156,12 +161,15 @@ function PickupPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile?.dealership_id) return;
+    const companyId = profile.dealership_id;
 
     // Realtime events patch the caches from their payloads; only cases the
     // payload can't resolve (missing row identity) fall back to a refetch.
-    const chan = supabase.channel("pickup-queue")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, (payload) => {
+    const chan = supabase.channel(`pickup-queue-${companyId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as Pickup | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         queryClient.setQueryData<Pickup[]>(["pickups"], (cur) => {
@@ -181,7 +189,9 @@ function PickupPage() {
           return next.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
         });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         if (!row || !isActiveCar(row) || takenPickupCars.some((c) => c.id === row.id)) {
@@ -202,18 +212,19 @@ function PickupPage() {
       })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient, realtimeGen, takenPickupCars]);
+  }, [user, profile?.dealership_id, queryClient, realtimeGen, takenPickupCars]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
   //   - Parts requests → same valet audience; anyone can claim them.
   useEffect(() => {
-    if (!profile) return;
+    if (!profile?.dealership_id) return;
     const role = profile.role_name;
     if (!isValetRole(role)) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    const chan = supabase.channel("valet-pickup-alert")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
+    const chan = supabase.channel(`valet-pickup-alert-${profile.dealership_id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${profile.dealership_id}` }, (payload) => {
+        if (!isCompanyEvent(payload.new, profile.dealership_id)) return;
         const p = payload.new as Pickup;
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.
@@ -483,8 +494,8 @@ function PickupPage() {
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
           const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN" && p.lot_position !== "TAKEN") || p.status !== "unclaimed");
-          const isSvSpot = lotOf(effectiveSpot) === "sv";
-          const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
+          const isSvSpot = isJcd ? lotOf(effectiveSpot) === "sv" : locationRules.some((r)=>r.label===effectiveSpot);
+          const adj = blockersForLocation(effectiveSpot, locationRules, isJcd);
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
 
           const isStaged = !!p.is_staged;
@@ -717,7 +728,7 @@ function PickupPage() {
                         spot: effectiveSpot,
                         highlight: isPickupMapRequest(p.kind, p.is_staged),
                       })}
-                      disabled={!effectiveSpot || lotOf(effectiveSpot) !== "sv"}
+                      disabled={!effectiveSpot || !isSvSpot}
                       aria-label="Show on lot map"
                       className="flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent disabled:opacity-40"
                     >
@@ -777,7 +788,7 @@ function PickupPage() {
         <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
           <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold">SV lot map</p>
+              <p className="truncate text-base font-semibold">{isJcd ? "SV lot map" : "Lot map"}</p>
               <p className="text-xs text-muted-foreground">
                 {mapSelection.highlight ? (
                   <>Pick up <span className="font-semibold text-primary">{mapSelection.spot}</span> (blue)</>
@@ -797,12 +808,12 @@ function PickupPage() {
           {/* Whole lot fitted on screen at once, mobile and desktop. */}
           <div className="min-h-0 flex-1 overflow-hidden px-3 py-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-6">
 
-            <LotMap
+            {isJcd ? <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}
               highlightSpot={mapSelection.highlight ? mapSelection.spot : null}
               staticView
-            />
+            /> : <CompanyLotGrid rules={locationRules} cars={allCars} highlight={mapSelection.spot} />}
           </div>
 
         </div>

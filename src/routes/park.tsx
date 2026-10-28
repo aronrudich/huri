@@ -1,3 +1,4 @@
+import { isValidRo } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy } from "lucide-react";
@@ -98,7 +99,7 @@ function ParkPage() {
   useEffect(() => {
     if (!user) return;
     const targetRo = ro.trim();
-    if (!idParam && !/^\d{6}$/.test(targetRo)) return;
+    if (!idParam && !isValidRo(targetRo, settings?.ro_format)) return;
     let cancelled = false;
     const apply = (data: ParkedCarRow) => {
       if (cancelled) return;
@@ -128,7 +129,7 @@ function ParkPage() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [ro, idParam, queryClient, user]);
+  }, [ro, idParam, queryClient, user, settings?.ro_format]);
 
   // "Washed" is tied to the RO #, so it follows the car through every later move.
   useEffect(() => {
@@ -150,7 +151,7 @@ function ParkPage() {
 
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
-    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Invalid spot");
     if (!user) return;
@@ -263,7 +264,7 @@ function ParkPage() {
           setStaged(false);
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
-        }} inputMode="numeric" maxLength={6} />
+        }} inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
         <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (
@@ -355,7 +356,7 @@ function ParkPage() {
         )}
         {/* Advisors text this to the customer so they can set their own arrival
             time; the car then jumps to the top of the valets' pickup list. */}
-        {settings?.slug && /^\d{6}$/.test(ro.trim()) && (
+        {settings?.slug && isValidRo(ro, settings?.ro_format) && (
           <button
             type="button"
             onClick={async () => {

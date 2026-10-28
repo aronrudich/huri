@@ -12,6 +12,10 @@ import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { isActiveCar } from "@/lib/car-loading";
+import { isCompanyEvent } from "@/lib/tenant-events";
+import { companyLocationsQuery } from "@/lib/company-locations";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { CompanyLotGrid } from "@/components/CompanyLotGrid";
 
 
 
@@ -48,8 +52,11 @@ function LotPage() {
   // Bumped when the app returns from the background so channels rebuild.
   const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const { data: locationRules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
+  const isJcd = settings?.company_code === "JCD29854";
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
   const [pickupSpots, setPickupSpots] = useState<Set<string>>(new Set());
@@ -69,11 +76,14 @@ function LotPage() {
 
 
   useEffect(() => {
-    if (!user) return;
-    const chan = supabase.channel("lot-all-spots")
+    if (!user || !profile?.dealership_id) return;
+    const companyId = profile.dealership_id;
+    const chan = supabase.channel(`lot-all-spots-${companyId}`)
       // Patch the one changed car instead of re-downloading the whole lot on
       // every phone for every move — that burst is what overloads the server.
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
@@ -89,12 +99,13 @@ function LotPage() {
             : [...cur, row];
         });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
         void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });
       })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient, realtimeGen]);
+  }, [user, profile?.dealership_id, queryClient, realtimeGen]);
 
 
   const byPos = useMemo(() => {
@@ -281,7 +292,7 @@ function LotPage() {
           )}
         </div>
 
-        <div className="mt-3 flex gap-2">
+        {isJcd && <div className="mt-3 flex gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
@@ -293,19 +304,20 @@ function LotPage() {
               {t.label}
             </button>
           ))}
-        </div>
+        </div>}
 
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
-           {tab === "sv" && `${filled} of ${spots.length} SV spots occupied`}
-           {tab === "cp" && `${carsInCP.length} car${carsInCP.length === 1 ? "" : "s"} in CP`}
-           {tab === "bl" && `${carsInBL.length} car${carsInBL.length === 1 ? "" : "s"} in BL`}
+           {isJcd ? tab === "sv" ? `${filled} of ${spots.length} SV spots occupied` : tab === "cp" ? `${carsInCP.length} cars in CP` : `${carsInBL.length} cars in BL` : `${cars.length} cars`}
         </p>
       </header>
 
 
 
 
-      {tab === "sv" ? (
+      {!isJcd ? <div className="space-y-4 px-3">
+        <CompanyLotGrid rules={locationRules.filter((r)=>!q.trim() || r.label.toLowerCase().includes(q.toLowerCase()) || cars.some((c)=>c.lot_position===r.label && c.ro_number?.includes(q)))} cars={cars} onSelect={(car)=>navigate({to:"/park",search:{id:car.id}})} onSelectEmpty={setEmptySpot} />
+        <ul>{cars.filter((c)=>!q.trim() || `${c.ro_number} ${c.car_model} ${c.lot_position}`.toLowerCase().includes(q.toLowerCase())).map((car)=><li key={car.id} className="border-b border-border py-3"><Link to="/park" search={{id:car.id}} className="flex justify-between gap-3 text-sm"><span>{car.ro_number} · {car.car_model}</span><span>{locationLabel(car.lot_position,car.bay_tech)}</span></Link></li>)}</ul>
+      </div> : tab === "sv" ? (
         <div className="px-3">
           <LotMap
             spots={filteredNumbered.map(({ spot }) => spot)}
@@ -354,7 +366,7 @@ function LotPage() {
         </ul>
       )}
 
-      {filteredUnknown.length > 0 && (
+      {isJcd && filteredUnknown.length > 0 && (
         <>
           <p className="mx-4 mt-4 mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
             Other locations ({filteredUnknown.length})
@@ -407,7 +419,7 @@ function LotPage() {
               </button>
             </div>
             <dl className="mb-4 space-y-1 rounded-xl bg-surface px-3 py-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted-foreground">Lot</dt><dd className="font-medium">SV</dd></div>
+              <div className="flex justify-between"><dt className="text-muted-foreground">Lot</dt><dd className="font-medium">{isJcd ? "SV" : locationRules.find((r)=>r.label===emptySpot)?.lot_name ?? "Lot"}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Spot</dt><dd className="font-medium">{emptySpot.replace("SV ", "")}</dd></div>
               <div className="flex justify-between"><dt className="text-muted-foreground">Status</dt><dd className="font-medium">Empty</dd></div>
             </dl>

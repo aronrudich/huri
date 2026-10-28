@@ -352,6 +352,38 @@ export type Database = {
           },
         ]
       }
+      company_location_rules: {
+        Row: {
+          blockers: string[]
+          capacity: number
+          dealership_id: string
+          label: string
+          lot_name: string
+        }
+        Insert: {
+          blockers?: string[]
+          capacity?: number
+          dealership_id: string
+          label: string
+          lot_name?: string
+        }
+        Update: {
+          blockers?: string[]
+          capacity?: number
+          dealership_id?: string
+          label?: string
+          lot_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_location_rules_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_map_lots: {
         Row: {
           category: string | null
@@ -534,6 +566,35 @@ export type Database = {
           },
         ]
       }
+      company_owner_grants: {
+        Row: {
+          created_at: string
+          dealership_id: string
+          granted_by: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dealership_id: string
+          granted_by: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dealership_id?: string
+          granted_by?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_owner_grants_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dealerships: {
         Row: {
           business_type: string
@@ -546,7 +607,10 @@ export type Database = {
           flagged_days: number
           id: string
           name: string
+          operating_hours: Json
           reminder_minutes: number
+          ro_format: string
+          shift_start_minutes: number
           slug: string
           timezone: string
           updated_at: string
@@ -562,7 +626,10 @@ export type Database = {
           flagged_days?: number
           id?: string
           name: string
+          operating_hours?: Json
           reminder_minutes?: number
+          ro_format?: string
+          shift_start_minutes?: number
           slug: string
           timezone?: string
           updated_at?: string
@@ -578,7 +645,10 @@ export type Database = {
           flagged_days?: number
           id?: string
           name?: string
+          operating_hours?: Json
           reminder_minutes?: number
+          ro_format?: string
+          shift_start_minutes?: number
           slug?: string
           timezone?: string
           updated_at?: string
@@ -1150,6 +1220,10 @@ export type Database = {
           role_name: string
         }[]
       }
+      is_physical_company_spot: {
+        Args: { _company: string; _label: string }
+        Returns: boolean
+      }
       log_car_event: {
         Args: {
           _actor: string
@@ -1181,6 +1255,14 @@ export type Database = {
           nickname: string
           role_name: string
         }[]
+      }
+      provision_first_company_owner: {
+        Args: { _inquiry_id: string; _user_id: string }
+        Returns: undefined
+      }
+      transfer_company_ownership: {
+        Args: { _user_id: string }
+        Returns: undefined
       }
     }
     Enums: {

@@ -219,6 +219,23 @@ export async function pushSupport(payload: object) {
 
 const idInput = z.object({ inquiryId: z.string().uuid() });
 
+export const provisionFirstOwner = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) => idInput.parse(d))
+  .handler(async ({ data, context }) => {
+    assertSupport(context.claims);
+    const admin = await supportCtx(context.claims);
+    const { data: inquiry, error } = await admin.from("business_inquiries")
+      .select("company_id, email").eq("id", data.inquiryId).single();
+    if (error || !inquiry.company_id) throw new Error("Company must be activated first");
+    const { data: person, error: personError } = await admin.from("profiles")
+      .select("id").eq("dealership_id", inquiry.company_id).ilike("email", inquiry.email).single();
+    if (personError || !person) throw new Error("The approved business contact must create their account first");
+    const { error: grantError } = await context.supabase.rpc("provision_first_company_owner", { _inquiry_id: data.inquiryId, _user_id: person.id });
+    if (grantError) throw new Error(grantError.message);
+    return { ok: true };
+  });
+
 async function supportCtx(claims: unknown) {
   assertSupport(claims);
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

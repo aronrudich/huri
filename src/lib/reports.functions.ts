@@ -4,6 +4,8 @@ import { canViewReports } from "@/lib/roles";
 import { normalizeSpot, adjacentSpots, lotOf } from "@/lib/lot";
 import { bayCustodyDeductions, parkClaimDeduction, UNLOGGED_POINTS, type CustodyRow } from "@/lib/unlogged-custody";
 import { isReportEligible } from "@/lib/report-eligibility";
+import { loadAllCarPages } from "@/lib/car-loading";
+import { blockersForLocation, type LocationRule } from "@/lib/company-locations";
 import {
   shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
@@ -108,14 +110,22 @@ export const getReport = createServerFn({ method: "POST" })
       (me.is_owner === true || canViewReports(me.role_name));
     if (!allowed) throw new Error("Reports are not available for your role.");
 
+    if (!me) throw new Error("No company for this account");
+    const { data: company, error: companyError } = await supabase.from("dealerships")
+      .select("timezone, shift_start_minutes, company_code").eq("id", me.dealership_id).single();
+    if (companyError) throw companyError;
+    const timeZone = company.timezone;
+    const shiftMinutes = company.shift_start_minutes;
+    const locationRules = await loadAllCarPages<LocationRule>((from,to)=>supabase.from("company_location_rules")
+      .select("label, lot_name, capacity, blockers").eq("dealership_id",me.dealership_id).order("label").range(from,to));
+    const isJcd = company.company_code === "JCD29854";
     const custom = data.range === "custom" && data.start && data.end;
-    const start = custom ? shiftDayStart(data.start!) : shiftWindowStart(data.range);
-    const end = custom ? shiftDayEnd(data.end!) : null;
+    const start = custom && data.start ? shiftDayStart(data.start, timeZone, shiftMinutes) : shiftWindowStart(data.range, new Date(), timeZone, shiftMinutes);
+    const end = custom && data.end ? shiftDayEnd(data.end, timeZone, shiftMinutes) : null;
 
     // The Data API caps any single read at 1000 rows, which silently truncated
     // "all time" history. Page through until a short batch comes back.
     const PAGE = 1000;
-    const MAX_ROWS = 50_000;
     type Row = {
       id: string; kind: string | null; is_staged: boolean | null; status: string;
       created_at: string; claimed_at: string | null; claimed_by: string | null;
@@ -123,7 +133,7 @@ export const getReport = createServerFn({ method: "POST" })
       lot_position: string | null; ro_number: string | null; dealership_id: string;
     };
     const rows: Row[] = [];
-    for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+    for (let offset = 0; ; offset += PAGE) {
       let query = supabase
         .from("pickup_requests")
         .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, completed_at, lot_position, ro_number, dealership_id")
@@ -150,7 +160,7 @@ export const getReport = createServerFn({ method: "POST" })
       const from = data.startHour;
       const to = data.endHour;
       list = list.filter((r) => {
-        const h = pacificHour(new Date(r.created_at));
+        const h = pacificHour(new Date(r.created_at), timeZone);
         return h >= from && h < to;
       });
     }
@@ -179,7 +189,7 @@ export const getReport = createServerFn({ method: "POST" })
       (snap ?? []).forEach((s) => seed.push({ ...s, actor_id: null }));
     }
     const events: Ev[] = [];
-    for (let offset = 0; offset < 200_000; offset += PAGE) {
+    for (let offset = 0; ; offset += PAGE) {
       let q = supabase
         .from("car_events")
         .select("dealership_id, ro_number, event_type, detail, actor_id, created_at")
@@ -222,8 +232,8 @@ export const getReport = createServerFn({ method: "POST" })
         if (next) { carAt.set(key, next); bump(`${e.dealership_id}|${next}`, 1); }
       }
       const spot = normalizeSpot(r.lot_position);
-      if (spot && lotOf(spot) === "sv") {
-        blockersFor.set(r.id, adjacentSpots(spot).filter((s) => (spotCount.get(`${r.dealership_id}|${s}`) ?? 0) > 0).length);
+      if (spot) {
+        blockersFor.set(r.id, blockersForLocation(spot,locationRules,isJcd).filter((s) => (spotCount.get(`${r.dealership_id}|${s}`) ?? 0) > 0).length);
       }
     }
     const pointsFor = (r: Row): number => {
@@ -232,7 +242,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (k === "park") return 0.7;
       if (k === "wash") return 0.7;
       const lot = lotOf(r.lot_position);
-      if (lot === "sv") return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
+      if ((isJcd && lot === "sv") || locationRules.some((rule)=>rule.label===normalizeSpot(r.lot_position) && rule.blockers.length>0)) return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
       if (lot === "bl") return 1.2;
       if (lot === "cp") return k === "stage" ? 1.2 : 1.0;
       return 1.3;
@@ -253,7 +263,7 @@ export const getReport = createServerFn({ method: "POST" })
     durations.forEach(({ row }) => addPts(row.claimed_by as string, pointsFor(row), CAT[kindOf(row)] ?? "Other requests"));
     const inHours = (iso: string) =>
       !(data.range === "custom" && data.startHour !== undefined && data.endHour !== undefined) ||
-      (pacificHour(new Date(iso)) >= data.startHour && pacificHour(new Date(iso)) < data.endHour!);
+      (pacificHour(new Date(iso), timeZone) >= data.startHour && data.endHour !== undefined && pacificHour(new Date(iso), timeZone) < data.endHour);
     // Technicians earn +0.3 for every request they submit (car, parts, park, wash).
     list.forEach((r) => {
       if (!r.requested_by || !isTechSource(r.source_role)) return;
@@ -298,7 +308,7 @@ export const getReport = createServerFn({ method: "POST" })
       const lookFrom = new Date(start.getTime() - 30 * 86_400_000).toISOString();
       for (let i = 0; i < ros.length; i += 200) {
         const chunk = ros.slice(i, i + 200);
-        for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+        for (let offset = 0; ; offset += PAGE) {
           const { data: batch, error } = await supabase
             .from("pickup_requests")
             .select("id, kind, is_staged, status, created_at, claimed_at, claimed_by, requested_by, source_role, completed_at, lot_position, ro_number, dealership_id")
@@ -312,7 +322,7 @@ export const getReport = createServerFn({ method: "POST" })
           priorRows.push(...((batch ?? []) as Row[]).filter(isReportEligible));
           if (!batch || batch.length < PAGE) break;
         }
-        for (let offset = 0; offset < 200_000; offset += PAGE) {
+        for (let offset = 0; ; offset += PAGE) {
           const { data: batch, error } = await supabase
             .from("car_events")
             .select("dealership_id, ro_number, event_type, detail, actor_id, created_at")
@@ -368,15 +378,16 @@ export const getReport = createServerFn({ method: "POST" })
 
     // Photos uploaded onto a car earn a small bonus.
     {
+      const photos = await loadAllCarPages<{ uploaded_by: string | null; created_at: string }>((from, to) => {
       let q = supabase
         .from("car_photos")
         .select("uploaded_by, created_at")
         .not("uploaded_by", "is", null);
       if (start) q = q.gte("created_at", start.toISOString());
       if (end) q = q.lt("created_at", end.toISOString());
-      const { data: photos, error: photosError } = await q.limit(10_000);
-      if (photosError) throw photosError;
-      (photos ?? []).forEach((p) => {
+      return q.order("created_at", { ascending: true }).order("id", { ascending: true }).range(from, to);
+      });
+      photos.forEach((p) => {
         if (!p.uploaded_by || !inHours(p.created_at)) return;
         addPts(p.uploaded_by, 0.2, "Vehicle photos");
       });
@@ -414,11 +425,11 @@ export const getReport = createServerFn({ method: "POST" })
     // Every active, approved teammate — so employees with zero activity still
     // show up in both leaderboards.
     const roster = new Set<string>();
-    for (let offset = 0; offset < MAX_ROWS; offset += PAGE) {
+    for (let offset = 0; ; offset += PAGE) {
       const { data: everyone, error: rosterError } = await supabase
         .from("profiles")
         .select("id, full_name, nickname, role_name, is_active, status")
-        .eq("dealership_id", me!.dealership_id)
+        .eq("dealership_id", me.dealership_id)
         .eq("is_active", true)
         .eq("status", "approved")
         .order("id", { ascending: true })
@@ -437,13 +448,17 @@ export const getReport = createServerFn({ method: "POST" })
       .concat([...pointsByEmployee.keys()])
       .filter((id, i, a) => !names.has(id) && a.indexOf(id) === i);
     if (missing.length) {
-      const { data: people } = await supabase
+      for (let offset = 0; offset < missing.length; offset += 100) {
+      const people = await loadAllCarPages((from, to) => supabase
         .from("profiles")
         .select("id, full_name, nickname, role_name")
-        .in("id", missing);
-      (people ?? []).forEach((p) => {
+        .eq("dealership_id", me.dealership_id)
+        .in("id", missing.slice(offset, offset + 100))
+        .order("id", { ascending: true }).range(from, to));
+      people.forEach((p) => {
         names.set(p.id, { name: p.nickname || p.full_name || "Employee", role: p.role_name ?? "" });
       });
+      }
     }
 
     const submitterIds = [...new Set([...roster, ...perSubmitter.keys()])];

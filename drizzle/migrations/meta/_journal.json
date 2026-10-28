@@ -78,6 +78,34 @@
       "when": 1793143415757,
       "tag": "0010_preserve_car_details_on_location_assignment",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1793157785593,
+      "tag": "0011_huri_tenant_photo_profiles_archive",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793157866318,
+      "tag": "0012_huri_company_configuration",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793157925035,
+      "tag": "0013_huri_owner_lifecycle_guards",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793158035934,
+      "tag": "0014_huri_physical_location_configuration",
+      "breakpoints": true
     }
   ]
 }

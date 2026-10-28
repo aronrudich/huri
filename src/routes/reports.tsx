@@ -15,6 +15,8 @@ import {
 } from "@/lib/report-range";
 import { ListSkeleton } from "@/components/ListSkeleton";
 import { DateRangeCalendar } from "@/components/DateRangeCalendar";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { formatClock } from "@/lib/company-configuration";
 
 
 export const Route = createFileRoute("/reports")({
@@ -54,6 +56,8 @@ function hourLabel(h: number): string {
 function ReportsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const reportClock = `${formatClock(settings?.shift_start_minutes ?? 390)} (${settings?.timezone ?? "company time"})`;
   const [range, setRange] = useState<RangeKey>("day");
   const [view, setView] = useState<"claiming" | "submitting" | "points" | "custom">("claiming");
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
@@ -230,7 +234,7 @@ function ReportsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <p className="text-[11px] text-muted-foreground">
-                      Only counts submissions started between these hours (Pacific).
+                      Only counts submissions started between these hours ({settings?.timezone ?? "company time"}).
                     </p>
                     {(hours.start !== null || hours.end !== null) && (
                       <button
@@ -390,7 +394,7 @@ function ReportsPage() {
             </section>
 
             <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-              Days start at 6:30 AM Pacific.
+              Days start at {reportClock}.
             </p>
               </>
             ) : (
@@ -455,7 +459,7 @@ function ReportsPage() {
                 </section>
 
                 <p className="pb-4 text-center text-[11px] leading-relaxed text-muted-foreground">
-                  Days start at 6:30 AM Pacific. Counts include every submission type.
+                  Days start at {reportClock}. Counts include every submission type.
                 </p>
               </>
             )}

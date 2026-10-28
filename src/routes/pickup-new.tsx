@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { isValidRo } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -32,6 +35,7 @@ export const Route = createFileRoute("/pickup-new")({
 function NewPickupPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const { staged, ro: roParam } = Route.useSearch();
   const isStage = !!staged;
   const [ro, setRo] = useState(roParam ?? "");
@@ -49,7 +53,7 @@ function NewPickupPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
-    if (!/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
     if (!user) return;
     setBusy(true);
     const sourceRole = profile?.role_name ?? null;
@@ -115,7 +119,7 @@ function NewPickupPage() {
             Staged means the car is finished but the customer has not arrived yet. Valets are notified, but staged cars sit below every other request until claimed.
           </p>
         )}
-        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode="numeric" maxLength={6} />
+        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
           <input
@@ -135,7 +139,7 @@ function NewPickupPage() {
             className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />
         </div>
-        {/^\d{6}$/.test(ro.trim()) && (
+        {isValidRo(ro, settings?.ro_format) && (
           <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
         )}
 

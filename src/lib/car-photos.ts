@@ -1,5 +1,6 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { loadAllCarPages } from "@/lib/car-loading";
 
 /** Photos live in a private bucket and are read through short-lived signed URLs. */
 export const CAR_PHOTO_BUCKET = "car-photos";
@@ -23,13 +24,12 @@ export const carPhotosQuery = (ro: string | null | undefined) =>
     queryFn: async (): Promise<CarPhoto[]> => {
       const target = normalizeRo(ro);
       if (!target) return [];
-      const { data, error } = await supabase
+      return loadAllCarPages<CarPhoto>((from, to) => supabase
         .from("car_photos")
         .select("id, ro_number, storage_path, uploaded_by, created_at")
         .eq("ro_number", target)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as CarPhoto[];
+        .order("created_at", { ascending: false })
+        .order("id", { ascending: false }).range(from, to));
     },
   });
 
@@ -44,16 +44,16 @@ export const carPhotoIndexQuery = (ros: string[]) => {
     enabled: list.length > 0,
     staleTime: 30_000,
     queryFn: async (): Promise<Record<string, CarPhoto[]>> => {
-      const { data, error } = await supabase
-        .from("car_photos")
-        .select("id, ro_number, storage_path, uploaded_by, created_at")
-        .in("ro_number", list)
-        .order("created_at", { ascending: false });
-      if (error) throw error;
       const by: Record<string, CarPhoto[]> = {};
-      ((data ?? []) as CarPhoto[]).forEach((p) => {
-        (by[p.ro_number] ??= []).push(p);
-      });
+      for (let offset = 0; offset < list.length; offset += 100) {
+        const photos = await loadAllCarPages<CarPhoto>((from, to) => supabase
+          .from("car_photos")
+          .select("id, ro_number, storage_path, uploaded_by, created_at")
+          .in("ro_number", list.slice(offset, offset + 100))
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false }).range(from, to));
+        photos.forEach((p) => { (by[p.ro_number] ??= []).push(p); });
+      }
       return by;
     },
   });
@@ -158,26 +158,36 @@ export async function shrinkImage(file: File, maxEdge = 1600, quality = 0.82): P
 export async function uploadCarPhoto(file: File, ro: string, userId: string) {
   const target = normalizeRo(ro);
   if (!target) throw new Error("Add the RO # before attaching a photo");
+  const { data: profile, error: profileError } = await supabase.from("profiles")
+    .select("dealership_id").eq("id", userId).single();
+  if (profileError || !profile?.dealership_id) throw new Error("Could not verify your company for this photo");
   // Resize once on the phone: a 1600px master for the full-screen viewer and a
   // ~160px thumbnail for list badges, so lists never download the big file.
   const [blob, thumb] = await Promise.all([shrinkImage(file), shrinkImage(file, 160, 0.75)]);
-  const path = `${target}/${crypto.randomUUID()}.jpg`;
+  const path = `${profile.dealership_id}/${target}/${crypto.randomUUID()}.jpg`;
   const [upFull, upThumb] = await Promise.all([
     supabase.storage.from(CAR_PHOTO_BUCKET).upload(path, blob, { contentType: "image/jpeg", upsert: false }),
     supabase.storage.from(CAR_PHOTO_BUCKET).upload(thumbOf(path), thumb, { contentType: "image/jpeg", upsert: false }),
   ]);
-  if (upFull.error) throw upFull.error;
-  if (upThumb.error) throw upThumb.error;
+  if (upFull.error || upThumb.error) {
+    await supabase.storage.from(CAR_PHOTO_BUCKET).remove([path, thumbOf(path)]);
+    throw upFull.error ?? upThumb.error;
+  }
   const { error } = await supabase
     .from("car_photos")
     .insert({ ro_number: target, storage_path: path, uploaded_by: userId } as never);
-  if (error) throw error;
+  if (error) {
+    await supabase.storage.from(CAR_PHOTO_BUCKET).remove([path, thumbOf(path)]);
+    throw error;
+  }
 }
 
 export async function deleteCarPhoto(photo: CarPhoto) {
+  const { error: storageError } = await supabase.storage.from(CAR_PHOTO_BUCKET)
+    .remove([photo.storage_path, thumbOf(photo.storage_path)]);
+  if (storageError) throw storageError;
   const { error } = await supabase.from("car_photos").delete().eq("id", photo.id);
   if (error) throw error;
-  await supabase.storage.from(CAR_PHOTO_BUCKET).remove([photo.storage_path, thumbOf(photo.storage_path)]);
 }
 
 /* ---------- "already looked at it" tracking, so the glow stops pulsing ---------- */

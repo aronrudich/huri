@@ -1,3 +1,6 @@
+import { useQuery } from "@tanstack/react-query";
+import { dealershipSettingsQuery } from "@/lib/settings";
+import { isValidRo } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -25,6 +28,7 @@ export const Route = createFileRoute("/parts")({
 function PartsPage() {
   const navigate = useNavigate();
   const { user, loading, profile } = useAuth();
+  const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const [busy, setBusy] = useState(false);
   const [ro, setRo] = useState("");
   const [notes, setNotes] = useState("");
@@ -37,7 +41,7 @@ function PartsPage() {
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    if (ro.trim() && !/^\d{6}$/.test(ro.trim())) return toast.error("Invalid RO#");
+    if (ro.trim() && !isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
     setBusy(true);
     try {
       await submitPickup({ data: {
@@ -80,13 +84,13 @@ function PartsPage() {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">RO Number</label>
-          <input value={ro} onChange={(event) => setRo(event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode="numeric" maxLength={6} className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
+          <input value={ro} onChange={(event) => setRo(settings?.ro_format === "flexible" ? event.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10) : event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>
           <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} className="w-full resize-none rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
         </div>
-        {/^\d{6}$/.test(ro.trim()) && (
+        {isValidRo(ro, settings?.ro_format) && (
           <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
         )}
 

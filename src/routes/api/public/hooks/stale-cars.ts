@@ -3,9 +3,9 @@ import { loadAllCarPages } from "@/lib/car-loading";
 import { companyRoKey } from "@/lib/tenant-events";
 
 /** Current hour (0-23) in Pacific time, so the refresh lands at 5 AM PST/PDT. */
-function pacificHour(now: Date): number {
+function pacificHour(now: Date, timeZone: string): number {
   const hour = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Los_Angeles",
+    timeZone,
     hour: "numeric",
     hour12: false,
   }).format(now);
@@ -24,19 +24,17 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
 
         const now = new Date();
         const url = new URL(request.url);
-        // The cron fires at both possible UTC hours; only the 5 AM Pacific one runs.
-        if (url.searchParams.get("force") !== "1" && pacificHour(now) !== 5) {
-          return Response.json({ skipped: true, reason: "not 5 AM Pacific" });
-        }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         // Each company sets its own number of untouched days. We query with the
         // widest window, then apply every company's own number row by row.
         const companies = await loadAllCarPages((from, to) => supabaseAdmin
           .from("dealerships")
-          .select("id, flagged_days").order("id").range(from, to));
+          .select("id, flagged_days, timezone").order("id").range(from, to));
+        const due = companies.filter((c)=>url.searchParams.get("force")==="1" || pacificHour(now,c.timezone)===5);
+        if(!due.length) return Response.json({ skipped:true, reason:"not 5 AM company time" });
         const daysFor = new Map<string, number>(
-          (companies ?? []).map((c) => [c.id, c.flagged_days ?? 14]),
+          due.map((c) => [c.id, c.flagged_days ?? 14]),
         );
         // Query with the shortest configured window so every company's own number is reachable.
         const shortestDays = daysFor.size ? Math.min(...daysFor.values()) : 14;
@@ -47,6 +45,7 @@ export const Route = createFileRoute("/api/public/hooks/stale-cars")({
         const candidates = await loadAllCarPages((from, to) => supabaseAdmin
           .from("parked_cars")
           .select("id, ro_number, located_at, dealership_id")
+          .in("dealership_id",due.map((c)=>c.id))
           .neq("lot_position", "TAKEN")
           .is("flagged_at", null)
           .is("flag_dismissed_at", null)

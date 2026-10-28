@@ -17,6 +17,7 @@ import {
 import { customerArrivalTemplate } from "@/lib/arrive-link";
 import { parseServiceHours, type ServiceHours } from "@/lib/company-configuration";
 import { Button } from "@/components/ui/button";
+import { CompanyLocationEditor } from "@/components/CompanyLocationEditor";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -123,6 +124,8 @@ function SettingsPage() {
     }
 
     setSaving(true);
+    try { parseServiceHours(draft.operating_hours); }
+    catch { setSaving(false); return toast.error("Enter valid opening and closing times"); }
     const { error } = await supabase
       .from("dealerships")
       .update({
@@ -293,6 +296,7 @@ function SettingsPage() {
                 </select>
               </label>
             </section>
+            <CompanyLocationEditor companyId={settings.id} />
             <Button
               onClick={save}
               disabled={saving}

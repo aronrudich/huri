@@ -1,0 +1,2 @@
+DROP TRIGGER IF EXISTS huri_protect_owner_deletion ON auth.users;
+CREATE TRIGGER huri_protect_owner_profile_deletion BEFORE DELETE ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.protect_company_owner_deletion();

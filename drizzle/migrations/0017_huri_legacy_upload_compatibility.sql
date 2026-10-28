@@ -1,0 +1,9 @@
+ALTER POLICY "car photos storage insert" ON storage.objects WITH CHECK ((bucket_id='car-photos') AND private.is_active_employee(auth.uid()) AND private.is_approved(auth.uid()) AND NOT private.is_spectator(auth.uid()) AND (private.photo_path_in_my_dealership(name) OR (array_length(storage.foldername(name),1)=1 AND EXISTS(SELECT 1 FROM public.parked_cars WHERE dealership_id=private.dealership_of(auth.uid()) AND ro_number=(storage.foldername(name))[1]) AND NOT EXISTS(SELECT 1 FROM public.parked_cars WHERE dealership_id<>private.dealership_of(auth.uid()) AND ro_number=(storage.foldername(name))[1]) AND NOT EXISTS(SELECT 1 FROM public.car_photos WHERE dealership_id<>private.dealership_of(auth.uid()) AND ro_number=(storage.foldername(name))[1]))));
+CREATE OR REPLACE FUNCTION public.sync_huri_stale_schedule() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+DECLARE hours text; job bigint;
+BEGIN
+ SELECT string_agg(h::text,',' ORDER BY h) INTO hours FROM (SELECT DISTINCT extract(hour FROM ((date_trunc('day', now() AT TIME ZONE d.timezone)+ interval '5 hours') AT TIME ZONE d.timezone) AT TIME ZONE 'UTC')::int AS h FROM public.dealerships d UNION SELECT DISTINCT extract(hour FROM ((date_trunc('day',(now()+interval '6 months') AT TIME ZONE d.timezone)+interval '5 hours') AT TIME ZONE d.timezone) AT TIME ZONE 'UTC')::int h FROM public.dealerships d) x;
+ SELECT jobid INTO job FROM cron.job WHERE jobname='huri-stale-car-alerts';
+ IF job IS NOT NULL AND hours IS NOT NULL THEN PERFORM cron.alter_job(job,schedule := '5 '||hours||' * * *'); END IF;
+ RETURN NEW;
+END $$;

@@ -120,6 +120,13 @@
       "when": 1793158412309,
       "tag": "0016_huri_timezone_stale_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1793158438183,
+      "tag": "0017_huri_legacy_upload_compatibility",
+      "breakpoints": true
     }
   ]
 }

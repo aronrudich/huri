@@ -5,6 +5,7 @@ import { normalizeSpot, adjacentSpots, lotOf } from "@/lib/lot";
 import { bayCustodyDeductions, parkClaimDeduction, UNLOGGED_POINTS, type CustodyRow } from "@/lib/unlogged-custody";
 import { isReportEligible } from "@/lib/report-eligibility";
 import { loadAllCarPages } from "@/lib/car-loading";
+import { blockersForLocation, type LocationRule } from "@/lib/company-locations";
 import {
   shiftWindowStart, shiftDayStart, shiftDayEnd, isDayKey, pacificHour, type RangeKey,
 } from "@/lib/report-range";
@@ -111,10 +112,13 @@ export const getReport = createServerFn({ method: "POST" })
 
     if (!me) throw new Error("No company for this account");
     const { data: company, error: companyError } = await supabase.from("dealerships")
-      .select("timezone, shift_start_minutes").eq("id", me.dealership_id).single();
+      .select("timezone, shift_start_minutes, company_code").eq("id", me.dealership_id).single();
     if (companyError) throw companyError;
     const timeZone = company.timezone;
     const shiftMinutes = company.shift_start_minutes;
+    const locationRules = await loadAllCarPages<LocationRule>((from,to)=>supabase.from("company_location_rules")
+      .select("label, lot_name, capacity, blockers").eq("dealership_id",me.dealership_id).order("label").range(from,to));
+    const isJcd = company.company_code === "JCD29854";
     const custom = data.range === "custom" && data.start && data.end;
     const start = custom && data.start ? shiftDayStart(data.start, timeZone, shiftMinutes) : shiftWindowStart(data.range, new Date(), timeZone, shiftMinutes);
     const end = custom && data.end ? shiftDayEnd(data.end, timeZone, shiftMinutes) : null;
@@ -228,8 +232,8 @@ export const getReport = createServerFn({ method: "POST" })
         if (next) { carAt.set(key, next); bump(`${e.dealership_id}|${next}`, 1); }
       }
       const spot = normalizeSpot(r.lot_position);
-      if (spot && lotOf(spot) === "sv") {
-        blockersFor.set(r.id, adjacentSpots(spot).filter((s) => (spotCount.get(`${r.dealership_id}|${s}`) ?? 0) > 0).length);
+      if (spot) {
+        blockersFor.set(r.id, blockersForLocation(spot,locationRules,isJcd).filter((s) => (spotCount.get(`${r.dealership_id}|${s}`) ?? 0) > 0).length);
       }
     }
     const pointsFor = (r: Row): number => {
@@ -238,7 +242,7 @@ export const getReport = createServerFn({ method: "POST" })
       if (k === "park") return 0.7;
       if (k === "wash") return 0.7;
       const lot = lotOf(r.lot_position);
-      if (lot === "sv") return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
+      if ((isJcd && lot === "sv") || locationRules.some((rule)=>rule.label===normalizeSpot(r.lot_position) && rule.blockers.length>0)) return [1.5, 1.8, 2.1][Math.min(2, blockersFor.get(r.id) ?? 0)];
       if (lot === "bl") return 1.2;
       if (lot === "cp") return k === "stage" ? 1.2 : 1.0;
       return 1.3;

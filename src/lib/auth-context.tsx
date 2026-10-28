@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { clearPersistedQueryCache } from "@/lib/query-persist";
@@ -61,11 +62,19 @@ const writeCachedProfile = (profile: Profile | null) => {
 };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
+  const identity = useRef<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const applyProfile = (next: Profile | null) => {
+    const nextIdentity = next ? `${next.id}|${next.dealership_id ?? ""}` : null;
+    if (identity.current !== nextIdentity) {
+      queryClient.clear();
+      clearPersistedQueryCache();
+      identity.current = nextIdentity;
+    }
     setProfile(next);
     writeCachedProfile(next);
   };
@@ -106,6 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
+      if (identity.current && s?.user.id !== identity.current.split("|")[0]) applyProfile(null);
       setSession(s);
       if (s?.user) {
         // Must stay deferred: calling another supabase client method from

@@ -40,7 +40,7 @@ function query(data: unknown) {
   builder.maybeSingle = () => Promise.resolve({ data: {
     role_name: "Admin", is_owner: true, is_active: true, status: "approved", dealership_id: "company",
   } });
-  builder.single = () => Promise.resolve({ data: { timezone: "America/Los_Angeles", shift_start_minutes: 390 }, error: null });
+  builder.single = () => Promise.resolve({ data: { timezone: "America/Los_Angeles", shift_start_minutes: 390, company_code: "JCD29854" }, error: null });
   builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve);
   return builder;
 }

@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { sendWebPush, isStalePushStatus, isBadSubscriptionStatus } from "./push-server.server";
+import { isValidRo } from "./company-configuration";
+import { isSpectatorRole } from "./roles";
 
 export type PickupSubmission = {
   tag?: string | null;
@@ -72,7 +74,8 @@ async function mergeIntoEtaRequest(
   data: PickupSubmission,
 ): Promise<PickupDeliveryResult | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  const ro = data.ro!.trim();
+  const ro = data.ro?.trim();
+  if (!ro) return null;
   const { data: eta } = await supabaseAdmin
     .from("pickup_requests")
     .select("id, customer_eta, car_notes")
@@ -174,11 +177,16 @@ export async function createPickupAndNotify(
   if (!caller?.dealership_id || !caller.is_active || caller.status !== "approved") {
     throw new Error("Your account cannot submit pickup requests");
   }
+  if (isSpectatorRole(caller.role_name)) throw new Error("Spectators cannot submit requests");
+  const { data: company, error: companyError } = await supabase.from("dealerships")
+    .select("ro_format").eq("id", caller.dealership_id).single();
+  if (companyError) throw companyError;
+  if (data.ro && !isValidRo(data.ro, company.ro_format)) throw new Error("Invalid RO#");
   if (data.kind === "parts" && !PARTS_ROLES.includes(caller.role_name)) {
     throw new Error("You do not have access to Parts requests");
   }
 
-  const sourceRole = data.sourceRole ?? caller.role_name;
+  const sourceRole = caller.role_name;
 
   // A customer who used the ETA link already has a card on the list. When an
   // advisor then submits a regular pickup for the same RO, fold it into that

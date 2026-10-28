@@ -12,6 +12,7 @@ import { lotActivePickupsQuery, parkedCarsQuery } from "@/lib/queries";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
 import { PhotoBadge } from "@/components/PhotoBadge";
 import { isActiveCar } from "@/lib/car-loading";
+import { isCompanyEvent } from "@/lib/tenant-events";
 
 
 
@@ -48,7 +49,7 @@ function LotPage() {
   // Bumped when the app returns from the background so channels rebuild.
   const realtimeGen = useRealtimeGeneration();
   const navigate = useNavigate();
-  const { user, loading } = useAuth();
+  const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
@@ -69,11 +70,14 @@ function LotPage() {
 
 
   useEffect(() => {
-    if (!user) return;
-    const chan = supabase.channel("lot-all-spots")
+    if (!user || !profile?.dealership_id) return;
+    const companyId = profile.dealership_id;
+    const chan = supabase.channel(`lot-all-spots-${companyId}`)
       // Patch the one changed car instead of re-downloading the whole lot on
       // every phone for every move — that burst is what overloads the server.
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
@@ -89,12 +93,13 @@ function LotPage() {
             : [...cur, row];
         });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, () => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
         void queryClient.invalidateQueries({ queryKey: ["lot-active-pickups"] });
       })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient, realtimeGen]);
+  }, [user, profile?.dealership_id, queryClient, realtimeGen]);
 
 
   const byPos = useMemo(() => {

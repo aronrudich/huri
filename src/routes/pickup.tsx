@@ -12,6 +12,7 @@ import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery } from "@/lib/queries";
 import { isActiveCar } from "@/lib/car-loading";
+import { isCompanyEvent } from "@/lib/tenant-events";
 import { LotMap } from "@/components/LotMap";
 import { canSeeKind, isSpectatorRole, isTechRole, isUpperManagementRole, isValetRole } from "@/lib/roles";
 import { carPhotoIndexQuery } from "@/lib/car-photos";
@@ -156,12 +157,15 @@ function PickupPage() {
   };
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !profile?.dealership_id) return;
+    const companyId = profile.dealership_id;
 
     // Realtime events patch the caches from their payloads; only cases the
     // payload can't resolve (missing row identity) fall back to a refetch.
-    const chan = supabase.channel("pickup-queue")
-      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests" }, (payload) => {
+    const chan = supabase.channel(`pickup-queue-${companyId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as Pickup | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         queryClient.setQueryData<Pickup[]>(["pickups"], (cur) => {
@@ -181,7 +185,9 @@ function PickupPage() {
           return next.sort((a, b) => +new Date(b.created_at) - +new Date(a.created_at));
         });
       })
-      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars" }, (payload) => {
+      .on("postgres_changes", { event: "*", schema: "public", table: "parked_cars", filter: `dealership_id=eq.${companyId}` }, (payload) => {
+        if (payload.eventType !== "DELETE" && !isCompanyEvent(payload.new, companyId)) return;
+        if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
         if (!row || !isActiveCar(row) || takenPickupCars.some((c) => c.id === row.id)) {
@@ -202,18 +208,19 @@ function PickupPage() {
       })
       .subscribe(handleChannelStatus);
     return () => { supabase.removeChannel(chan); };
-  }, [user, queryClient, realtimeGen, takenPickupCars]);
+  }, [user, profile?.dealership_id, queryClient, realtimeGen, takenPickupCars]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
   //   - Parts requests → same valet audience; anyone can claim them.
   useEffect(() => {
-    if (!profile) return;
+    if (!profile?.dealership_id) return;
     const role = profile.role_name;
     if (!isValetRole(role)) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
-    const chan = supabase.channel("valet-pickup-alert")
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests" }, (payload) => {
+    const chan = supabase.channel(`valet-pickup-alert-${profile.dealership_id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${profile.dealership_id}` }, (payload) => {
+        if (!isCompanyEvent(payload.new, profile.dealership_id)) return;
         const p = payload.new as Pickup;
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.

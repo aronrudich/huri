@@ -105,15 +105,14 @@ export const flaggedCarsQuery = () =>
     queryKey: ["flagged-cars"],
     staleTime: 60_000,
     queryFn: async ({ signal }): Promise<FlaggedCarRow[]> => {
-      const { data, error } = await supabase
+      return loadAllCarPages<FlaggedCarRow>((from, to) => supabase
         .from("parked_cars")
         .select("id, tag_number, ro_number, car_model, lot_position, notes, located_at, flagged_at, bay_tech")
         .not("flagged_at", "is", null)
         .is("flag_dismissed_at", null)
         .order("located_at", { ascending: false })
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []) as FlaggedCarRow[];
+        .order("id", { ascending: true }).range(from, to)
+        .abortSignal(timeoutSignal(signal)));
     },
   });
 
@@ -123,12 +122,12 @@ export const carWashesQuery = () =>
     queryKey: ["car-washes"],
     staleTime: 60_000,
     queryFn: async ({ signal }): Promise<string[]> => {
-      const { data, error } = await supabase
+      const data = await loadAllCarPages<{ ro_number: string }>((from, to) => supabase
         .from("car_washes")
         .select("ro_number")
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []).map((r) => (r.ro_number ?? "").trim()).filter(Boolean);
+        .order("id", { ascending: true }).range(from, to)
+        .abortSignal(timeoutSignal(signal)));
+      return data.map((r) => (r.ro_number ?? "").trim()).filter(Boolean);
     },
   });
 
@@ -139,14 +138,14 @@ export const pickupsQuery = <T,>() =>
     queryKey: ["pickups"],
     staleTime: 30_000,
     queryFn: async ({ signal }): Promise<T[]> => {
-      const { data, error } = await supabase
+      const data = await loadAllCarPages((from, to) => supabase
         .from("pickup_requests")
         .select("*")
         .in("status", ["unclaimed", "claimed"])
         .order("created_at", { ascending: false })
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []) as T[];
+        .order("id", { ascending: false }).range(from, to)
+        .abortSignal(timeoutSignal(signal)));
+      return data as T[];
     },
   });
 
@@ -161,12 +160,11 @@ export const lotActivePickupsQuery = () =>
     queryKey: ["lot-active-pickups"],
     staleTime: 30_000,
     queryFn: async ({ signal }): Promise<ActivePickupRow[]> => {
-      const { data, error } = await supabase
+      return loadAllCarPages<ActivePickupRow>((from, to) => supabase
         .from("pickup_requests")
         .select("ro_number, lot_position, kind, status, is_staged")
         .in("status", ["unclaimed", "claimed"])
-        .abortSignal(timeoutSignal(signal));
-      if (error) throw error;
-      return (data ?? []) as ActivePickupRow[];
+        .order("id", { ascending: true }).range(from, to)
+        .abortSignal(timeoutSignal(signal)));
     },
   });

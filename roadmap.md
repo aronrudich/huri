@@ -1,4 +1,10 @@
 # Roadmap
+## Uploaded master hardening prompt (Oct 28)
+- [ ] Validate all 22 proposals against current source and active database definitions; distinguish defects from already-fixed behavior.
+- [ ] Review a staged implementation plan before shared-live database changes; replace unsafe first-signup ownership and overly broad physical-spot uniqueness proposals.
+- [ ] Implement approved tenant isolation, query completeness, company configuration, and navigation fixes with regression tests and signed-in verification.
+- [ ] Preserve JCD behavior, operational history, report eligibility, spectator restrictions, and freshness; do not publish automatically.
+
 ## Lot completeness and car details (Oct 27)
 - [x] Load every active car with pagination; preserve TAKEN history and live updates, including targeted TAKEN lookups for open pickup context.
 - [x] Preserve existing model/notes on location-only saves; restored JCD RO #193626 model to Jeep GC without changing SV 3.

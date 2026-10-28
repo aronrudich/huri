@@ -16,6 +16,8 @@ test("company schedule accepts 6:45 PM when closing at 7 PM", () => {
   expect(isServiceTimeOpen("2026-10-28",6,45,"PM",hours)).toBe(true);
   expect(isServiceTimeOpen("2026-10-28",7,1,"PM",hours)).toBe(false);
   expect(()=>parseServiceHours([{open:800,close:700}])).toThrow();
+  expect(()=>parseServiceHours([null,{open:800,close:700},null,null,null,null,null])).toThrow();
+  expect(()=>parseServiceHours([null,{open:-1,close:700},null,null,null,null,null])).toThrow();
 });
 test("RO settings retain six digits and permit requested flexible formats", () => {
   expect(isValidRo("45120")).toBe(false);

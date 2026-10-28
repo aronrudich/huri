@@ -7,7 +7,7 @@ export function parseServiceHours(value: unknown): ServiceHours {
   if (!Array.isArray(value) || value.length !== 7) throw new Error("Invalid service hours");
   return value.map((day) => {
     if (day === null) return null;
-    if (typeof day !== "object" || !Number.isInteger(day.open) || !Number.isInteger(day.close) || day.open < 0 || day.close > 1439 || day.open >= day.close) throw new Error("Invalid service hours");
+    if (typeof day !== "object" || Array.isArray(day) || !Number.isInteger(day.open) || !Number.isInteger(day.close) || day.open < 0 || day.close > 1439 || day.open >= day.close) throw new Error("Invalid service hours");
     return { open: day.open, close: day.close };
   });
 }

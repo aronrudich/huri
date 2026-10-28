@@ -1,9 +1,12 @@
 # Roadmap
 ## Uploaded master hardening prompt (Oct 28)
-- [ ] Validate all 22 proposals against current source and active database definitions; distinguish defects from already-fixed behavior.
-- [ ] Review a staged implementation plan before shared-live database changes; replace unsafe first-signup ownership and overly broad physical-spot uniqueness proposals.
-- [ ] Implement approved tenant isolation, query completeness, company configuration, and navigation fixes with regression tests and signed-in verification.
-- [ ] Preserve JCD behavior, operational history, report eligibility, spectator restrictions, and freshness; do not publish automatically.
+- [x] Review the 22 proposals against source and database definitions; the 30-minute claim lead was already correct, and blanket first-signup ownership was rejected.
+- [x] Add tenant-scoped profile reads, company-qualified photo uploads with legacy compatibility, paginated collection reads, and scoped realtime patches.
+- [x] Add explicit company location rules and management editing, company hours/report boundaries, Support first-owner approval, and atomic ownership transfer.
+- [x] Keep owner deletion protection on public.profiles rather than a managed auth-table trigger; normalize assignment positions before occupied-spot checks.
+- [x] 39 tests pass; public Ontario arrival language switching preserves RO/query parameters and closed-hour controls; current build OK. No publication performed. Database changes already applied to shared live backend.
+- [ ] Signed-in parking, photos, reports, owner approval/transfer and multi-company permission checks: blocked by unavailable requesting-user preview session; these flows are not certified.
+- [ ] Final live acceptance of the hardening batch remains blocked by those signed-in checks; this is not an exhaustive bug-free inventory.
 
 ## Lot completeness and car details (Oct 27)
 - [x] Load every active car with pagination; preserve TAKEN history and live updates, including targeted TAKEN lookups for open pickup context.

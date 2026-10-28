@@ -28,7 +28,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   if (t === "TAKEN BY CUSTOMER") return "TAKEN";
   if (/^SV\s*[0-9]+$/.test(t)) {
     const n = parseInt(t.replace(/^SV\s*/, ""), 10);
-    return n >= MIN_SPOT && n <= MAX_SPOT ? `SV ${n}` : null;
+    return n >= MIN_SPOT && t.length <= 60 ? `SV ${n}` : null;
   }
   // Normalize legacy locations while old links/forms are still open.
   if (t === "0" || t === "T") return "BL";
@@ -47,7 +47,7 @@ export function isValidSpot(raw: string): boolean {
   if (t === "") return false;
   if (/^SV\s*[0-9]+$/.test(t)) {
     const n = parseInt(t.replace(/^SV\s*/, ""), 10);
-    return n >= MIN_SPOT && n <= MAX_SPOT;
+    return n >= MIN_SPOT && t.length <= 60;
   }
   return t.length <= 60;
 }
@@ -112,7 +112,7 @@ export function blockedSpots(raw: string | null | undefined): string[] {
   const posInGroup = (n - 1) % 3; // 0=front, 1=middle, 2=back
   const out: string[] = [];
   for (let i = 1; i <= 2 - posInGroup; i++) out.push(`SV ${n + i}`);
-  return out.filter((s) => parseSpot(s) !== null && parseSpot(s)! <= MAX_SPOT);
+  return out.filter((s) => { const n = parseSpot(s); return n !== null && n <= MAX_SPOT; });
 }
 
 /**

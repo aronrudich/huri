@@ -20,6 +20,8 @@ import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { claimHideMilliseconds, isClaimWithinWindow } from "@/lib/pickup-window";
+import { companyLocationsQuery, blockersForLocation } from "@/lib/company-locations";
+import { CompanyLotGrid } from "@/components/CompanyLotGrid";
 
 
 
@@ -85,6 +87,8 @@ function PickupPage() {
   const queryClient = useQueryClient();
   // Each company sets how long a claimed submission stays on the list.
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const { data: locationRules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
+  const isJcd = settings?.company_code === "JCD29854";
   const claimHideMs = claimHideMilliseconds(settings?.claim_hide_minutes);
   // Both lists are React Query caches now: revisiting the tab paints from cache
   // and realtime events patch the cache directly (no full-table refetches).
@@ -490,8 +494,8 @@ function PickupPage() {
           // A pickup submitted for an RO that was never logged into Huri has no
           // spot snapshot and no live car row — say so instead of "Unknown".
           const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN" && p.lot_position !== "TAKEN") || p.status !== "unclaimed");
-          const isSvSpot = lotOf(effectiveSpot) === "sv";
-          const adj = effectiveSpot ? adjacentSpots(effectiveSpot) : [];
+          const isSvSpot = isJcd ? lotOf(effectiveSpot) === "sv" : locationRules.some((r)=>r.label===effectiveSpot);
+          const adj = blockersForLocation(effectiveSpot, locationRules, isJcd);
           const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
 
           const isStaged = !!p.is_staged;
@@ -724,7 +728,7 @@ function PickupPage() {
                         spot: effectiveSpot,
                         highlight: isPickupMapRequest(p.kind, p.is_staged),
                       })}
-                      disabled={!effectiveSpot || lotOf(effectiveSpot) !== "sv"}
+                      disabled={!effectiveSpot || !isSvSpot}
                       aria-label="Show on lot map"
                       className="flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent disabled:opacity-40"
                     >
@@ -784,7 +788,7 @@ function PickupPage() {
         <div className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur">
           <div className="flex items-center justify-between border-b border-border px-4 py-3 safe-top">
             <div className="min-w-0">
-              <p className="truncate text-base font-semibold">SV lot map</p>
+              <p className="truncate text-base font-semibold">{isJcd ? "SV lot map" : "Lot map"}</p>
               <p className="text-xs text-muted-foreground">
                 {mapSelection.highlight ? (
                   <>Pick up <span className="font-semibold text-primary">{mapSelection.spot}</span> (blue)</>
@@ -804,12 +808,12 @@ function PickupPage() {
           {/* Whole lot fitted on screen at once, mobile and desktop. */}
           <div className="min-h-0 flex-1 overflow-hidden px-3 py-2 pb-[calc(4.5rem+env(safe-area-inset-bottom))] md:pb-6">
 
-            <LotMap
+            {isJcd ? <LotMap
               spots={svSpots}
               carsBySpot={carsByPos}
               highlightSpot={mapSelection.highlight ? mapSelection.spot : null}
               staticView
-            />
+            /> : <CompanyLotGrid rules={locationRules} cars={allCars} highlight={mapSelection.spot} />}
           </div>
 
         </div>

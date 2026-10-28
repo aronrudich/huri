@@ -74,6 +74,7 @@ function ParkPage() {
   const [washedAt, setWashedAt] = useState<string | null>(null);
   const [showMap, setShowMap] = useState(false);
   const detailEdits = useRef({ model: false, notes: false, pos: !!spotParam });
+  const roEdited = useRef(false);
   const formValues = useRef({ model, notes, pos });
   formValues.current = { model, notes, pos };
   const { data: mapCars = [] } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
@@ -96,9 +97,11 @@ function ParkPage() {
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
+  // ID-based editors load that car once; typing a correction must not reload it.
+  const lookupRo = idParam ? "" : ro;
   useEffect(() => {
     if (!user) return;
-    const targetRo = ro.trim();
+    const targetRo = lookupRo.trim();
     if (!idParam && !isValidRo(targetRo, settings?.ro_format)) return;
     let cancelled = false;
     const apply = (data: ParkedCarRow) => {
@@ -106,7 +109,7 @@ function ParkPage() {
       const details = mergeLoadedCarDetails(formValues.current, data, detailEdits.current);
       setEditing(true);
       setExistingId(data.id);
-      if (idParam) setRo(data.ro_number ?? "");
+      if (idParam && !roEdited.current) setRo(data.ro_number ?? "");
       setModel(details.model);
       setPos(details.pos);
       setNotes(details.notes);
@@ -129,7 +132,7 @@ function ParkPage() {
     };
     void load();
     return () => { cancelled = true; };
-  }, [ro, idParam, queryClient, user, settings?.ro_format]);
+  }, [lookupRo, idParam, queryClient, user, settings?.ro_format]);
 
   // "Washed" is tied to the RO #, so it follows the car through every later move.
   useEffect(() => {
@@ -256,7 +259,10 @@ function ParkPage() {
 
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={(value) => {
+          roEdited.current = true;
           setRo(value);
+          // A correction belongs to the same car, including its model/location.
+          if (idParam) return;
           setExistingId(null);
           setEditing(false);
           setSavedPos(null);

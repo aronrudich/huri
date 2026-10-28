@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Fragment, useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
@@ -99,6 +99,9 @@ function PickupPage() {
   const { data: takenPickupCars = [] } = useQuery({
     ...pickupTakenCarsQuery(pickups.map((p) => p.ro_number ?? "")), enabled: !!user,
   });
+  // Query results change on inserts/refetches, not the channel's identity.
+  const takenPickupCarsRef = useRef(takenPickupCars);
+  takenPickupCarsRef.current = takenPickupCars;
   const { data: washedRoList = [] } = useQuery({ ...carWashesQuery(), enabled: !!user });
   // Photos attached to any car on the list, so cards can glow when one exists.
   const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(pickups.map((p) => p.ro_number ?? "")));
@@ -163,6 +166,7 @@ function PickupPage() {
   useEffect(() => {
     if (!user || !profile?.dealership_id) return;
     const companyId = profile.dealership_id;
+    let disposed = false;
 
     // Realtime events patch the caches from their payloads; only cases the
     // payload can't resolve (missing row identity) fall back to a refetch.
@@ -194,7 +198,7 @@ function PickupPage() {
         if (payload.eventType === "DELETE" && "dealership_id" in payload.old && !isCompanyEvent(payload.old, companyId)) return;
         const row = payload.new as ParkedCar | undefined;
         const oldId = (payload.old as { id?: string } | undefined)?.id;
-        if (!row || !isActiveCar(row) || takenPickupCars.some((c) => c.id === row.id)) {
+        if (!row || !isActiveCar(row) || takenPickupCarsRef.current.some((c) => c.id === row.id)) {
           void queryClient.invalidateQueries({ queryKey: ["pickup-taken-cars"] });
         }
         queryClient.setQueryData<ParkedCar[]>(["parked-cars"], (cur) => {
@@ -210,9 +214,9 @@ function PickupPage() {
             : [...list, row];
         });
       })
-      .subscribe(handleChannelStatus);
-    return () => { supabase.removeChannel(chan); };
-  }, [user, profile?.dealership_id, queryClient, realtimeGen, takenPickupCars]);
+      .subscribe((status) => { if (!disposed) handleChannelStatus(status); });
+    return () => { disposed = true; void supabase.removeChannel(chan); };
+  }, [user, profile?.dealership_id, queryClient, realtimeGen]);
 
   // In-app realtime alert.
   //   - Regular car pickups → notify anyone with a Valet-type role.
@@ -222,6 +226,7 @@ function PickupPage() {
     const role = profile.role_name;
     if (!isValetRole(role)) return;
     if (typeof window === "undefined" || !("Notification" in window)) return;
+    let disposed = false;
     const chan = supabase.channel(`valet-pickup-alert-${profile.dealership_id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${profile.dealership_id}` }, (payload) => {
         if (!isCompanyEvent(payload.new, profile.dealership_id)) return;
@@ -248,9 +253,9 @@ function PickupPage() {
           "/pickup",
         );
       })
-      .subscribe(handleChannelStatus);
-    return () => { supabase.removeChannel(chan); };
-  }, [profile, realtimeGen]);
+      .subscribe((status) => { if (!disposed) handleChannelStatus(status); });
+    return () => { disposed = true; void supabase.removeChannel(chan); };
+  }, [profile?.dealership_id, profile?.role_name, realtimeGen]);
 
   // Expired requests are completed only by the database's scheduled archive.
 

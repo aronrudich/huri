@@ -1,4 +1,10 @@
 # Roadmap
+## Monitoring findings (Oct 28)
+- [x] Keep Pickup live channels stable across pending queries and car updates; ignore intentional channel cleanup statuses.
+- [x] Preserve typed RO corrections and the original car identity when opening Park by ID; verify delayed loads cannot reset edits.
+- [x] All 41 tests pass, including real-screen regressions with controlled network boundaries; build OK and signed-out pages redirect safely. Resolved only these two findings; no publication or database changes.
+- [ ] Signed-in live Pickup and RO-save acceptance: blocked by unavailable requesting-user preview session; controlled screen tests do not certify live employee flows.
+
 ## Uploaded master hardening prompt (Oct 28)
 - [x] Review the 22 proposals against source and database definitions; the 30-minute claim lead was already correct, and blanket first-signup ownership was rejected.
 - [x] Add tenant-scoped profile reads, company-qualified photo uploads with legacy compatibility, paginated collection reads, and scoped realtime patches.

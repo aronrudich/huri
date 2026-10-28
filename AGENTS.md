@@ -1,6 +1,8 @@
 # Architecture rules
 - Load active-car lists through the shared paginated query, exclude TAKEN both in reads and realtime patches, and keep direct RO/history reads unfiltered; this prevents row-limit omissions without deleting history.
 - Merge Park RO lookups without overwriting edited fields or selected locations, and preserve omitted model/notes in the assignment RPC; this prevents location moves from erasing car details.
+- Keep ID-based Park loads independent of typed RO corrections and retain the original car identity; delayed lookups must not undo edits.
+- Keep Pickup channel lifetimes independent of query-result arrays, read latest context through refs, and ignore statuses after intentional cleanup; this prevents cache updates from triggering reconnect loops.
 - Preserve company/RO/date history indexes and the ordered location-snapshot index when changing report queries; they avoid unnecessary scans without dropping history or weakening recovery freshness.
 - Use the shared report eligibility predicate before request-based statistics and scoring, including custody lookbacks; this keeps totals, rankings and downstream exports consistent without changing operational history.
 - Generate public browser and install icons from the approved wordmark and version their URLs together; this keeps cached icons consistent with the in-app brand.

@@ -85,6 +85,13 @@
       "when": 1793157785593,
       "tag": "0011_huri_tenant_photo_profiles_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1793157866318,
+      "tag": "0012_huri_company_configuration",
+      "breakpoints": true
     }
   ]
 }

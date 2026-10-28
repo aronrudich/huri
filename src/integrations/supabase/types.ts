@@ -546,7 +546,10 @@ export type Database = {
           flagged_days: number
           id: string
           name: string
+          operating_hours: Json
           reminder_minutes: number
+          ro_format: string
+          shift_start_minutes: number
           slug: string
           timezone: string
           updated_at: string
@@ -562,7 +565,10 @@ export type Database = {
           flagged_days?: number
           id?: string
           name: string
+          operating_hours?: Json
           reminder_minutes?: number
+          ro_format?: string
+          shift_start_minutes?: number
           slug: string
           timezone?: string
           updated_at?: string
@@ -578,7 +584,10 @@ export type Database = {
           flagged_days?: number
           id?: string
           name?: string
+          operating_hours?: Json
           reminder_minutes?: number
+          ro_format?: string
+          shift_start_minutes?: number
           slug?: string
           timezone?: string
           updated_at?: string

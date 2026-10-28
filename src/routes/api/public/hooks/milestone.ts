@@ -32,14 +32,15 @@ export const Route = createFileRoute("/api/public/hooks/milestone")({
 
         const body = "WOW! Alex has officially hit 1000 claims! He sure knows how to Huri up! Thank you Alex!";
         let sent = 0;
+        for (let offset = 0; offset < (subs ?? []).length; offset += 6) {
         await Promise.all(
-          (subs ?? []).map(async (s) => {
+          (subs ?? []).slice(offset, offset + 6).map(async (s) => {
             try {
               await sendWebPush(s, {
                 title: "🏆 Huri",
                 body,
                 tag: "milestone-alex-1000",
-                url: `/thread/${encodeURIComponent(threadFor.get(s.user_id) ?? "")}`,
+                url: "/pickup",
               });
               sent++;
             } catch {
@@ -47,6 +48,7 @@ export const Route = createFileRoute("/api/public/hooks/milestone")({
             }
           }),
         );
+        }
         return Response.json({ sent });
       },
     },

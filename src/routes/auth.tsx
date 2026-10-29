@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { Play, X } from "lucide-react";
+import { ArrowLeft, Play, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { confirmEmailForValidCredentials, createConfirmedAccount } from "@/lib/auth.functions";
 import { loginWithPasswordFallback } from "@/lib/password-login.functions";
@@ -202,7 +202,10 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-surface safe-top safe-bottom">
+    <div className="relative min-h-screen bg-surface safe-top safe-bottom">
+      <Link to="/" className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+        <ArrowLeft className="h-4 w-4" /> Back to Live Demo
+      </Link>
 
       <div className={`mx-auto px-5 py-12 ${mode === "business" ? "max-w-5xl" : "max-w-md"}`}>
         <div className="mb-8 text-center">

@@ -7,12 +7,13 @@ import huriLogo from "@/assets/huri-logo-new.png.asset.json";
  * No database reads, realtime channels or network calls — zero running cost.
  */
 type Kind = "Customer" | "ETA" | "Tech" | "Parts" | "Park" | "Wash";
-type Req = { id: number; kind: Kind; ro: string; car: string; spot: string; note?: string; at: number; by?: string; claimedAt?: number };
+type Req = { id: number; kind: Kind; ro: string; car: string; spot: string; note?: string; dest?: string; blockers?: string[]; at: number; by?: string; claimedAt?: number };
 
 const KINDS: Kind[] = ["Customer", "Customer", "Customer", "Customer", "ETA", "ETA", "ETA", "Tech", "Tech", "Tech", "Parts", "Park", "Wash"];
 const CARS = ["Grand Cherokee", "Ram 1500", "Wrangler", "Durango", "Charger", "Compass", "Pacifica", "Gladiator", "Ram 2500", "Cherokee", "Hornet", "Wagoneer"];
 const VALETS = ["Marcus", "Alex", "Tyler", "Diego", "Jordan", "Luis", "Sam"];
 const NOTES = ["Customer waiting in lounge", "Keys on advisor desk", "Customer with kids", "Recalls completed", "Ready for test drive", "Alignment rack"];
+const TECHS = ["Dave", "Leo", "Ruben", "Chris"];
 const TECH_BAYS = ["Bay 4", "Bay 7", "Bay 12", "Bay 9"];
 const pick = <T,>(a: T[]) => a[Math.floor(Math.random() * a.length)];
 let nextId = 1;
@@ -20,13 +21,27 @@ let nextRo = 194210;
 
 function makeReq(at: number): Req {
   const kind = pick(KINDS);
-  const r = Math.random();
-  const spot = kind === "Tech" ? pick(TECH_BAYS) : r < 0.1 ? (Math.random() < 0.5 ? "Side Lot" : `Side Lot ${1 + Math.floor(Math.random() * 9)}`) : `${pick(["Lot A", "Lot B", "Lot C"])} ${1 + Math.floor(Math.random() * 150)}`;
+  const side = Math.random() < 0.12;
+  const lot = pick(["Lot A", "Lot B", "Lot C"]);
+  const spot = side ? "Side Lot" : `${lot} - ${1 + Math.floor(Math.random() * 150)}`;
   nextRo += 3 + Math.floor(Math.random() * 20);
-  return { id: nextId++, kind, ro: String(nextRo), car: pick(CARS), spot, note: Math.random() < 0.3 ? pick(NOTES) : undefined, at };
+  const blockers = !side && Math.random() < 0.18
+    ? Array.from({ length: Math.random() < 0.3 ? 2 : 1 }, () => `RO #${193000 + Math.floor(Math.random() * 1200)} (${pick(CARS)}, ${lot} - ${1 + Math.floor(Math.random() * 150)})`)
+    : undefined;
+  const dest = kind === "Tech" ? `${pick(TECH_BAYS)} · Tech ${pick(TECHS)}` : undefined;
+  return { id: nextId++, kind, ro: String(nextRo), car: pick(CARS), spot, dest, blockers, note: Math.random() < 0.25 ? pick(NOTES) : undefined, at };
 }
 
 const LABEL: Record<Kind, string> = { Customer: "Customer here", ETA: "Customer ETA", Tech: "Tech pickup", Parts: "Parts", Park: "Park", Wash: "Wash" };
+// Demo-only accent palette mirroring the request-type colors staff see in the app.
+const TONE: Record<Kind, { badge: string; card: string }> = {
+  Customer: { badge: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30", card: "border-l-emerald-500" },
+  ETA: { badge: "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30", card: "border-l-amber-500" },
+  Tech: { badge: "bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/30", card: "border-l-sky-500" },
+  Parts: { badge: "bg-purple-500/15 text-purple-600 dark:text-purple-400 border-purple-500/30", card: "border-l-purple-500" },
+  Park: { badge: "bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border-indigo-500/30", card: "border-l-indigo-500" },
+  Wash: { badge: "bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 border-cyan-500/30", card: "border-l-cyan-500" },
+};
 const ago = (ms: number) => { const m = Math.floor(ms / 60000); return m < 1 ? "Just now" : `${m}m ago`; };
 
 function seed() {
@@ -64,11 +79,11 @@ export function DemoFeed() {
               return { ...s, upcoming, open: due ? { ...s.upcoming[0], kind: "Customer", at: n } : makeReq(n) };
             });
             cycle();
-          }, 2500);
+          }, 1500 + Math.random() * 500);
           timers.current.push(t3);
         }, 700);
         timers.current.push(t2);
-      }, 6000 + Math.random() * 2000);
+      }, 3000 + Math.random() * 1000);
       timers.current.push(t1);
     };
     cycle();
@@ -146,13 +161,14 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 function Card({ req, now, className = "", children }: { req: Req; now: number; className?: string; children: React.ReactNode }) {
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-xl border bg-background p-3 shadow-sm ${className}`}>
+    <div className={`flex items-center justify-between gap-3 rounded-xl border border-l-4 bg-background p-3 shadow-sm ${TONE[req.kind].card} ${className}`}>
       <div className="min-w-0">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">{LABEL[req.kind]}</span>
+          <span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${TONE[req.kind].badge}`}>{LABEL[req.kind]}</span>
           <span className="text-sm font-semibold">RO #{req.ro}</span>
         </div>
-        <p className="mt-1 truncate text-sm">{req.car} · <span className="font-medium">{req.spot}</span></p>
+        <p className="mt-1 truncate text-sm">{req.car} · <span className="font-medium">{req.spot}</span>{req.dest && <> → <span className="font-medium">{req.dest}</span></>}</p>
+        {req.blockers && <p className="mt-0.5 text-xs text-destructive"><b>Blocked by{req.blockers.length > 1 ? ` ${req.blockers.length} cars` : ""}:</b> {req.blockers.join(", ")}</p>}
         {req.note && <p className="truncate text-xs text-muted-foreground">{req.note}</p>}
         {req.at <= now && !req.by && <p className="text-[11px] text-muted-foreground">{ago(now - req.at)}</p>}
       </div>

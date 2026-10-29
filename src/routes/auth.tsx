@@ -27,6 +27,8 @@ export const Route = createFileRoute("/auth")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { mode?: "login" | "register" | "business" } =>
+    s.mode === "register" || s.mode === "business" || s.mode === "login" ? { mode: s.mode } : {},
   component: AuthPage,
 });
 
@@ -39,7 +41,7 @@ const errorMessage = (error: unknown) =>
 function AuthPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  const [mode, setMode] = useState<"login" | "register" | "business">("login");
+  const [mode, setMode] = useState<"login" | "register" | "business">(Route.useSearch().mode ?? "login");
   const [busy, setBusy] = useState(false);
   const roles = DEFAULT_ROLES;
 

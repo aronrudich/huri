@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { DemoFeed } from "@/components/DemoFeed";
 
 /**
  * "/" decides where to go only after we know whether someone is signed in,
@@ -9,9 +10,9 @@ import { useAuth } from "@/lib/auth-context";
 export const Route = createFileRoute("/")({
   head: () => ({ meta: [
     { title: "Huri · Vehicle Pickup Queue" },
-    { name: "description", content: "Open Huri to manage vehicle pickups and company lot activity." },
+    { name: "description", content: "Watch a live simulated service drive: Huri keeps vehicle pickups moving." },
     { property: "og:title", content: "Huri · Vehicle Pickup Queue" },
-    { property: "og:description", content: "Open Huri to manage vehicle pickups and company lot activity." },
+    { property: "og:description", content: "Watch a live simulated service drive: Huri keeps vehicle pickups moving." },
     { property: "og:type", content: "website" },
     { name: "twitter:card", content: "summary" },
   ] }),
@@ -34,8 +35,12 @@ function IndexComponent() {
 
   useEffect(() => {
     if (user) return void navigate({ to: "/pickup", replace: true });
-    if (!hasStoredSession() || !loading) navigate({ to: "/auth", replace: true });
-  }, [user, loading, navigate]);
+  }, [user, navigate]);
 
-  return <div className="min-h-screen bg-surface" />;
+  // Signed-in visitors (or a stored session still restoring) never see the demo.
+  const [checked, setChecked] = useState(false);
+  const [stored, setStored] = useState(false);
+  useEffect(() => { setStored(hasStoredSession()); setChecked(true); }, []);
+  if (user || !checked || (stored && loading)) return <div className="min-h-screen bg-surface" />;
+  return <DemoFeed />;
 }

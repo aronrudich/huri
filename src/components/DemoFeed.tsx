@@ -51,6 +51,8 @@ function seed() {
     const at = now - (i * 4 + 1) * 60000 - Math.random() * 120000;
     claimed.push({ ...makeReq(at), by: pick(VALETS), claimedAt: at + 20000 + Math.random() * 40000 });
   }
+  // Guarantee a few blocked cars are always visible in the feed.
+  [2, 7, 11].forEach((i, k) => { if (!claimed[i].blockers && claimed[i].spot !== "Side Lot") claimed[i].blockers = k === 1 ? [`RO #193102 (Durango, ${claimed[i].spot.split(" - ")[0]} - 14)`, `RO #194015 (Compass, ${claimed[i].spot.split(" - ")[0]} - 15)`] : [`RO #${193400 + i * 37} (${pick(CARS)}, ${claimed[i].spot.split(" - ")[0]} - ${10 + i})`]; });
   const upcoming = [8, 14, 19, 27].map((m) => ({ ...makeReq(now + m * 60000), kind: "ETA" as Kind }));
   return { claimed, upcoming, open: makeReq(now) as Req | null };
 }

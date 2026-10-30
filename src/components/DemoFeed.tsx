@@ -59,6 +59,10 @@ const TONE: Record<Kind, string> = {
   Park: "bg-success text-success-foreground",
   Wash: "bg-wash text-wash-foreground",
 };
+const ACCENT: Record<Kind, string> = {
+  Customer: "border-l-primary", ETA: "border-l-warning", Tech: "border-l-primary",
+  Parts: "border-l-warning", Park: "border-l-success", Wash: "border-l-wash",
+};
 const ago = (ms: number) => { const m = Math.floor(ms / 60000); return m < 1 ? "Just now" : `${m}m ago`; };
 const upcomingEta = (at: number): Req => ({ ...makeReq(at, "ETA"), eta: at, at });
 
@@ -77,6 +81,9 @@ function seed() {
   plant(5, "Tech", 47, "Lot B", 1, "Car won't start. Needs push");
   plant(9, "Customer", 88, "Lot C", 1, "Tall guy in blue shirt");
   claimed[3] = { ...makeReq(now - 13 * 60000, "Tech"), by: "David", claimedAt: now - 12 * 60000, note: "Might need a jumpstart" };
+  claimed[6] = { ...makeReq(now - 25 * 60000, "Park"), by: "Marcus", claimedAt: now - 24 * 60000 };
+  claimed[10] = { ...makeReq(now - 41 * 60000, "Wash"), by: "Jordan", claimedAt: now - 40 * 60000 };
+  claimed[12] = { ...makeReq(now - 49 * 60000, "Parts"), by: "Alex", claimedAt: now - 48 * 60000 };
   const upcoming = [34, 41, 49, 58].map((m) => upcomingEta(now + m * 60000));
   return { claimed, upcoming, open: makeReq(now, "Customer") as Req | null };
 }
@@ -171,7 +178,7 @@ function Card({ req, now, upcoming, className = "", children }: { req: Req; now:
   const label = upcoming ? "Customer ETA" : LABEL[req.kind];
   const tone = upcoming ? "bg-warning/15 text-warning-foreground" : TONE[req.kind];
   return (
-    <div className={`flex items-center justify-between gap-3 rounded-2xl border bg-background px-4 py-3 ${className}`}>
+    <div className={`flex items-center justify-between gap-3 rounded-2xl border border-l-4 bg-background px-4 py-3 ${ACCENT[req.kind]} ${className}`}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${tone}`}>{label}</span>

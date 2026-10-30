@@ -1,7 +1,7 @@
 # Roadmap
 ## Public demo refinements (Oct 30)
-- [ ] Update only the synthetic feed: clean header, semantic request colors, realistic origins/destinations/blockers, multi-brand vehicles and selective notes.
-- [ ] Verify inert Claim, 3.5-second claims, 1.5-second breather, 30-minute ETA eligibility, and all three auth return links; no publication or backend changes.
+- [x] Update only the synthetic feed: clean header, semantic request colors, realistic origins/destinations/blockers, multi-brand vehicles and selective notes.
+- [x] Verify inert Claim, 3–4-second claims, 1.5-second breather, 30-minute ETA eligibility, and all three auth return links; 45 tests pass and phone/desktop checks pass. No publication or backend changes; ordinary page delivery costs still apply.
 
 ## Monitoring findings (Oct 28)
 - [x] Keep Pickup live channels stable across pending queries and car updates; ignore intentional channel cleanup statuses.

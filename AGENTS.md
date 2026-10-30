@@ -1,4 +1,5 @@
 # Architecture rules
+- Keep public demo generation and timing browser-local in DemoFeed, with no operational imports or data connections; demo refinements cannot affect live company workflows.
 - Load active-car lists through the shared paginated query, exclude TAKEN both in reads and realtime patches, and keep direct RO/history reads unfiltered; this prevents row-limit omissions without deleting history.
 - Merge Park RO lookups without overwriting edited fields or selected locations, and preserve omitted model/notes in the assignment RPC; this prevents location moves from erasing car details.
 - Keep ID-based Park loads independent of typed RO corrections and retain the original car identity; delayed lookups must not undo edits.

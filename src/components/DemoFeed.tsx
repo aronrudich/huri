@@ -4,7 +4,8 @@ import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 
 /**
  * Public homepage demo: fully simulated, client-side only.
- * No database reads, realtime channels or network calls — zero running cost.
+ * The simulation performs no database reads, live subscriptions or network calls.
+ * Normal page and asset delivery still has hosting costs.
  */
 type Kind = "Customer" | "ETA" | "Tech" | "Parts" | "Park" | "Wash";
 type Req = { id: number; kind: Kind; ro: string; car: string; spot: string; note?: string; dest?: string; blockers?: string[]; at: number; eta?: number; by?: string; claimedAt?: number };
@@ -42,18 +43,18 @@ function makeReq(at: number, forced?: Kind): Req {
   if (kind === "Park") return { ...base, spot: bay(), dest: "Next open lot spot" };
   if (kind === "Parts") return { ...base, spot: "Parts Counter", dest: `${bay()} · Tech ${pick(TECHS)}` };
   const loc = lotSpot();
-  const blockers = loc.lot && Math.random() < 0.22 ? blockersFor(loc.lot, loc.n!) : undefined;
+  const blockers = loc.lot && loc.n !== undefined && Math.random() < 0.22 ? blockersFor(loc.lot, loc.n) : undefined;
   if (kind === "Tech") return { ...base, ...loc, blockers, dest: `${bay()} · Tech ${pick(TECHS)}`, note: Math.random() < 0.2 ? pick(TECH_NOTES) : undefined };
   if (kind === "Wash") return { ...base, ...loc, blockers, dest: "Wash Bay" };
   return { ...base, ...loc, blockers, dest: pick(ADVISORS), eta: kind === "ETA" ? at + 30 * 60000 : undefined, note: kind === "Customer" && Math.random() < 0.35 ? pick(CUSTOMER_NOTES) : undefined };
 }
 
 const LABEL: Record<Kind, string> = { Customer: "Customer is here", ETA: "Customer arriving in 30 minutes", Tech: "Technician pickup", Parts: "Parts", Park: "Park request", Wash: "🧼 Wash" };
-// Same semantic tokens the real Pickup list uses.
+// Existing Huri semantic colors, with the requested blue tech / amber ETA demo hierarchy.
 const TONE: Record<Kind, string> = {
   Customer: "bg-primary text-primary-foreground",
-  ETA: "bg-arrival text-arrival-foreground",
-  Tech: "bg-destructive text-destructive-foreground",
+  ETA: "bg-warning/15 text-warning-foreground border border-warning/30",
+  Tech: "bg-primary text-primary-foreground",
   Parts: "bg-warning text-warning-foreground",
   Park: "bg-success text-success-foreground",
   Wash: "bg-wash text-wash-foreground",
@@ -75,7 +76,7 @@ function seed() {
   plant(1, "Customer", 132, "Lot A", 2, "Woman with 3 kids");
   plant(5, "Tech", 47, "Lot B", 1, "Car won't start. Needs push");
   plant(9, "Customer", 88, "Lot C", 1, "Tall guy in blue shirt");
-  claimed[3] = { ...claimed[3], kind: "Tech", note: "Might need a jumpstart" };
+  claimed[3] = { ...makeReq(now - 13 * 60000, "Tech"), by: "David", claimedAt: now - 12 * 60000, note: "Might need a jumpstart" };
   const upcoming = [34, 41, 49, 58].map((m) => upcomingEta(now + m * 60000));
   return { claimed, upcoming, open: makeReq(now, "Customer") as Req | null };
 }
@@ -84,11 +85,14 @@ export function DemoFeed() {
   const [state, setState] = useState(seed);
   const [now, setNow] = useState(Date.now());
   const [pulse, setPulse] = useState(false);
-  const timers = useRef<number[]>([]);
+  const timers = useRef(new Set<number>());
 
   useEffect(() => {
     const tick = window.setInterval(() => setNow(Date.now()), 1000);
-    const later = (fn: () => void, ms: number) => timers.current.push(window.setTimeout(fn, ms));
+    const later = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => { timers.current.delete(id); fn(); }, ms);
+      timers.current.add(id);
+    };
     const cycle = () => later(() => {
       setPulse(true);
       later(() => {
@@ -105,9 +109,9 @@ export function DemoFeed() {
           cycle();
         }, 1500);
       }, 500);
-    }, 3000 + Math.random() * 1000);
+    }, 2500 + Math.random() * 1000);
     cycle();
-    return () => { clearInterval(tick); timers.current.forEach(clearTimeout); };
+    return () => { clearInterval(tick); timers.current.forEach(clearTimeout); timers.current.clear(); };
   }, []);
 
   return (
@@ -165,7 +169,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 function Card({ req, now, upcoming, className = "", children }: { req: Req; now: number; upcoming?: boolean; className?: string; children: React.ReactNode }) {
   const label = upcoming ? "Customer ETA" : LABEL[req.kind];
-  const tone = upcoming ? "bg-arrival/15 text-arrival" : TONE[req.kind];
+  const tone = upcoming ? "bg-warning/15 text-warning-foreground" : TONE[req.kind];
   return (
     <div className={`flex items-center justify-between gap-3 rounded-2xl border bg-background px-4 py-3 ${className}`}>
       <div className="min-w-0">

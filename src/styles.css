@@ -36,6 +36,12 @@
   --color-arrival-foreground: var(--arrival-foreground);
   --color-celebrate: var(--celebrate);
   --color-celebrate-foreground: var(--celebrate-foreground);
+  --color-demo-parts: var(--demo-parts);
+  --color-demo-parts-foreground: var(--demo-parts-foreground);
+  --color-demo-wash: var(--demo-wash);
+  --color-demo-wash-foreground: var(--demo-wash-foreground);
+  --color-demo-stage: var(--demo-stage);
+  --color-demo-stage-foreground: var(--demo-stage-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -44,6 +50,12 @@
 }
 
 :root {
+  --demo-parts: oklch(0.84 0.18 90);
+  --demo-parts-foreground: oklch(0.15 0 0);
+  --demo-wash: oklch(0.63 0.23 350);
+  --demo-wash-foreground: oklch(1 0 0);
+  --demo-stage: oklch(0.15 0 0);
+  --demo-stage-foreground: oklch(1 0 0);
   --radius: 0.75rem;
   /* iOS Mail palette */
   --background: oklch(1 0 0);
@@ -112,6 +124,15 @@
 }
 
 @layer base {
+  @keyframes demo-claim-flash {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    25%, 75% { opacity: 0.45; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+  .demo-claim-flash { animation: demo-claim-flash 500ms ease-in-out; }
+  @media (prefers-reduced-motion: reduce) {
+    .demo-claim-flash { animation: none; opacity: 0.65; }
+  }
   * { border-color: var(--color-border); }
   html, body { height: 100%; }
   /* The app scrolls inside .app-scroll, not the document. This keeps the

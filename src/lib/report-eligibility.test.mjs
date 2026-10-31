@@ -36,3 +36,13 @@ test("canceled and bookkeeping requests stay excluded", () => {
     expect(isReportEligible({ ...claim(1000), status })).toBe(false);
   }
 });
+
+test("Val's restored completed job regains report eligibility without changing its times", () => {
+  const canceled = { status: "canceled", created_at: "2026-09-14T21:39:22.925Z", claimed_at: "2026-09-14T21:40:00.000Z", completed_at: "2026-09-14T21:41:39.842Z" };
+  const restored = { ...canceled, status: "completed" };
+  expect(isReportEligible(canceled)).toBe(false);
+  expect(isReportEligible(restored)).toBe(true);
+  expect(restored.created_at).toBe(canceled.created_at);
+  expect(restored.claimed_at).toBe(canceled.claimed_at);
+  expect(restored.completed_at).toBe(canceled.completed_at);
+});

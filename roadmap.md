@@ -1,9 +1,10 @@
 # Roadmap
 ## Combined demo, car shortcut and Val restoration (Oct 30)
-- [ ] Refine isolated demo sequence, locations, notes, badges and claim flash; verify browser behavior.
-- [ ] Add permission-safe car shortcut and per-user dismissal guide; enable one-tap native video fullscreen with fallback.
-- [ ] Audit and restore only Val's historical mistaken cancellations; preserve timestamps and newer cancellations.
-- [ ] Run regressions and check preview errors; do not publish.
+- [x] Refine isolated demo sequence, locations, notes, badges and claim flash; browser cycle and 375/631/1280 layouts verified without overflow or runtime errors.
+- [x] Add capability-gated car shortcut and per-user dismissal guide; native video fullscreen starts playing on one tap in browser checks, with fallback logic tested.
+- [x] Restore 55 Val jobs through October 5 only, per user's clarification; verified zero changes to other fields and completed count 558 → 613, with two newer cancellations unchanged. Older 56-job/56.7-point/520-count assertions were stale; exact current point gain not certified.
+- [x] All 51 regressions pass and preview build OK; no publication.
+- [ ] Signed-in car shortcut/guide and updated Reports acceptance: blocked because automatic preview sign-in found no account matching the requesting user; requires preview sign-in.
 
 ## Public demo refinements (Oct 30)
 - [x] Update only the synthetic feed: clean header, semantic request colors, realistic origins/destinations/blockers, multi-brand vehicles and selective notes.

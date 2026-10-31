@@ -1,4 +1,10 @@
 # Roadmap
+## Combined demo, car shortcut and Val restoration (Oct 30)
+- [ ] Refine isolated demo sequence, locations, notes, badges and claim flash; verify browser behavior.
+- [ ] Add permission-safe car shortcut and per-user dismissal guide; enable one-tap native video fullscreen with fallback.
+- [ ] Audit and restore only Val's historical mistaken cancellations; preserve timestamps and newer cancellations.
+- [ ] Run regressions and check preview errors; do not publish.
+
 ## Public demo refinements (Oct 30)
 - [x] Update only the synthetic feed: clean header, semantic request colors, realistic origins/destinations/blockers, multi-brand vehicles and selective notes.
 - [x] Verify inert Claim, 3–4-second claims, 1.5-second breather, 30-minute ETA eligibility, and all three auth return links; 45 tests pass and phone/desktop checks pass. No publication or backend changes; ordinary page delivery costs still apply.

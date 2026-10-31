@@ -135,12 +135,12 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     <div ref={rootRef} className="relative flex items-center gap-2 md:gap-3">
       {profile && items.includes("new") && (
         <div className="relative">
-          <Link to="/park" aria-label="Update car location" title="Update car location" onClick={dismissTip} className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Link to="/park" aria-label="Update car location" title="Update car location" className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <Car className="h-5 w-5" aria-hidden="true" />
           </Link>
           {tipUser === profile.id && (
-            <div role="dialog" aria-label="Car location reminder" className="absolute right-0 top-full z-[60] mt-3 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-lg">
-              <span aria-hidden="true" className="absolute -top-2 right-4 h-3 w-3 rotate-45 border-l border-t border-border bg-popover" />
+            <div role="dialog" aria-label="Car location reminder" className="absolute -right-16 top-full z-[60] mt-3 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-lg">
+              <span aria-hidden="true" className="absolute -top-2 right-20 h-3 w-3 rotate-45 border-l border-t border-border bg-popover" />
               <p className="text-sm font-semibold leading-relaxed">If you park a car, press the car button and update the location. Please and thanks.</p>
               <Button onClick={dismissTip} className="mt-3 w-full">Got it</Button>
             </div>

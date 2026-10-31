@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { actionsForRole, type ActionId } from "@/lib/roles";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
+import { Button } from "@/components/ui/button";
+import { carTipKey, shouldShowCarTip } from "@/lib/car-shortcut";
 
 export function BottomBar({ active }: { active: "pickup" | "lot" | "profile" }) {
   const item = (key: string, to: string, icon: React.ReactNode, label: string) => (
@@ -48,7 +50,22 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   const { profile } = useAuth();
   const role = profile?.role_name ?? "";
   const [open, setOpen] = useState(false);
+  const [tipUser, setTipUser] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const id = profile?.id;
+    let dismissed = false;
+    try { dismissed = !!id && localStorage.getItem(carTipKey(id)) === "true"; } catch { /* blocked storage */ }
+    setTipUser(shouldShowCarTip(role, id, dismissed) && id ? id : null);
+  }, [profile?.id, role]);
+
+  const dismissTip = () => {
+    if (profile?.id) {
+      try { localStorage.setItem(carTipKey(profile.id), "true"); } catch { /* session dismissal still works */ }
+    }
+    setTipUser(null);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -114,24 +131,23 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   };
 
 
-  // Single-action roles (valets) skip the dropdown entirely.
-  if (items.length === 1) {
-    const only = items[0]!;
-    const props = linkProps(only);
-    return (
-      <Link
-        to={props.to}
-        search={props.search as never}
-        className="rounded-full bg-primary px-4 py-1.5 text-xs font-semibold text-primary-foreground md:px-6 md:py-3 md:text-base"
-      >
-        {LABELS[only]}
-      </Link>
-    );
-  }
-
   return (
-    <div ref={rootRef} className="relative">
-      <button
+    <div ref={rootRef} className="relative flex items-center gap-2 md:gap-3">
+      {profile && items.includes("new") && (
+        <div className="relative">
+          <Link to="/park" aria-label="Update car location" title="Update car location" className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+            <Car className="h-5 w-5" aria-hidden="true" />
+          </Link>
+          {tipUser === profile.id && (
+            <div role="dialog" aria-label="Car location reminder" className="absolute -right-16 top-full z-[60] mt-3 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-lg">
+              <span aria-hidden="true" className="absolute -top-2 right-20 h-3 w-3 rotate-45 border-l border-t border-border bg-popover" />
+              <p className="text-sm font-semibold leading-relaxed">If you park a car, press the car button and update the location. Please and thanks.</p>
+              <Button onClick={dismissTip} className="mt-3 w-full">Got it</Button>
+            </div>
+          )}
+        </div>
+      )}
+      <Button
         type="button"
         aria-expanded={open}
         aria-label="Actions"
@@ -140,7 +156,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       >
         Actions
         <ChevronDown className={`h-4 w-4 transition-transform md:h-5 md:w-5 ${open ? "rotate-180" : ""}`} />
-      </button>
+      </Button>
       {open && (
         <div className="absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-64">
           {items.map((id) => {

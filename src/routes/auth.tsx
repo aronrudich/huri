@@ -15,6 +15,7 @@ import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import explainerVideo from "@/assets/huri-explainer-v7.mp4.asset.json";
 import explainerWebm from "@/assets/huri-explainer-v7.webm.asset.json";
 import explainerPreview from "@/assets/huri-explainer-v7-cover.jpg.asset.json";
+import { playVideoFullscreen } from "@/lib/video-fullscreen";
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -442,17 +443,12 @@ function BusinessForm() {
   return (
     <>
       <div className="grid items-start gap-8 md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
-      <button
-        type="button"
-        onClick={() => setWatching(true)}
-        aria-label="Play Huri explainer video"
-        className="relative block aspect-video w-full overflow-hidden rounded-xl border border-border bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:hidden"
-      >
-        <img src={explainerPreview.url} alt="" className="h-full w-full object-cover" />
-        <span className="absolute inset-0 grid place-items-center bg-foreground/20">
+      <div className="relative overflow-hidden rounded-lg border border-border bg-card md:hidden">
+        <DemoVideo onFullscreenFallback={() => setWatching(true)} />
+        <span className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
           <Play className="h-14 w-14 rounded-full bg-primary p-4 text-primary-foreground" aria-hidden="true" />
         </span>
-      </button>
+      </div>
       <form onSubmit={submit} className="space-y-3">
         <Field label="Work Email" value={email} onChange={setEmail} type="email" autoComplete="email" required />
         <Field label="Your Name" value={contactName} onChange={(v) => setContactName(v.slice(0, 120))} autoComplete="name" required />
@@ -551,7 +547,7 @@ function ExplainerModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function DemoVideo({ autoPlay = false }: { autoPlay?: boolean }) {
+function DemoVideo({ autoPlay = false, onFullscreenFallback }: { autoPlay?: boolean; onFullscreenFallback?: () => void }) {
   const [unavailable, setUnavailable] = useState(false);
 
   if (unavailable) {
@@ -564,6 +560,11 @@ function DemoVideo({ autoPlay = false }: { autoPlay?: boolean }) {
 
   return (
     <video
+      aria-label="Play Huri explainer video"
+      onClick={(event) => {
+        if (document.fullscreenElement === event.currentTarget) return;
+        playVideoFullscreen(event.currentTarget, onFullscreenFallback);
+      }}
       controls
       playsInline
       autoPlay={autoPlay}

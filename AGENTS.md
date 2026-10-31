@@ -12,6 +12,8 @@
 - Keep public customer-arrival writes inside validated server functions scoped by company slug and RO; this prevents one company link from affecting another company's requests.
 - Share the pure service-hours validator between customer arrival pages and server writes; this prevents different operating-hour rules across languages or direct requests.
 - All Business-page explainer players share one CDN asset pointer and poster; this keeps replacements consistent without oversized repository videos.
+- Keep car shortcuts gated by existing Add/Edit capability and guide dismissal scoped to authenticated user IDs; this preserves spectator access and shared-device guidance.
+- Request Business video fullscreen synchronously from the initiating gesture, retaining inline/dialog playback when denied; this supports browser restrictions without interrupting the form.
 - Only the scheduled database archive completes expired pickup requests using the company's configured window; browser timers must not persist completion, so devices cannot race the archive rule.
 - Unlogged-location deductions come only from the shared custody rules in src/lib/unlogged-custody.ts; this keeps one deduction per missed spot across every report.
 - Page collection reads with deterministic ordering and scope realtime inserts/updates to the current company; this prevents truncated lists and cross-company patches.

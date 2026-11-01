@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { ArrowLeft, Copy, Settings as SettingsIcon } from "lucide-react";
+import { ArrowLeft, BookOpen, Copy, Settings as SettingsIcon } from "lucide-react";
+import { TekionGuideModal } from "@/components/TekionGuideModal";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,6 +72,7 @@ function SettingsPage() {
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const [draft, setDraft] = useState<Draft | null>(null);
   const [saving, setSaving] = useState(false);
+  const [tekionGuideOpen, setTekionGuideOpen] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
@@ -200,6 +202,14 @@ function SettingsPage() {
                   Paste this once into your "Vehicle Ready" text template. The RO # fills in
                   automatically and customers never see your company code.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setTekionGuideOpen(true)}
+                  className="mt-3 flex items-center gap-1.5 rounded-xl border border-primary/20 bg-primary/5 px-3.5 py-2 text-xs font-semibold text-primary transition-colors hover:bg-primary/10"
+                >
+                  <BookOpen className="h-4 w-4" /> Connect Huri to Tekion (Guide & Steps)
+                </button>
+                <TekionGuideModal open={tekionGuideOpen} onOpenChange={setTekionGuideOpen} companySlug={settings.slug} />
               </div>
               <button
                 onClick={copyTemplate}

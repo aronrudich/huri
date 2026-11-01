@@ -25,6 +25,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
+import { LocationTestCard } from "@/components/LocationTestCard";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole } from "@/lib/roles";
 
@@ -395,6 +396,8 @@ function ProfilePage() {
           </ul>
         </section>
       )}
+
+      {["aron@huri.team", "aron@oremor.net"].includes((user?.email ?? "").toLowerCase()) && <LocationTestCard />}
 
       <section className="mx-3 mt-6 overflow-hidden rounded-2xl bg-background">
         <Link to="/help" className="flex w-full items-center gap-3 px-4 py-4 text-primary active:bg-accent">

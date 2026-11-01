@@ -165,9 +165,7 @@ function SettingsPage() {
           <SettingsIcon className="h-5 w-5 text-primary" />
           Company Settings
         </h1>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {settings?.name ? `${settings.name} · ` : ""}Only upper management can open this screen.
-        </p>
+        {settings?.name && <p className="mt-1 text-xs text-muted-foreground">{settings.name}</p>}
       </div>
 
       {settings && draft ? (
@@ -199,8 +197,8 @@ function SettingsPage() {
                   {customerArrivalTemplate(settings.slug)}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  Paste this once into your "Vehicle Ready" text template. The RO # fills in
-                  automatically and customers never see your company code.
+                  Paste this into your DMS text template and add the RO number field right after
+                  "?ro=". Customers never see your company code.
                 </p>
                 <button
                   type="button"
@@ -264,22 +262,25 @@ function SettingsPage() {
 
           <section className="mx-3 mt-4 overflow-hidden rounded-2xl bg-background">
             <p className="px-4 pt-4 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Departments
+              Actions
             </p>
+            <CoreActionRow label="Vehicle Pickup (Bring Me A Car)" hint="Customer arrivals, advisor pulls and technician pulls." />
+            <CoreActionRow label="Park My Car" hint="Technician bay-to-spot parking requests." />
+            <CoreActionRow label="Add / Edit Car" hint="Valet logging and direct car location updates." />
             <ToggleRow
-              label="Car Wash"
+              label="Car Wash (Bring Car To Wash)"
               hint="Turn off if your store doesn't run washes through Huri."
               checked={draft.enable_wash}
               onChange={(v) => setDraft({ ...draft, enable_wash: v })}
             />
             <ToggleRow
-              label="Parts"
+              label="Parts (Bring Me Parts)"
               hint="Turn off to remove parts requests from the Actions menu."
               checked={draft.enable_parts}
               onChange={(v) => setDraft({ ...draft, enable_parts: v })}
             />
             <ToggleRow
-              label="Staged cars"
+              label="Staged Cars (Bring Car To CP)"
               hint="Turn off to remove staging from the Actions menu."
               checked={draft.enable_staging}
               onChange={(v) => setDraft({ ...draft, enable_staging: v })}
@@ -306,7 +307,7 @@ function SettingsPage() {
                 </select>
               </label>
             </section>
-            <CompanyLocationEditor companyId={settings.id} />
+            <CompanyLocationEditor companyId={settings.id} companyName={settings.name} companyCode={settings.company_code} />
             <Button
               onClick={save}
               disabled={saving}
@@ -375,6 +376,18 @@ function ToggleRow({
         <p className="text-[11px] leading-snug text-muted-foreground">{hint}</p>
       </div>
       <Switch checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function CoreActionRow({ label, hint }: { label: string; hint: string }) {
+  return (
+    <div className="flex items-center gap-3 border-t border-border px-4 py-3 first-of-type:border-t-0">
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">{label}</p>
+        <p className="text-[11px] text-muted-foreground">{hint}</p>
+      </div>
+      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary">Active</span>
     </div>
   );
 }

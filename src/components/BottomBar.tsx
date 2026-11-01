@@ -109,7 +109,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     wash: "Bring Car To Wash",
     reports: "Stats & Claim Times",
     flagged: `Parked ${settings?.flagged_days ?? 14}+ Days`,
-    settings: "Timing & Departments",
+    settings: "Timing & Actions",
     help: "Contact Huri Support",
   };
 
@@ -137,7 +137,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       {profile && items.includes("new") && (
         <div className="relative">
           <Link to="/park" aria-label="Update car location" title="Update car location" className="grid h-11 w-11 place-items-center rounded-lg border border-border bg-background text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-            <img src={quickParkCar.url} alt="Update car location" className="h-6 w-auto object-contain transition-transform hover:scale-105 active:scale-95" />
+            <img src={quickParkCar.url} alt="Update car location" className="h-9 max-h-[34px] w-auto max-w-[38px] object-contain transition-transform hover:scale-105 active:scale-95" />
           </Link>
           {tipUser === profile.id && (
             <div role="dialog" aria-label="Car location reminder" className="absolute -right-16 top-full z-[60] mt-3 w-64 max-w-[calc(100vw-2rem)] rounded-lg border border-border bg-popover p-4 text-popover-foreground shadow-lg">

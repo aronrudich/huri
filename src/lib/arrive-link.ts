@@ -9,4 +9,4 @@ export const customerArrivalLink = (slug: string, ro?: string | null) =>
 
 /** What a service advisor pastes into their text-message template once. */
 export const customerArrivalTemplate = (slug: string) =>
-  `${ARRIVE_BASE}/${slug}?ro={{repair_order_number}}`;
+  `${ARRIVE_BASE}/${slug}?ro=`;

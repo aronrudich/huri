@@ -148,6 +148,13 @@
       "when": 1793158630265,
       "tag": "0020_huri_assignment_normalized_collision",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793492942914,
+      "tag": "0021_company_lots",
+      "breakpoints": true
     }
   ]
 }

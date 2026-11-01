@@ -384,6 +384,56 @@ export type Database = {
           },
         ]
       }
+      company_lots: {
+        Row: {
+          blocking_explanation: string | null
+          created_at: string
+          dealership_id: string
+          has_blocking: boolean
+          id: string
+          label_type: string
+          lot_name: string
+          prefix: string | null
+          range_end: string | null
+          range_start: string | null
+          updated_at: string
+        }
+        Insert: {
+          blocking_explanation?: string | null
+          created_at?: string
+          dealership_id: string
+          has_blocking?: boolean
+          id?: string
+          label_type: string
+          lot_name: string
+          prefix?: string | null
+          range_end?: string | null
+          range_start?: string | null
+          updated_at?: string
+        }
+        Update: {
+          blocking_explanation?: string | null
+          created_at?: string
+          dealership_id?: string
+          has_blocking?: boolean
+          id?: string
+          label_type?: string
+          lot_name?: string
+          prefix?: string | null
+          range_end?: string | null
+          range_start?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_lots_dealership_id_fkey"
+            columns: ["dealership_id"]
+            isOneToOne: false
+            referencedRelation: "dealerships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_map_lots: {
         Row: {
           category: string | null

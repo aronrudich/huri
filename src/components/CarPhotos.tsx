@@ -69,7 +69,9 @@ export function CarPhotos({
 
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-muted-foreground">Photos</label>
+      <label className="mb-1 block text-xs font-medium text-muted-foreground">
+        Photos <span className="text-[11px] font-normal opacity-80">(optional)</span>
+      </label>
 
       {(photos.length > 0 || pending.length > 0) && (
         <div className="mb-2 flex flex-wrap gap-2">
@@ -125,7 +127,7 @@ export function CarPhotos({
             onClick={() => cameraRef.current?.click()}
             className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60"
           >
-            <Camera className="h-4 w-4" /> {busy ? "Uploading…" : "Add Photo"}
+            <Camera className="h-4 w-4" /> {busy ? "Uploading…" : "Add Photo (optional)"}
           </button>
         </div>
       ) : (

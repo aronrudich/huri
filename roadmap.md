@@ -1,8 +1,9 @@
 # Roadmap
 ## GPS polish (Nov 2)
-- [ ] Fix browser timer binding, accept the best fresh fix immediately, and improve pin-button contrast.
-- [ ] Save independent pin writes concurrently while preserving existing audit handling; treat the pin as the location and suppress new-RO timeout notices.
-- [ ] Filter pickup satellite pins to active requests; verify regression tests and preview behavior without publishing.
+- [x] Fix browser timer binding, accept the best fresh fix immediately, and improve pin-button contrast.
+- [x] Save independent pin writes concurrently while preserving existing audit handling; treat the pin as the location and suppress new-RO timeout notices.
+- [x] Filter pickup satellite pins to visible active requests, retaining claimed-request coordinates; 73 Bun tests pass and preview build OK. Requested Vitest command cannot load this project's bun:test suites; existing native runner used. Signed-out Park/Pickup redirect safely without runtime errors; no publication or live record changes.
+- [ ] Signed-in phone pin-save/map acceptance: automatic session unavailable because no account matches the requesting user's email; requires preview sign-in and an outdoor device test. Controlled screen tests verify concurrent saves and GPS-only location validation, not real GPS accuracy.
 ## Private GPS refinement (Nov 2)
 - [x] Add device-local warm-up, fresh best-fix selection, two-second refinement and live accuracy; stop after save/unmount.
 - [x] Verify thresholds, fallback, cleanup and controlled Park pin-save propagation; all 70 tests pass and preview build OK. Signed-out Park redirects to Sign In without runtime errors; no live car records changed or publication.

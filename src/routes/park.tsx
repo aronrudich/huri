@@ -113,7 +113,8 @@ function ParkPage() {
 
   const dropPin = async () => {
     const target = ro.trim();
-    if (!user || !isAron || isSpectatorRole(role) || pinBusy) return;
+    const companyId = profile?.dealership_id;
+    if (!user || !companyId || !isAron || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
     setPinBusy(true);
     try {
@@ -129,28 +130,38 @@ function ParkPage() {
           let carId = existingId;
           if (!carId) {
             const { data: found, error: lookupError } = await supabase
-              .from("parked_cars").select("id").ilike("ro_number", target).maybeSingle();
+              .from("parked_cars").select("id").eq("dealership_id", companyId).eq("ro_number", target).maybeSingle();
             if (lookupError) throw lookupError;
             carId = found?.id ?? null;
           }
-          if (carId) {
-            const { error } = await supabase.from("parked_cars").update(coords).eq("id", carId);
-            if (error) throw error;
-          } else {
-            const { error } = await supabase.from("parked_cars").insert({
-              ro_number: target, lot_position: "UNKNOWN", parked_by: user.id, ...coords,
-            } as never);
-            if (error) throw error;
+          // The existing database trigger records the location audit with the car write.
+          // Only independent car/request writes run concurrently; never duplicate that audit.
+          const carWrite = carId
+            ? supabase.from("parked_cars").update({ ...coords, lot_position: "GPS PIN", parked_by: user.id })
+                .eq("dealership_id", companyId).eq("id", carId)
+            : supabase.from("parked_cars").insert({
+                dealership_id: companyId, ro_number: target, lot_position: "GPS PIN", parked_by: user.id, ...coords,
+              } as never);
+          const [carResult, requestResult] = await Promise.all([
+            carWrite,
+            supabase.from("pickup_requests").update(coords).eq("dealership_id", companyId)
+              .eq("ro_number", target).in("status", ["unclaimed", "claimed"]),
+          ]);
+          // Reflect a successful car save even if propagation needs retrying.
+          if (!carResult.error && gps.isMounted()) {
+            detailEdits.current.pos = true;
+            setPos("GPS Pin");
+            setSavedPos("GPS PIN");
+            setPinDrop({ accFt, at: coords.pinned_at });
           }
-          // Open requests for this RO carry the pin too, so the queue can map them.
-          const { error: requestError } = await supabase.from("pickup_requests").update(coords)
-            .eq("ro_number", target).in("status", ["unclaimed", "claimed"]);
-          if (requestError) throw requestError;
+          void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+          void queryClient.invalidateQueries({ queryKey: ["pickups"] });
+          void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
+          if (carResult.error) throw carResult.error;
+          if (requestResult.error) throw new Error("Pin saved to the car, but pickup pins could not refresh. Tap Drop GPS Pin to retry.");
           gps.stop();
           if (!gps.isMounted()) return;
-          setPinDrop({ accFt, at: coords.pinned_at });
           toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
-          void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
     } catch (e) {
       if (gps.isMounted()) toast.error((e as Error).message);
     } finally {
@@ -188,12 +199,18 @@ function ParkPage() {
     if (hit) apply(hit);
     const load = async () => {
       const request = supabase.from("parked_cars").select("*");
-      const { data, error } = await (idParam ? request.eq("id", idParam) : request.eq("ro_number", targetRo))
-        .abortSignal(AbortSignal.timeout(10_000)).maybeSingle();
-      if (cancelled) return;
-      if (error) { toast.error("Could not load this car's details. Please try again."); return; }
-      if (!data || cancelled) return;
-      apply(data);
+      try {
+        const { data, error } = await (idParam ? request.eq("id", idParam) : request.eq("ro_number", targetRo))
+          .abortSignal(AbortSignal.timeout(10_000)).maybeSingle();
+        if (cancelled) return;
+        if (error) throw error;
+        if (data) apply(data);
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? `${error.name} ${error.message}` : String((error as { message?: string })?.message ?? error);
+        if (!idParam && !hit && /timeout|timed out|abort/i.test(message)) return;
+        toast.error("Could not load this car's details. Please try again.");
+      }
     };
     void load();
     return () => { cancelled = true; };
@@ -220,6 +237,7 @@ function ParkPage() {
     e.preventDefault();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
+    if (pinBusy) return;
     if (!pos.trim()) return toast.error("Spot is required");
     if (!isValidSpot(pos.trim())) return toast.error("Invalid spot");
     if (!user) return;
@@ -324,6 +342,7 @@ function ParkPage() {
 
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={(raw) => {
+          if (pinBusy) return;
           const value = filterRoInput(raw, settings?.ro_format);
           roEdited.current = true;
           setRo(value);
@@ -334,6 +353,7 @@ function ParkPage() {
           setSavedPos(null);
           setBayTech(null);
           setStaged(false);
+          setPinDrop(null);
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
@@ -350,7 +370,7 @@ function ParkPage() {
               type="button"
               onClick={dropPin}
               disabled={pinBusy}
-              className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary active:bg-primary/10 disabled:opacity-60"
+              className="flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold disabled:opacity-100"
             >
               <Crosshair className="h-4 w-4" /> {pinBusy ? gps.refining ? "Refining GPS…" : "Saving pin…" : "Drop GPS Pin"}
             </Button>

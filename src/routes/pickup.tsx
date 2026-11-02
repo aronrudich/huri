@@ -26,6 +26,7 @@ import { dealershipSettingsQuery } from "@/lib/settings";
 import { claimHideMilliseconds, isClaimWithinWindow } from "@/lib/pickup-window";
 import { companyLocationsQuery, blockersForLocation } from "@/lib/company-locations";
 import { CompanyLotGrid } from "@/components/CompanyLotGrid";
+import { activePickupPins } from "@/lib/pickup-pins";
 
 
 
@@ -64,6 +65,8 @@ type Pickup = {
   customer_arrived_at?: string | null;
   /** Silent test submissions never alert valets. */
   is_test?: boolean | null;
+  latitude?: number | null; longitude?: number | null;
+  accuracy_ft?: number | null; pinned_at?: string | null;
 };
 
 type ParkedCar = {
@@ -161,11 +164,6 @@ function PickupPage() {
   // Private satellite pin test — Aron's accounts only.
   const isAron = isAronEmail(user?.email);
   const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
-  const pinByRo = useMemo(() => {
-    const by: Record<string, PinnedCarRow> = {};
-    pinnedCars.forEach((c) => { if (c.ro_number) by[c.ro_number] = c; });
-    return by;
-  }, [pinnedCars]);
   const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -325,6 +323,9 @@ function PickupPage() {
     }),
     [pickups, profile, claimHideMs, nowTick],
   );
+  const queuePins = useMemo(() => activePickupPins(visiblePickups, pinnedCars), [visiblePickups, pinnedCars]);
+  const pinByRo = useMemo(() => Object.fromEntries(queuePins.map((car) => [car.ro_number, car])), [queuePins]);
+  const activeSatFocus = satFocus ? queuePins.find((car) => car.ro_number === satFocus.ro_number) : null;
 
   const matches = useMemo(() => {
     const n = normalizeSearchText(q.trim());
@@ -760,7 +761,10 @@ function PickupPage() {
 
                   {isAron && p.ro_number && pinByRo[p.ro_number.trim()] && (
                     <button
-                      onClick={() => setSatFocus(pinByRo[p.ro_number!.trim()])}
+                      onClick={() => {
+                        const pin = p.ro_number ? pinByRo[p.ro_number.trim()] : null;
+                        if (pin) setSatFocus(pin);
+                      }}
                       aria-label="Show on satellite map"
                       className="flex items-center gap-1 rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 text-xs font-semibold text-primary active:bg-primary/10"
                     >
@@ -852,9 +856,9 @@ function PickupPage() {
       )}
 
       {/* Only reachable from a tap, so the lazy Leaflet bundle never loads during SSR. */}
-      {satFocus && (
+      {isAron && activeSatFocus && (
         <Suspense fallback={null}>
-          <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
+          <SatellitePinMapModal focus={activeSatFocus} others={queuePins} onClose={() => setSatFocus(null)} />
         </Suspense>
       )}
 

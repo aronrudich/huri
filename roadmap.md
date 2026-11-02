@@ -1,4 +1,8 @@
 # Roadmap
+## Foreground GPS warm-up and instant capture (Nov 2)
+- [ ] Share authorized foreground-only GPS tracking across pages; pause on hiding/sign-out and resume on return.
+- [ ] Capture any fresh available fix immediately, wait at most two seconds only when none exists, and retain explicit pin drop without auto-pin.
+- [ ] Verify lifecycle, private gating, capture and existing regressions; real outdoor phone accuracy remains device-dependent.
 ## Claimed satellite maps and GPS refinement (Nov 2)
 - [x] Include TAKEN cars in private pin reads; snapshot saved coordinates in the shared company-scoped creation path for pickup, park, wash, parts and ETA merges.
 - [x] Replace the regular pickup Map button for private pinned submissions with one primary satellite Map action; controlled claimed-card tests verify availability and private gating.

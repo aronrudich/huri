@@ -1,4 +1,7 @@
 # Roadmap
+## Private GPS refinement (Nov 2)
+- [ ] Add device-local warm-up, fresh best-fix selection, two-second refinement and live accuracy; stop after save/unmount.
+- [ ] Verify thresholds, fallback, cleanup and existing regressions; check preview without modifying live car records.
 ## Combined demo, car shortcut and Val restoration (Oct 30)
 - [x] Refine isolated demo sequence, locations, notes, badges and claim flash; browser cycle and 375/631/1280 layouts verified without overflow or runtime errors.
 - [x] Add capability-gated car shortcut and per-user dismissal guide; native video fullscreen starts playing on one tap in browser checks, with fallback logic tested.

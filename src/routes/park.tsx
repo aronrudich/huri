@@ -1,7 +1,8 @@
 import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy } from "lucide-react";
+import { createFileRoute, ClientOnly, Link, useNavigate } from "@tanstack/react-router";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy, Crosshair, Satellite } from "lucide-react";
+import { isAronEmail } from "@/lib/aron";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -16,8 +17,11 @@ import { dealershipSettingsQuery } from "@/lib/settings";
 import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
 import { uploadCarPhoto } from "@/lib/car-photos";
-import { parkedCarsQuery, type ParkedCarRow } from "@/lib/queries";
+import { parkedCarsQuery, pinnedCarsQuery, type ParkedCarRow, type PinnedCarRow } from "@/lib/queries";
 import { mergeLoadedCarDetails } from "@/lib/car-loading";
+
+// Leaflet is browser-only: the satellite map loads lazily after hydration.
+const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
 
 import { format } from "date-fns";
 
@@ -92,6 +96,70 @@ function ParkPage() {
   const role = profile?.role_name ?? "";
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const hideModel = isTechRole(role);
+  // Private GPS pin-drop test controls — Aron's accounts only.
+  const isAron = isAronEmail(user?.email);
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string } | null>(null);
+  const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
+  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
+  const pinnedFocus = useMemo(() => {
+    const target = ro.trim();
+    if (!isAron || !target) return null;
+    return pinnedCars.find((c) => c.ro_number === target) ?? null;
+  }, [isAron, pinnedCars, ro]);
+
+  const dropPin = () => {
+    const target = ro.trim();
+    if (!user) return;
+    if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
+    if (!navigator.geolocation) return toast.error("This browser does not support location.");
+    setPinBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (fix) => {
+        const accFt = Math.round(fix.coords.accuracy * 3.28084);
+        const coords = {
+          latitude: fix.coords.latitude,
+          longitude: fix.coords.longitude,
+          accuracy_ft: accFt,
+          pinned_at: new Date().toISOString(),
+        };
+        try {
+          let carId = existingId;
+          if (!carId) {
+            const { data: found } = await supabase
+              .from("parked_cars").select("id").ilike("ro_number", target).maybeSingle();
+            carId = found?.id ?? null;
+          }
+          if (carId) {
+            const { error } = await supabase.from("parked_cars").update(coords).eq("id", carId);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("parked_cars").insert({
+              ro_number: target, lot_position: "UNKNOWN", parked_by: user.id, ...coords,
+            } as never);
+            if (error) throw error;
+          }
+          // Open requests for this RO carry the pin too, so the queue can map them.
+          await supabase.from("pickup_requests").update(coords)
+            .eq("ro_number", target).in("status", ["unclaimed", "claimed"]);
+          setPinDrop({ accFt, at: coords.pinned_at });
+          toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
+          void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
+        } catch (e) {
+          toast.error((e as Error).message);
+        } finally {
+          setPinBusy(false);
+        }
+      },
+      (err) => {
+        setPinBusy(false);
+        toast.error(err.code === err.PERMISSION_DENIED
+          ? "Location permission denied. Allow location access in your browser settings."
+          : "Could not get a GPS fix. Try again outside.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
 

@@ -132,6 +132,24 @@ test("Lot/Flagged ID editor keeps typed RO through late lookup and saves same ca
   await act(async () => { screen.unmount(); });
 });
 
+test("claimed pinned pickup has one active satellite map action, private to Aron", async () => {
+  const previousRequests = requests;
+  requests = [{ id: "pinned-request", ro_number: "000006", status: "claimed", claimed_at: new Date().toISOString(), claimed_by: "valet", kind: "pickup", created_at: new Date().toISOString(), latitude: 34.123, longitude: -117.456 }];
+  user.email = "aron@huri.team";
+  try {
+    const screen = await mount(Pickup);
+    const satellite = screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on satellite map");
+    expect(satellite).toHaveLength(1);
+    expect(satellite[0].props.disabled).not.toBe(true);
+    expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on lot map")).toHaveLength(0);
+    delete user.email;
+    await act(async () => screen.update(<Pickup />));
+    expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on satellite map")).toHaveLength(0);
+    expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on lot map")).toHaveLength(1);
+    await act(async () => screen.unmount());
+  } finally { requests = previousRequests; delete user.email; }
+});
+
 test("Aron pin drop saves concurrently, satisfies empty location despite late lookup, and clears GPS watch", async () => {
   let ok: PositionCallback = () => {};
   let watches = 0;

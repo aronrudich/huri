@@ -758,18 +758,17 @@ function PickupPage() {
                       <Satellite className="h-4 w-4" /> Map
                     </Button>
                   ) : !isParts ? (
-                    <Button
+                    <button
                       onClick={() => effectiveSpot && setMapSelection({
                         spot: effectiveSpot,
                         highlight: isPickupMapRequest(p.kind, p.is_staged),
                       })}
                       disabled={!effectiveSpot || !isSvSpot}
                       aria-label="Show on lot map"
-                      variant="outline"
-                      className="h-auto gap-1 px-3 py-3 text-xs font-semibold text-muted-foreground disabled:opacity-40"
+                      className="flex items-center gap-1 rounded-xl border border-border bg-background px-3 py-3 text-xs font-semibold text-muted-foreground active:bg-accent disabled:opacity-40"
                     >
                       <MapIcon className="h-4 w-4" /> Map
-                    </Button>
+                    </button>
                   ) : null}
 
                   {canCancel && (

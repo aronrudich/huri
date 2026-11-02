@@ -5,7 +5,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 // Mount the real screens with controlled query/network boundaries, no live writes.
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 const user: { id: string; email?: string } = { id: "valet" };
-let profile = { dealership_id: "company", role_name: "Valet" };
+let profile = { id: "valet", dealership_id: "company", role_name: "Valet", status: "approved", is_active: true };
 let search: { id?: string; ro?: string; from?: string } = { id: "car", from: "flagged" };
 let generation = 0;
 let taken: unknown[] | undefined;
@@ -97,11 +97,11 @@ test("pending/results/TAKEN patches keep one queue channel; cleanup is not a fai
   const screen = await mount(Pickup);
   const queue = channels.find((c) => c.name.startsWith("pickup-queue"));
   expect(queue).toBeDefined();
-  await act(async () => { screen.update(<Pickup />); });
+  await act(async () => { screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>); });
   requests = [{ id: "request", ro_number: "193626", status: "unclaimed", kind: "pickup", created_at: new Date().toISOString() }];
-  await act(async () => { screen.update(<Pickup />); });
+  await act(async () => { screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>); });
   taken = [{ ...car, lot_position: "TAKEN" }];
-  await act(async () => { screen.update(<Pickup />); });
+  await act(async () => { screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>); });
   await act(async () => { queue?.handlers.parked_cars({ eventType: "UPDATE", old: {}, new: { ...car, dealership_id: "company" } }); });
   expect(invalidations).toContainEqual({ queryKey: ["pickup-taken-cars"] });
   expect(channels.filter((c) => c.name.startsWith("pickup-queue"))).toHaveLength(1);
@@ -109,7 +109,7 @@ test("pending/results/TAKEN patches keep one queue channel; cleanup is not a fai
   expect(statuses).toEqual(["CHANNEL_ERROR"]);
   generation++;
   profile = { ...profile };
-  await act(async () => { screen.update(<Pickup />); });
+  await act(async () => { screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>); });
   expect(channels.filter((c) => c.name.startsWith("pickup-queue"))).toHaveLength(2);
   expect(statuses).toEqual(["CHANNEL_ERROR"]);
   await act(async () => { screen.unmount(); });
@@ -144,7 +144,7 @@ test("claimed pinned pickup has one active satellite map action, private to Aron
     expect(satellite[0].props.disabled).not.toBe(true);
     expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on lot map")).toHaveLength(0);
     delete user.email;
-    await act(async () => screen.update(<Pickup />));
+    await act(async () => screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>));
     expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on satellite map")).toHaveLength(0);
     expect(screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on lot map")).toHaveLength(1);
     await act(async () => screen.unmount());
@@ -194,9 +194,21 @@ test("Aron pin drop saves concurrently and keeps foreground GPS until root unmou
     expect(cleared).toEqual([]);
     await act(async () => screen.unmount());
     expect(cleared).toEqual([1]);
+    const blocked = await mount(Park);
+    await act(async () => blocked.unmount());
+    expect(watches).toBe(2);
+    profile = { ...profile, role_name: "Spectator" };
+    const spectator = await mount(Park);
+    expect(watches).toBe(2);
+    await act(async () => spectator.unmount());
+    profile = { ...profile, role_name: "Valet", status: "pending" };
+    const pending = await mount(Park);
+    expect(watches).toBe(2);
+    await act(async () => pending.unmount());
   } finally {
     holdPinWrites = false;
     delete user.email;
+    profile = { ...profile, role_name: "Valet", status: "approved" };
     if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
     else Reflect.deleteProperty(globalThis, "navigator");
     if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument);

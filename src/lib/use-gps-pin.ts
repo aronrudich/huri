@@ -11,7 +11,7 @@ const GpsContext = createContext<SharedGps>({ tracker: null, fix: null, error: n
 export function GpsPinProvider({ children }: { children: ReactNode }) {
   const { user, profile, loading } = useAuth();
   const enabled = !loading && !!user && !!profile?.dealership_id && isAronEmail(user.email)
-    && !isSpectatorRole(profile.role_name) && profile.is_active !== false && profile.status !== "pending";
+    && profile.id === user.id && !isSpectatorRole(profile.role_name) && profile.is_active === true && profile.status === "approved";
   const [tracker, setTracker] = useState<GpsPinTracker | null>(null);
   const [fix, setFix] = useState<GpsFix | null>(null);
   const [error, setError] = useState<string | null>(null);

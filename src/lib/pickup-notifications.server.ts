@@ -14,6 +14,8 @@ export type PickupSubmission = {
   kind?: "pickup" | "park" | "wash" | "parts";
   staged?: boolean | null;
   lotPosition?: string | null;
+  /** Silent test submission: recorded normally, never alerts valets. */
+  isTest?: boolean | null;
 };
 
 export type PickupDeliveryResult = {

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { DEFAULT_SERVICE_HOURS, isValidRo, parseServiceHours } from "./company-configuration";
+import { DEFAULT_SERVICE_HOURS, filterRoInput, isValidRo, parseServiceHours, roDigitLength } from "./company-configuration";
 import { isServiceTimeOpen } from "./service-hours";
 import { currentShiftStart, shiftDayEnd, shiftDayStart } from "./report-range";
 import { blockersForLocation } from "./company-locations";
@@ -19,11 +19,29 @@ test("company schedule accepts 6:45 PM when closing at 7 PM", () => {
   expect(()=>parseServiceHours([null,{open:800,close:700},null,null,null,null,null])).toThrow();
   expect(()=>parseServiceHours([null,{open:-1,close:700},null,null,null,null,null])).toThrow();
 });
-test("RO settings retain six digits and permit requested flexible formats", () => {
+test("RO formats are strictly numeric, 1 to 7 digits, defaulting to 6", () => {
   expect(isValidRo("45120")).toBe(false);
   expect(isValidRo("194000")).toBe(true);
-  for(const ro of ["45120","B-1042","9850","ABC_123"]) expect(isValidRo(ro,"flexible")).toBe(true);
-  expect(isValidRo("../../x","flexible")).toBe(false);
+  expect(isValidRo("194000", "digits_6")).toBe(true);
+  expect(isValidRo("7", "digits_1")).toBe(true);
+  expect(isValidRo("42", "digits_2")).toBe(true);
+  expect(isValidRo("1234567", "digits_7")).toBe(true);
+  expect(isValidRo("123456", "digits_7")).toBe(false);
+  expect(isValidRo("1234567", "digits_6")).toBe(false);
+  expect(isValidRo("B-1042", "digits_4")).toBe(false);
+  // Legacy and unknown formats fall back to the 6-digit standard.
+  expect(isValidRo("194000", "six_digits")).toBe(true);
+  expect(isValidRo("194000", "flexible")).toBe(true);
+  expect(isValidRo("45120", "flexible")).toBe(false);
+});
+test("RO digit length and input filter follow the configured format", () => {
+  expect(roDigitLength(undefined)).toBe(6);
+  expect(roDigitLength("digits_1")).toBe(1);
+  expect(roDigitLength("digits_7")).toBe(7);
+  expect(roDigitLength("flexible")).toBe(6);
+  expect(filterRoInput("12a3-456", "digits_4")).toBe("1234");
+  expect(filterRoInput("12345678", "digits_7")).toBe("1234567");
+  expect(filterRoInput("abc", "digits_3")).toBe("");
 });
 test("Central reporting boundaries use local clock including DST", () => {
   expect(shiftDayStart("2026-10-28","America/Chicago").toISOString()).toBe("2026-10-28T11:30:00.000Z");

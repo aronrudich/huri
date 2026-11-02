@@ -110,13 +110,14 @@ export const getPublicProfile = createServerFn({ method: "GET" })
       .eq("id", profile.dealership_id!)
       .maybeSingle();
 
+    const isAron = ARON_EMAILS.includes((profile.email ?? "").toLowerCase());
     return {
       id: profile.id,
-      fullName: profile.full_name,
-      nickname: profile.nickname,
-      roleName: profile.role_name,
-      email: profile.email,
-      avatarUrl: avatarUrlFor(profile.id, profile.has_avatar, profile.avatar_version),
+      fullName: isAron ? "Huri" : profile.full_name,
+      nickname: isAron ? null : profile.nickname,
+      roleName: isAron ? "" : profile.role_name,
+      email: isAron ? null : profile.email,
+      avatarUrl: isAron ? null : avatarUrlFor(profile.id, profile.has_avatar, profile.avatar_version),
       dealershipName: dealer?.name ?? null,
     };
   });

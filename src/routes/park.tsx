@@ -1,5 +1,5 @@
 import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
-import { createFileRoute, ClientOnly, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy, Crosshair, Satellite } from "lucide-react";
 import { isAronEmail } from "@/lib/aron";
@@ -502,12 +502,11 @@ function ParkPage() {
         </div>
       )}
 
+      {/* Only reachable from a tap, so the lazy Leaflet bundle never loads during SSR. */}
       {satFocus && (
-        <ClientOnly fallback={null}>
-          <Suspense fallback={null}>
-            <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
-          </Suspense>
-        </ClientOnly>
+        <Suspense fallback={null}>
+          <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
+        </Suspense>
       )}
     </div>
   );

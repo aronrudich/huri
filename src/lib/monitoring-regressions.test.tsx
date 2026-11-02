@@ -192,8 +192,15 @@ test("Aron pin drop saves concurrently and keeps foreground GPS until root unmou
     await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
     expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS PIN" });
     expect(cleared).toEqual([]);
+    await act(async () => screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>));
+    expect(watches).toBe(1);
+    expect(cleared).toEqual([]);
+    delete user.email;
+    await act(async () => screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>));
+    expect(cleared).toEqual([1]);
     await act(async () => screen.unmount());
     expect(cleared).toEqual([1]);
+    user.email = "aron@huri.team";
     const blocked = await mount(Park);
     await act(async () => blocked.unmount());
     expect(watches).toBe(2);

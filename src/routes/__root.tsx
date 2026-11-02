@@ -22,6 +22,7 @@ import { useRealtimeRecovery } from "@/lib/realtime-recovery";
 import { useAppUpdate } from "@/lib/app-update";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { ConnectionBanner } from "@/components/ConnectionBanner";
+import { GpsPinProvider } from "@/lib/use-gps-pin";
 
 function NotFoundComponent() {
   return (
@@ -134,9 +135,11 @@ function RootComponent() {
         <PushSync />
         <RealtimeRecovery />
         <TabPrefetcher />
-        <PullToRefresh>
-          <Outlet />
-        </PullToRefresh>
+        <GpsPinProvider>
+          <PullToRefresh>
+            <Outlet />
+          </PullToRefresh>
+        </GpsPinProvider>
 
         <NotificationGate />
         <PendingGate />

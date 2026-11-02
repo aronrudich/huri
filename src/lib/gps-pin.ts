@@ -44,7 +44,7 @@ export class GpsPinTracker {
       this.fixes.push(fix);
       const best = this.best();
       this.changed(best, null);
-      if (best && isReadyGpsFix(best, this.clock.now())) this.finish(best);
+      if (best) this.finish(best);
     }, (error) => {
       if (generation !== this.generation) return;
       const message = error.code === 1 ? "Location permission denied. Allow location access in your browser settings." : "GPS unavailable. Try again outside.";
@@ -56,12 +56,12 @@ export class GpsPinTracker {
     }, GPS_WATCH_OPTIONS);
   }
   acquire(): Promise<GpsFix> {
-    if (this.pending) return Promise.reject(new Error("GPS refinement already in progress."));
+    if (this.pending) return Promise.reject(new Error("GPS acquisition already in progress."));
     this.start();
     const best = this.best();
-    if (best && isReadyGpsFix(best, this.clock.now())) return Promise.resolve(best);
+    if (best) return Promise.resolve(best);
     return new Promise((resolve, reject) => {
-      const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading available. Try again outside.")), GPS_REFINE_MS);
+      const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading yet. GPS is still acquiring; try again shortly.")), GPS_REFINE_MS);
       this.pending = { resolve, reject, timer };
     });
   }

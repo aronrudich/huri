@@ -159,7 +159,6 @@ function ParkPage() {
           void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
           if (carResult.error) throw carResult.error;
           if (requestResult.error) throw new Error("Pin saved to the car, but pickup pins could not refresh. Tap Drop GPS Pin to retry.");
-          gps.stop();
           if (!gps.isMounted()) return;
           toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
     } catch (e) {
@@ -361,9 +360,9 @@ function ParkPage() {
         {isAron && !isSpectatorRole(role) && (
           <div className="space-y-2">
             {gps.active && (
-              <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.ready ? "text-success" : "text-warning"}`}>
-                <span className={`h-2 w-2 shrink-0 rounded-full ${gps.ready ? "bg-success" : "bg-warning"}`} />
-                {gps.error ?? (gps.ready && gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : gps.fix ? `Acquiring GPS… (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
+              <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.fix && !gps.error ? "text-success" : "text-warning"}`}>
+                <span className={`h-2 w-2 shrink-0 rounded-full ${gps.fix && !gps.error ? "bg-success" : "bg-warning"}`} />
+                {gps.error ?? (gps.ready && gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : gps.fix ? `GPS Acquired (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
               </p>
             )}
             <Button
@@ -372,7 +371,7 @@ function ParkPage() {
               disabled={pinBusy}
               className="flex w-full items-center justify-center gap-2 py-3 text-sm font-semibold disabled:opacity-100"
             >
-              <Crosshair className="h-4 w-4" /> {pinBusy ? gps.refining ? "Refining GPS…" : "Saving pin…" : "Drop GPS Pin"}
+              <Crosshair className="h-4 w-4" /> {pinBusy ? gps.refining ? "Acquiring GPS…" : "Saving pin…" : "Drop GPS Pin"}
             </Button>
             {pinDrop && (
               <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">

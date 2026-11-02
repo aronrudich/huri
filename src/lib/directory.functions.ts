@@ -1,5 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { ARON_EMAILS } from "@/lib/aron";
+
+/**
+ * The global administrator appears in every roster and directory simply as
+ * "Huri" — no personal name, email, Admin label or owner badge.
+ */
+async function aronProfileIds(): Promise<Set<string>> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("profiles").select("id").in("email", ARON_EMAILS);
+  return new Set((data ?? []).map((p) => p.id as string));
+}
 
 async function callerDealership(userId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -27,15 +39,19 @@ export const getDirectory = createServerFn({ method: "GET" })
     });
     if (error) throw error;
 
-    return (data ?? []).map((person) => ({
-      id: person.id,
-      full_name: person.full_name,
-      nickname: person.nickname,
-      role_name: person.role_name,
-      role_id: person.role_id,
-      is_active: person.is_active,
-      avatar_url: avatarUrlFor(person.id, person.has_avatar, person.avatar_version),
-    }));
+    const aronIds = await aronProfileIds();
+    return (data ?? []).map((person) => {
+      const isAron = aronIds.has(person.id);
+      return {
+        id: person.id,
+        full_name: isAron ? "Huri" : person.full_name,
+        nickname: isAron ? null : person.nickname,
+        role_name: isAron ? "" : person.role_name,
+        role_id: person.role_id,
+        is_active: person.is_active,
+        avatar_url: isAron ? null : avatarUrlFor(person.id, person.has_avatar, person.avatar_version),
+      };
+    });
   });
 
 

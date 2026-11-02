@@ -1,4 +1,8 @@
 # Roadmap
+## Private GPS refinement (Nov 2)
+- [x] Add device-local warm-up, fresh best-fix selection, two-second refinement and live accuracy; stop after save/unmount.
+- [x] Verify thresholds, fallback, cleanup and controlled Park pin-save propagation; all 70 tests pass and preview build OK. Signed-out Park redirects to Sign In without runtime errors; no live car records changed or publication.
+- [ ] Verify real phone accuracy and authenticated live pin/map flow: requesting-user session unavailable; requires the user to sign in and test outdoors. Two seconds bounds refinement only, not save/network time or guaranteed precision; sampling adds no backend calls, existing saves/page/map delivery still apply.
 ## Combined demo, car shortcut and Val restoration (Oct 30)
 - [x] Refine isolated demo sequence, locations, notes, badges and claim flash; browser cycle and 375/631/1280 layouts verified without overflow or runtime errors.
 - [x] Add capability-gated car shortcut and per-user dismissal guide; native video fullscreen starts playing on one tap in browser checks, with fallback logic tested.

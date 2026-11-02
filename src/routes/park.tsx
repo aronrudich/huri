@@ -261,6 +261,7 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
 
     e.preventDefault();
+    gps.cancelPolish();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
     if (pinBusy) return;
@@ -369,6 +370,7 @@ function ParkPage() {
       <form onSubmit={submit} className="space-y-3 p-4">
         <Field label="RO Number" required value={ro} onChange={(raw) => {
           if (pinBusy) return;
+          gps.cancelPolish();
           const value = filterRoInput(raw, settings?.ro_format);
           roEdited.current = true;
           setRo(value);
@@ -383,7 +385,7 @@ function ParkPage() {
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
-        <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
+        <LocationPicker required value={pos} onChange={(value) => { gps.cancelPolish(); detailEdits.current.pos = true; setPos(value); }} />
         {isAron && !isSpectatorRole(role) && (
           <div className="space-y-2">
             {gps.active && (

@@ -1,9 +1,10 @@
 # Roadmap
 ## Rapid capture, bounded precision polish and supervisor reports (Nov 2)
-- [ ] Reuse the 15-second device cache while retaining fresh-fix validation and immediate capture.
-- [ ] Add one bounded, guarded precision update within 15 seconds while Park remains active; cancel on navigation, hiding, changed form target or authorization loss.
-- [ ] Grant Valet Supervisor Reports only, preserving Settings/Flagged restrictions and company scope.
-- [ ] Run regressions and verify preview; real phone and authenticated acceptance require an available requesting-user session.
+- [x] Reuse the 15-second device cache while retaining fresh-fix validation and immediate capture.
+- [x] Add one guarded precision correction within 15 seconds of the captured fix; cancel on navigation, hiding, changed RO/location, Save or authorization loss. Reject moving/distant fixes and compare saved timestamp/location before writes.
+- [x] Grant Valet Supervisor Reports only through the shared menu/page/server predicate; preserve Settings/Flagged restrictions and company scope.
+- [x] All 90 Bun regressions pass, including controlled Park save/correction and authenticated report-handler authorization; preview build OK and signed-out Park/Reports redirect to Sign In without runtime errors. No publication or live records changed.
+- [ ] Real phone accuracy, capture/save speed and live signed-in acceptance remain blocked: requesting-user automatic session mint found no matching account; requires preview sign-in and an outdoor phone check. No sub-20-foot or instant-save guarantee.
 ## Foreground GPS warm-up and instant capture (Nov 2)
 - [x] Share authorized foreground-only GPS tracking across pages; pause on hiding/sign-out and resume on return. Approved active non-spectator accounts only.
 - [x] Capture any fresh available fix immediately, wait at most two seconds only when none exists, and retain explicit pin drop without auto-pin; parallel existing saves retained.

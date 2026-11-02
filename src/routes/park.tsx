@@ -102,7 +102,9 @@ function ParkPage() {
   const isAron = isAronEmail(user?.email);
   const gps = useGpsPin(!!user && isAron && !isSpectatorRole(role));
   const [pinBusy, setPinBusy] = useState(false);
-  const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string } | null>(null);
+  const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string; polished?: boolean } | null>(null);
+  const pinContext = useRef({ ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: isAron && !isSpectatorRole(role) });
+  pinContext.current = { ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: isAron && !isSpectatorRole(role) };
   const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
   const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
   const pinnedFocus = useMemo(() => {
@@ -117,6 +119,7 @@ function ParkPage() {
     if (!user || !companyId || !isAron || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
     setPinBusy(true);
+    gps.cancelPolish();
     try {
         const fix = await gps.acquire();
         if (!gps.isMounted()) return;
@@ -158,6 +161,30 @@ function ParkPage() {
           void queryClient.invalidateQueries({ queryKey: ["pickups"] });
           void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
           if (carResult.error) throw carResult.error;
+          // One bounded correction, only while this screen still represents the saved car.
+          // Compare-and-set prevents delayed GPS readings overwriting a newer pin/location.
+          gps.polish(fix, (improved) => {
+            const current = pinContext.current;
+            if (!gps.isMounted() || document.hidden || !current.allowed || current.userId !== user.id
+              || current.companyId !== companyId || current.ro !== target || normalizeSpot(current.pos) !== "GPS PIN") return;
+            const improvedCoords = {
+              latitude: improved.latitude, longitude: improved.longitude,
+              accuracy_ft: Math.round(improved.accuracyFeet), pinned_at: new Date(improved.timestamp).toISOString(),
+            };
+            void (async () => {
+              const { data: updated, error } = await supabase.from("parked_cars").update(improvedCoords)
+                .eq("dealership_id", companyId).eq("ro_number", target).eq("lot_position", "GPS PIN")
+                .eq("pinned_at", coords.pinned_at).select("id");
+              if (error || !updated?.length) return;
+              await supabase.from("pickup_requests").update(improvedCoords).eq("dealership_id", companyId)
+                .eq("ro_number", target).eq("pinned_at", coords.pinned_at).in("status", ["unclaimed", "claimed"]);
+              if (gps.isMounted() && pinContext.current.ro === target) {
+                setPinDrop({ accFt: improvedCoords.accuracy_ft, at: improvedCoords.pinned_at, polished: true });
+              }
+              void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
+              void queryClient.invalidateQueries({ queryKey: ["pickups"] });
+            })().catch(() => { /* Keep the successfully saved original pin on correction failure. */ });
+          });
           if (requestResult.error) throw new Error("Pin saved to the car, but pickup pins could not refresh. Tap Drop GPS Pin to retry.");
           if (!gps.isMounted()) return;
           toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
@@ -362,7 +389,7 @@ function ParkPage() {
             {gps.active && (
               <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.fix && !gps.error ? "text-success" : "text-warning"}`}>
                 <span className={`h-2 w-2 shrink-0 rounded-full ${gps.fix && !gps.error ? "bg-success" : "bg-warning"}`} />
-                {gps.error ?? (gps.ready && gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : gps.fix ? `GPS Acquired (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
+                {gps.error ?? (gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
               </p>
             )}
             <Button
@@ -375,7 +402,7 @@ function ParkPage() {
             </Button>
             {pinDrop && (
               <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
-                <CheckCircle2 className="h-4 w-4" /> GPS Pin Dropped: ±{pinDrop.accFt} ft accuracy
+                <CheckCircle2 className="h-4 w-4" /> GPS Pin {pinDrop.polished ? "Polished" : "Dropped"}: ±{pinDrop.accFt} ft accuracy
               </p>
             )}
             {pinnedFocus && (

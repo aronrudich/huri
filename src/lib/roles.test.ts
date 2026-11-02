@@ -19,7 +19,7 @@ test("management titles are exactly roles containing manager, director or admin"
 });
 
 test("settings, reports and flagged cars are limited to management titles and the owner", () => {
-  for (const r of ["Valet", "Valet Supervisor", "Advisor", "Technician", "Shop Foreman", "Spectator", "Car Wash"]) {
+  for (const r of ["Valet", "Advisor", "Technician", "Shop Foreman", "Spectator", "Car Wash"]) {
     expect(canViewSettings(r)).toBe(false);
     expect(canViewReports(r)).toBe(false);
     expect(canViewFlagged(r)).toBe(false);
@@ -33,6 +33,15 @@ test("settings, reports and flagged cars are limited to management titles and th
   expect(canViewSettings("Valet", true)).toBe(true);
   expect(canViewReports("Valet", true)).toBe(true);
   expect(canViewFlagged("Valet", true)).toBe(true);
+});
+
+test("Valet Supervisor gets Reports only without management privileges", () => {
+  expect(canViewReports("Valet Supervisor")).toBe(true);
+  expect(actionsForRole("Valet Supervisor")).toContain("reports");
+  expect(canViewSettings("Valet Supervisor")).toBe(false);
+  expect(canViewFlagged("Valet Supervisor")).toBe(false);
+  expect(actionsForRole("Valet Supervisor")).not.toContain("settings");
+  expect(actionsForRole("Valet Supervisor")).not.toContain("flagged");
 });
 
 test("regular employees never see settings, reports or flagged in the actions menu", () => {

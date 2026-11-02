@@ -42,11 +42,16 @@ export function GpsPinProvider({ children }: { children: ReactNode }) {
 export function useGpsPin(enabled: boolean) {
   const shared = useContext(GpsContext);
   const mounted = useRef(false);
+  const cancelPolish = useRef<(() => void) | null>(null);
   const [refining, setRefining] = useState(false);
   useEffect(() => {
     mounted.current = true;
-    return () => { mounted.current = false; };
+    return () => { mounted.current = false; cancelPolish.current?.(); };
   }, []);
+  useEffect(() => {
+    if (!enabled || !shared.active) cancelPolish.current?.();
+    return () => { cancelPolish.current?.(); };
+  }, [enabled, shared.active, shared.tracker]);
   return {
     fix: enabled ? shared.fix : null, error: shared.error, active: enabled && shared.active,
     refining, ready: enabled && isReadyGpsFix(shared.fix, Date.now()),
@@ -57,5 +62,12 @@ export function useGpsPin(enabled: boolean) {
       finally { if (mounted.current) setRefining(false); }
     },
     isMounted: () => mounted.current,
+    cancelPolish: () => { cancelPolish.current?.(); },
+    polish: (saved: GpsFix, corrected: (fix: GpsFix) => void) => {
+      cancelPolish.current?.();
+      if (enabled && shared.active && shared.tracker) {
+        cancelPolish.current = shared.tracker.polish(saved, corrected);
+      }
+    },
   };
 }

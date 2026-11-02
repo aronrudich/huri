@@ -69,8 +69,8 @@ test("fallback waits at most 2000ms and returns best fresh fix, not latest coars
 test("no fresh reading fails at 2000ms instead of saving stale or invented coordinates", async () => {
   const s = setup(); s.tracker.start(); s.emit(14, 40_000);
   const result = s.tracker.acquire();
-  const assertion = expect(result).rejects.toThrow("No fresh GPS reading");
-  s.advance(2_000); await assertion; s.tracker.stop();
+  const failure = result.catch((error: Error) => error.message);
+  s.advance(2_000); expect(await failure).toContain("No fresh GPS reading"); s.tracker.stop();
 });
 test("expired precise fix cannot beat a new coarse fix", async () => {
   const s = setup(); s.tracker.start(); s.emit(14);
@@ -86,14 +86,14 @@ test("successful-save cleanup clears watch and ignores late callbacks", () => {
 });
 test("unmount cancels pending refinement and all timers", async () => {
   const s = setup(); const result = s.tracker.acquire();
-  const assertion = expect(result).rejects.toThrow("GPS acquisition stopped");
-  s.tracker.stop(); await assertion;
+  const failure = result.catch((error: Error) => error.message);
+  s.tracker.stop(); expect(await failure).toContain("GPS acquisition stopped");
   expect(s.cleared).toEqual([1]); expect(s.timers.size).toBe(0);
 });
 test("permission denial rejects without coordinates and stops tracking", async () => {
   const s = setup(); const result = s.tracker.acquire();
-  const assertion = expect(result).rejects.toThrow("Location permission denied");
-  s.denied(); await assertion;
+  const failure = result.catch((error: Error) => error.message);
+  s.denied(); expect(await failure).toContain("Location permission denied");
   expect(s.cleared).toEqual([1]); expect(s.timers.size).toBe(0);
   expect(GPS_WATCH_OPTIONS.maximumAge).toBe(0);
 });

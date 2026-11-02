@@ -127,11 +127,9 @@ export const canStageRole = (role: string | null | undefined) => {
   return r === "Advisor" || r === "Admin" || /manager|director/i.test(r);
 };
 
-/** Management roles (with Reports access) that can open Company Settings. */
-export const SETTINGS_ROLES = ["Admin", "Service Manager", "Service Director", "General Manager"];
-
+/** Management titles (plus the owner) that can open Company Settings. */
 export const canViewSettings = (role: string | null | undefined, isOwner?: boolean | null) =>
-  !!isOwner || SETTINGS_ROLES.includes(role ?? "");
+  !!isOwner || isManagementTitle(role);
 
 /** Company-level switches that hide optional departments from the menu. */
 export type ActionModules = {
@@ -147,15 +145,16 @@ export function actionsForRole(
   modules?: ActionModules,
 ): ActionId[] {
   const r = role ?? "";
+  const isOwner = modules?.isOwner;
   const withReports = (ids: ActionId[]): ActionId[] => {
     const out = [...ids];
-    if (canViewReports(r)) out.push("reports");
-    if (canViewFlagged(r)) out.push("flagged");
+    if (canViewReports(r, isOwner)) out.push("reports");
+    if (canViewFlagged(r, isOwner)) out.push("flagged");
     return out;
   };
   const base = (): ActionId[] => {
-    // Spectators are read-only: they can only open the view-only screens.
-    if (isSpectatorRole(r)) return ["reports", "flagged"];
+    // Spectators are read-only: they browse the queue and lot but get no actions.
+    if (isSpectatorRole(r)) return [];
     // The car wash employee doesn't request washes — they just relocate cars once washed.
     if (r === "Car Wash") return ["new"];
     if (isValetRole(r)) return withReports(["new"]);

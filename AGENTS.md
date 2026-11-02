@@ -23,7 +23,7 @@
 - Share validated company service hours, RO formats, timezone and report boundaries across client and server paths; defaults preserve existing company behavior.
 - Gate every GPS pin-drop, satellite-map and silent-test control through src/lib/aron.ts email checks, and re-verify the caller's email server-side before honoring isTest; this keeps experimental controls invisible and unusable for all other accounts.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
-- Keep GPS sampling and bounded fresh-fix selection in the browser-local GPS tracker, with Park lifecycle cleanup and no polling writes; this limits battery and backend work without promising device accuracy.
+- Own the shared browser-local GPS tracker in the authenticated root provider, gated to authorized non-spectators, with visibility/auth cleanup rather than Park cleanup; this shares fresh fixes across pages without polling writes or promising device accuracy.
 - Save GPS location and coordinates together on the car through existing audit triggers, and parallelize only independent request propagation; derive satellite queue pins from visible active requests, including their stored coordinates when a claimed car is TAKEN.
 - Snapshot existing car GPS coordinates in the shared tenant-scoped request creation path, including ETA merges, rather than trusting form-supplied coordinates; every request type retains the same saved pin without new device sampling.
 - RO formats are strictly numeric ("digits_1"…"digits_7", default digits_6) via shared roDigitLength/isValidRo/filterRoInput helpers; legacy format values fall back to 6 digits so old company rows keep working.

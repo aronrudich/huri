@@ -1,4 +1,9 @@
 # Roadmap
+## Foreground GPS warm-up and instant capture (Nov 2)
+- [x] Share authorized foreground-only GPS tracking across pages; pause on hiding/sign-out and resume on return. Approved active non-spectator accounts only.
+- [x] Capture any fresh available fix immediately, wait at most two seconds only when none exists, and retain explicit pin drop without auto-pin; parallel existing saves retained.
+- [x] All 83 native Bun regressions pass, including page-transition reuse, private gating, first-fix capture and visibility cleanup; preview build OK and public/signed-out browser checks have no runtime errors. No publication or live record changes.
+- [ ] Authenticated outdoor phone acceptance blocked: automatic session mint has no matching requesting-user account; requires preview sign-in and a real phone test. Accuracy and network save time are not guaranteed.
 ## Claimed satellite maps and GPS refinement (Nov 2)
 - [x] Include TAKEN cars in private pin reads; snapshot saved coordinates in the shared company-scoped creation path for pickup, park, wash, parts and ETA merges.
 - [x] Replace the regular pickup Map button for private pinned submissions with one primary satellite Map action; controlled claimed-card tests verify availability and private gating.

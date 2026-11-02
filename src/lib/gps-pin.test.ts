@@ -12,7 +12,7 @@ function setup() {
   const changed: (GpsFix | null)[] = [];
   const tracker = new GpsPinTracker({
     watchPosition: (ok, error, options) => {
-      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 });
+      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 15_000 });
       success = ok; failure = error ?? (() => {}); return ++watchCount;
     },
     clearWatch: (id) => { cleared.push(id); },
@@ -24,7 +24,7 @@ function setup() {
     },
     clearTimeout: (id) => { timers.delete(id); },
   });
-  const emit = (feet: number, timestamp = now, latitude = 34) => success({ coords: { latitude, longitude: -117, accuracy: feet / 3.28084 }, timestamp } as GeolocationPosition);
+  const emit = (feet: number, timestamp = now, latitude = 34, speed: number | null = null) => success({ coords: { latitude, longitude: -117, accuracy: feet / 3.28084, speed }, timestamp } as GeolocationPosition);
   const advance = (ms: number) => {
     now += ms;
     for (const [id, timer] of timers) if (timer.at <= now) { timers.delete(id); timer.run(); }
@@ -130,5 +130,49 @@ test("permission denial rejects without coordinates and stops tracking", async (
   const failure = result.catch((error: Error) => error.message);
   s.denied(); expect(await failure).toContain("Location permission denied");
   expect(s.cleared).toEqual([1]); expect(s.timers.size).toBe(0);
-  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(0);
+  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(15_000);
+});
+
+test("26-foot drop gets one later sub-20-foot correction without holding capture", async () => {
+  const s = setup(); s.tracker.start(); s.emit(26);
+  const saved = await s.tracker.acquire();
+  const corrections: GpsFix[] = [];
+  s.tracker.polish(saved, (fix) => corrections.push(fix));
+  s.advance(1_000); s.emit(19);
+  s.advance(1_000); s.emit(7);
+  expect(corrections).toHaveLength(1);
+  expect(corrections[0]?.accuracyFeet).toBeCloseTo(19);
+  expect(s.timers.size).toBe(0); s.tracker.stop();
+});
+test("coarse polish accepts an improvement of at least five feet", async () => {
+  const s = setup(); s.tracker.start(); s.emit(36);
+  const corrections: GpsFix[] = [];
+  s.tracker.polish(await s.tracker.acquire(), (fix) => corrections.push(fix));
+  s.advance(1_000); s.emit(32);
+  expect(corrections).toHaveLength(0);
+  s.advance(1_000); s.emit(30);
+  expect(corrections[0]?.accuracyFeet).toBeCloseTo(30); s.tracker.stop();
+});
+test("polish expires at fifteen seconds and never writes after stop or cancellation", async () => {
+  const s = setup(); s.tracker.start(); s.emit(26);
+  let count = 0;
+  const saved = await s.tracker.acquire();
+  s.tracker.polish(saved, () => count++);
+  s.advance(15_000); s.emit(7);
+  expect(count).toBe(0);
+  s.emit(26); const cancel = s.tracker.polish(await s.tracker.acquire(), () => count++);
+  cancel(); s.advance(1_000); s.emit(7);
+  expect(count).toBe(0);
+  s.emit(26); s.advance(10_000); s.emit(26);
+  s.tracker.polish(await s.tracker.acquire(), () => count++);
+  s.tracker.stop(); s.emit(7);
+  expect(count).toBe(0); expect(s.timers.size).toBe(0);
+});
+test("polish cannot follow a walking employee or a distant tighter fix", async () => {
+  const s = setup(); s.tracker.start(); s.emit(26);
+  const corrections: GpsFix[] = [];
+  s.tracker.polish(await s.tracker.acquire(), (fix) => corrections.push(fix));
+  s.advance(1_000); s.emit(7, 51_000, 34, 1.2);
+  s.advance(1_000); s.emit(7, 52_000, 34.001);
+  expect(corrections).toHaveLength(0); s.tracker.stop();
 });

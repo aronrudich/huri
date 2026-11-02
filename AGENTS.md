@@ -24,8 +24,9 @@
 - Gate every GPS pin-drop, satellite-map and silent-test control through src/lib/aron.ts email checks, and re-verify the caller's email server-side before honoring isTest; this keeps experimental controls invisible and unusable for all other accounts.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
 - Own the shared browser-local GPS tracker in the authenticated root provider, gated to authorized non-spectators, with visibility/auth cleanup rather than Park cleanup; this shares fresh fixes across pages without polling writes or promising device accuracy.
+- Reuse the shared foreground watch for at most one guarded pin correction; cancel on Park exit/hiding and compare saved timestamps and locations before writes so walking or newer car changes cannot silently replace a pin.
 - Save GPS location and coordinates together on the car through existing audit triggers, and parallelize only independent request propagation; derive satellite queue pins from visible active requests, including their stored coordinates when a claimed car is TAKEN.
 - Snapshot existing car GPS coordinates in the shared tenant-scoped request creation path, including ETA merges, rather than trusting form-supplied coordinates; every request type retains the same saved pin without new device sampling.
 - RO formats are strictly numeric ("digits_1"…"digits_7", default digits_6) via shared roDigitLength/isValidRo/filterRoInput helpers; legacy format values fall back to 6 digits so old company rows keep working.
-- Settings, Reports and Flagged Cars access uses the isManagementTitle regex (manager|director|admin) plus the owner; role pickers render regular roles above an unlabeled divider with management titles below.
+- Settings and Flagged Cars access uses isManagementTitle plus the owner; Reports additionally allows Valet Supervisor through the shared client/server predicate, while role-picker grouping remains unchanged.
 - The global admin appears as "Huri" in every directory and roster feed, with name, email, role label, avatar and owner badge anonymized at the data-mapping layer.

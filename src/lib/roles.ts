@@ -39,7 +39,7 @@ export const isSpectatorRole = (role: string | null | undefined) =>
 /**
  * Upper management titles: any role containing "manager", "director" or
  * "admin" (case-insensitive). Only these roles — plus the company owner —
- * can open Company Settings, Reports and Flagged Cars.
+ * can open Company Settings and Flagged Cars. Reports additionally allows Valet Supervisor.
  */
 export const isManagementTitle = (role: string | null | undefined) =>
   /manager|director|admin/i.test(role ?? "");
@@ -54,7 +54,7 @@ export function splitRolesByLevel(roles: string[]): { regular: string[]; managem
 
 /** Roles that can open the Reports screen. */
 export const canViewReports = (role: string | null | undefined, isOwner?: boolean | null) =>
-  !!isOwner || isManagementTitle(role);
+  !!isOwner || isManagementTitle(role) || role === "Valet Supervisor";
 
 /** Roles that can open the Flagged Cars (14+ day) list. */
 export const canViewFlagged = (role: string | null | undefined, isOwner?: boolean | null) =>

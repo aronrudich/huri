@@ -15,6 +15,9 @@ let cached: unknown[] = [car];
 const invalidations: unknown[] = [];
 const writes: Record<string, unknown>[] = [];
 const pinWrites: { table: string; values: Record<string, unknown> }[] = [];
+let holdPinWrites = false;
+const startedPinWrites: string[] = [];
+const releasePinWrites: (() => void)[] = [];
 let loadCount = 0;
 let resolveLoad: ((value: unknown) => void) | undefined;
 const client = {
@@ -40,7 +43,11 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
     const builder: Record<string, any> = {};
     for (const method of ["select", "eq", "ilike", "abortSignal", "in"]) builder[method] = () => builder;
     builder.update = (values: Record<string, unknown>) => { pinWrites.push({ table, values }); return builder; };
-    builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve);
+    builder.then = (resolve: (value: unknown) => unknown) => {
+      if (!holdPinWrites) return Promise.resolve({ error: null }).then(resolve);
+      startedPinWrites.push(table);
+      return new Promise((release) => { releasePinWrites.push(() => release({ error: null })); }).then(resolve);
+    };
     builder.maybeSingle = () => {
       if (table === "car_washes") return Promise.resolve({ data: null });
       if (loadCount++ === 0) return new Promise((resolve) => { resolveLoad = resolve; });
@@ -125,7 +132,7 @@ test("Lot/Flagged ID editor keeps typed RO through late lookup and saves same ca
   await act(async () => { screen.unmount(); });
 });
 
-test("Park warms GPS only for Aron, saves one fix to the car and open requests, then clears watch", async () => {
+test("Aron pin drop saves concurrently, satisfies empty location despite late lookup, and clears GPS watch", async () => {
   let ok: PositionCallback = () => {};
   let watches = 0;
   const cleared: number[] = [];
@@ -139,24 +146,35 @@ test("Park warms GPS only for Aron, saves one fix to the car and open requests, 
     expect(watches).toBe(0);
     await act(async () => regular.unmount());
     user.email = "aron@huri.team";
-    cached = [car];
+    cached = [{ ...car, lot_position: "" }];
+    loadCount = 0;
+    pinWrites.length = 0;
+    startedPinWrites.length = 0;
+    releasePinWrites.length = 0;
     const screen = await mount(Park);
     expect(watches).toBe(1);
     const timestamp = Date.now();
     await act(async () => ok({ coords: { latitude: 34.123, longitude: -117.456, accuracy: 4 }, timestamp } as GeolocationPosition));
     const button = screen.root.findAllByType("button").find((item) => item.props.onClick?.name === "dropPin");
     if (!button) throw new Error("Pin drop control missing");
-    await act(async () => { await button.props.onClick(); });
+    holdPinWrites = true;
+    let dropping: Promise<void> | undefined;
+    await act(async () => { dropping = button.props.onClick(); await Promise.resolve(); });
+    expect(startedPinWrites).toEqual(["parked_cars", "pickup_requests"]);
+    await act(async () => { releasePinWrites.forEach((release) => release()); await dropping; });
+    holdPinWrites = false;
     expect(pinWrites).toEqual([
       { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString(), lot_position: "GPS PIN", parked_by: "valet" } },
       { table: "pickup_requests", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
     ]);
+    await act(async () => { resolveLoad?.({ data: car, error: null }); });
     await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
     expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS PIN" });
     expect(cleared).toEqual([1]);
     await act(async () => screen.unmount());
     expect(cleared).toEqual([1]);
   } finally {
+    holdPinWrites = false;
     delete user.email;
     if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
     else Reflect.deleteProperty(globalThis, "navigator");

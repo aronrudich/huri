@@ -116,6 +116,34 @@ export const flaggedCarsQuery = () =>
     },
   });
 
+export type PinnedCarRow = {
+  id: string;
+  ro_number: string | null;
+  car_model: string | null;
+  lot_position: string | null;
+  latitude: number;
+  longitude: number;
+  accuracy_ft: number | null;
+  pinned_at: string | null;
+};
+
+/** Cars with a GPS pin dropped (private satellite-map test). */
+export const pinnedCarsQuery = () =>
+  queryOptions({
+    queryKey: ["pinned-cars"],
+    staleTime: 30_000,
+    queryFn: async ({ signal }): Promise<PinnedCarRow[]> => {
+      return loadAllCarPages<PinnedCarRow>((from, to) => supabase
+        .from("parked_cars")
+        .select("id, ro_number, car_model, lot_position, latitude, longitude, accuracy_ft, pinned_at")
+        .not("latitude", "is", null)
+        .not("longitude", "is", null)
+        .neq("lot_position", "TAKEN")
+        .order("id", { ascending: true }).range(from, to)
+        .abortSignal(timeoutSignal(signal)));
+    },
+  });
+
 /** RO #s that have a recorded wash, so lists can show the green check. */
 export const carWashesQuery = () =>
   queryOptions({

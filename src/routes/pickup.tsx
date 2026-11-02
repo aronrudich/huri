@@ -758,6 +758,16 @@ function PickupPage() {
                     </button>
                   )}
 
+                  {isAron && p.ro_number && pinByRo[p.ro_number.trim()] && (
+                    <button
+                      onClick={() => setSatFocus(pinByRo[p.ro_number!.trim()])}
+                      aria-label="Show on satellite map"
+                      className="flex items-center gap-1 rounded-xl border border-primary/30 bg-primary/5 px-3 py-3 text-xs font-semibold text-primary active:bg-primary/10"
+                    >
+                      <Satellite className="h-4 w-4" /> Satellite
+                    </button>
+                  )}
+
                   {canCancel && (
                   <button
                     onClick={async () => {
@@ -841,6 +851,13 @@ function PickupPage() {
         </div>
       )}
 
+      {satFocus && (
+        <ClientOnly fallback={null}>
+          <Suspense fallback={null}>
+            <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
+          </Suspense>
+        </ClientOnly>
+      )}
 
       <BottomBar active="pickup" />
     </div>

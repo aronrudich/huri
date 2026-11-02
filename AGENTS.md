@@ -24,6 +24,7 @@
 - Gate every GPS pin-drop, satellite-map and silent-test control through src/lib/aron.ts email checks, and re-verify the caller's email server-side before honoring isTest; this keeps experimental controls invisible and unusable for all other accounts.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
 - Keep GPS sampling and bounded fresh-fix selection in the browser-local GPS tracker, with Park lifecycle cleanup and no polling writes; this limits battery and backend work without promising device accuracy.
+- Save GPS location and coordinates together on the car through existing audit triggers, and parallelize only independent request propagation; derive satellite queue pins from visible active requests, including their stored coordinates when a claimed car is TAKEN.
 - RO formats are strictly numeric ("digits_1"…"digits_7", default digits_6) via shared roDigitLength/isValidRo/filterRoInput helpers; legacy format values fall back to 6 digits so old company rows keep working.
 - Settings, Reports and Flagged Cars access uses the isManagementTitle regex (manager|director|admin) plus the owner; role pickers render regular roles above an unlabeled divider with management titles below.
 - The global admin appears as "Huri" in every directory and roster feed, with name, email, role label, avatar and owner badge anonymized at the data-mapping layer.

@@ -16,7 +16,11 @@ type Clock = {
   setTimeout: (callback: () => void, ms: number) => ReturnType<typeof setTimeout>;
   clearTimeout: (timer: ReturnType<typeof setTimeout>) => void;
 };
-const realClock: Clock = { now: Date.now, setTimeout, clearTimeout };
+const realClock: Clock = {
+  now: () => Date.now(),
+  setTimeout: (callback, ms) => setTimeout(callback, ms),
+  clearTimeout: (timer) => clearTimeout(timer),
+};
 
 /** Device-local only. No storage, network, or application-data dependencies. */
 export class GpsPinTracker {
@@ -55,7 +59,7 @@ export class GpsPinTracker {
     if (this.pending) return Promise.reject(new Error("GPS refinement already in progress."));
     this.start();
     const best = this.best();
-    if (isReadyGpsFix(best, this.clock.now()) && best) return Promise.resolve(best);
+    if (best) return Promise.resolve(best);
     return new Promise((resolve, reject) => {
       const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading available. Try again outside.")), GPS_REFINE_MS);
       this.pending = { resolve, reject, timer };

@@ -1,6 +1,6 @@
 // Private satellite pin-drop viewer — only ever rendered for Aron's accounts.
 // Leaflet touches browser APIs at import time, so this module is always loaded
-// through React.lazy behind <ClientOnly>; never import it statically.
+// through React.lazy after a tap; never import it statically.
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -55,6 +55,7 @@ export default function SatellitePinMapModal({
 
   useEffect(() => {
     if (!hostRef.current || mapRef.current) return;
+    setSelected(focus);
     const map = L.map(hostRef.current, {
       center: [focus.latitude, focus.longitude],
       zoom: STALL_ZOOM,
@@ -90,9 +91,8 @@ export default function SatellitePinMapModal({
       map.remove();
       mapRef.current = null;
     };
-    // The modal mounts once per open; pins are a snapshot of that moment.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    // Remove finished/canceled requests while the queue map remains open.
+  }, [focus, others]);
 
   const fitAll = () => {
     const map = mapRef.current;

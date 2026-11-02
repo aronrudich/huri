@@ -37,7 +37,7 @@ export function useGpsPin(enabled: boolean) {
     acquire: async () => {
       if (!enabled || !tracker.current) throw new Error(error ?? "Location unavailable.");
       setActive(true);
-      setRefining(!isReadyGpsFix(tracker.current.best(), Date.now()));
+      setRefining(!tracker.current.best());
       try { return await tracker.current.acquire(); }
       finally { if (mounted.current) setRefining(false); }
     },

@@ -341,6 +341,32 @@ function ParkPage() {
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
+        {isAron && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={dropPin}
+              disabled={pinBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary active:bg-primary/10 disabled:opacity-60"
+            >
+              <Crosshair className="h-4 w-4" /> {pinBusy ? "Getting GPS fix…" : "Drop GPS Pin"}
+            </button>
+            {pinDrop && (
+              <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+                <CheckCircle2 className="h-4 w-4" /> GPS Pin Dropped: ±{pinDrop.accFt} ft accuracy
+              </p>
+            )}
+            {pinnedFocus && (
+              <button
+                type="button"
+                onClick={() => setSatFocus(pinnedFocus)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold text-foreground active:bg-accent"
+              >
+                <Satellite className="h-4 w-4" /> View on Satellite Map
+              </button>
+            )}
+          </div>
+        )}
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (
           <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
@@ -474,6 +500,14 @@ function ParkPage() {
             <LotMap spots={svSpots} carsBySpot={carsBySpot} staticView />
           </div>
         </div>
+      )}
+
+      {satFocus && (
+        <ClientOnly fallback={null}>
+          <Suspense fallback={null}>
+            <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
+          </Suspense>
+        </ClientOnly>
       )}
     </div>
   );

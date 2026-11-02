@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -119,7 +119,7 @@ function NewPickupPage() {
             Staged means the car is finished but the customer has not arrived yet. Valets are notified, but staged cars sit below every other request until claimed.
           </p>
         )}
-        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
+        <Field label="RO Number" required value={ro} onChange={(v) => setRo(filterRoInput(v, settings?.ro_format))} autoFocus inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
           <input

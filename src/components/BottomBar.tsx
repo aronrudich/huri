@@ -162,7 +162,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       </Button>
       {open && (
         <div className="absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-64">
-          {items.map((id) => {
+          {menuItems.map((id) => {
             const props = linkProps(id);
             return (
               <Link

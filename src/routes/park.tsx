@@ -1,4 +1,4 @@
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy } from "lucide-react";
@@ -258,7 +258,8 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={(value) => {
+        <Field label="RO Number" required value={ro} onChange={(raw) => {
+          const value = filterRoInput(raw, settings?.ro_format);
           roEdited.current = true;
           setRo(value);
           // A correction belongs to the same car, including its model/location.
@@ -270,7 +271,7 @@ function ParkPage() {
           setStaged(false);
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
-        }} inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
+        }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (

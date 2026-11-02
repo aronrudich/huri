@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -84,7 +84,7 @@ function PartsPage() {
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">RO Number</label>
-          <input value={ro} onChange={(event) => setRo(settings?.ro_format === "flexible" ? event.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10) : event.target.value.replace(/\D/g, "").slice(0, 6))} inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
+          <input value={ro} onChange={(event) => setRo(filterRoInput(event.target.value, settings?.ro_format))} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary" />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">Notes</label>

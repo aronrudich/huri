@@ -49,15 +49,15 @@ test("warm accurate fix returns immediately without refinement timer", async () 
   expect(result.accuracyFeet).toBeCloseTo(14);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
-test("coarse fix refines immediately on an under-20-foot update", async () => {
+test("fresh coarse fix returns immediately without a mandatory wait", async () => {
   const s = setup(); s.tracker.start(); s.emit(190);
-  const result = s.tracker.acquire();
-  s.advance(1_500); s.emit(15, 51_500, 35);
-  expect((await result).latitude).toBe(35);
+  const result = await s.tracker.acquire();
+  expect(result.latitude).toBe(34);
+  expect(result.accuracyFeet).toBeCloseTo(190);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
 test("fallback waits at most 2000ms and returns best fresh fix, not latest coarse fix", async () => {
-  const s = setup(); s.tracker.start(); s.emit(190);
+  const s = setup(); s.tracker.start();
   let resolved = false;
   const result = s.tracker.acquire().then((fix) => { resolved = true; return fix; });
   s.advance(1_000); s.emit(40, 51_000, 35); s.emit(80, 51_000, 36);
@@ -77,6 +77,32 @@ test("expired precise fix cannot beat a new coarse fix", async () => {
   s.advance(10_000); s.emit(70, 60_000, 35);
   const result = s.tracker.acquire(); s.advance(2_000);
   expect((await result).latitude).toBe(35); s.tracker.stop();
+});
+test("default timer helpers do not invoke browser timers with tracker clock as receiver", async () => {
+  const originalSet = globalThis.setTimeout;
+  const originalClear = globalThis.clearTimeout;
+  let callback: (() => void) | undefined;
+  let clearCalled = false;
+  const timer = 1 as unknown as ReturnType<typeof setTimeout>;
+  try {
+    globalThis.setTimeout = function (this: unknown, cb: () => void) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Invalid timer receiver");
+      callback = cb; return timer;
+    } as typeof setTimeout;
+    globalThis.clearTimeout = function (this: unknown) {
+      if (this !== undefined && this !== globalThis) throw new TypeError("Invalid timer receiver");
+      clearCalled = true;
+    } as typeof clearTimeout;
+    const tracker = new GpsPinTracker({ watchPosition: () => 1, clearWatch: () => {} }, () => {});
+    const failure = tracker.acquire().catch((error: Error) => error.message);
+    callback?.();
+    expect(await failure).toContain("No fresh GPS reading");
+    expect(clearCalled).toBe(true);
+    tracker.stop();
+  } finally {
+    globalThis.setTimeout = originalSet;
+    globalThis.clearTimeout = originalClear;
+  }
 });
 test("successful-save cleanup clears watch and ignores late callbacks", () => {
   const s = setup(); s.tracker.start(); s.emit(14); s.tracker.stop();

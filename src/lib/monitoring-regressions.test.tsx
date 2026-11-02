@@ -148,9 +148,11 @@ test("Park warms GPS only for Aron, saves one fix to the car and open requests, 
     if (!button) throw new Error("Pin drop control missing");
     await act(async () => { await button.props.onClick(); });
     expect(pinWrites).toEqual([
-      { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
+      { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString(), lot_position: "GPS PIN", parked_by: "valet" } },
       { table: "pickup_requests", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
     ]);
+    await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS PIN" });
     expect(cleared).toEqual([1]);
     await act(async () => screen.unmount());
     expect(cleared).toEqual([1]);

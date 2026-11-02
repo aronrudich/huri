@@ -1,4 +1,9 @@
 # Roadmap
+## Claimed satellite maps and GPS refinement (Nov 2)
+- [ ] Keep claimed car pins available, and preserve car coordinates when creating each request type.
+- [ ] Replace the regular pickup Map button for private pinned submissions without duplicating controls.
+- [ ] Refine fresh coarse GPS readings for up to 2 seconds; test immediate sub-20-foot selection and fallback.
+- [ ] Run regressions and check preview; verify authenticated flow if the requesting account is available.
 ## GPS polish (Nov 2)
 - [x] Fix browser timer binding, accept the best fresh fix immediately, and improve pin-button contrast.
 - [x] Save independent pin writes concurrently while preserving existing audit handling; treat the pin as the location and suppress new-RO timeout notices.

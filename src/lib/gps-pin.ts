@@ -59,7 +59,7 @@ export class GpsPinTracker {
     if (this.pending) return Promise.reject(new Error("GPS refinement already in progress."));
     this.start();
     const best = this.best();
-    if (best) return Promise.resolve(best);
+    if (best && isReadyGpsFix(best, this.clock.now())) return Promise.resolve(best);
     return new Promise((resolve, reject) => {
       const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading available. Try again outside.")), GPS_REFINE_MS);
       this.pending = { resolve, reject, timer };

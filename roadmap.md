@@ -1,4 +1,10 @@
 # Roadmap
+## Claimed satellite maps and GPS refinement (Nov 2)
+- [x] Include TAKEN cars in private pin reads; snapshot saved coordinates in the shared company-scoped creation path for pickup, park, wash, parts and ETA merges.
+- [x] Replace the regular pickup Map button for private pinned submissions with one primary satellite Map action; controlled claimed-card tests verify availability and private gating.
+- [x] Refine fresh coarse GPS readings for up to 2 seconds; test immediate sub-20-foot selection, early improvement and exact 2000ms best-fix fallback.
+- [x] All 81 native Bun regressions pass and preview build OK; requested Vitest cannot load the existing bun:test suites. Signed-out Park/Pickup safely reach Sign In without runtime errors; no publication or live record changes.
+- [ ] Authenticated phone map/pin acceptance remains blocked: automatic session mint found no account matching the requesting user; requires preview sign-in and an outdoor phone check. Real GPS accuracy is not certified.
 ## GPS polish (Nov 2)
 - [x] Fix browser timer binding, accept the best fresh fix immediately, and improve pin-button contrast.
 - [x] Save independent pin writes concurrently while preserving existing audit handling; treat the pin as the location and suppress new-RO timeout notices.

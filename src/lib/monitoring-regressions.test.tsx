@@ -44,7 +44,7 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
     for (const method of ["select", "eq", "ilike", "abortSignal", "in"]) builder[method] = () => builder;
     builder.update = (values: Record<string, unknown>) => { pinWrites.push({ table, values }); return builder; };
     builder.then = (resolve: (value: unknown) => unknown) => {
-      if (!holdPinWrites) return Promise.resolve({ error: null }).then(resolve);
+      if (!holdPinWrites) return Promise.resolve({ data: [{ id: "car" }], error: null }).then(resolve);
       startedPinWrites.push(table);
       return new Promise((release) => { releasePinWrites.push(() => release({ error: null })); }).then(resolve);
     };
@@ -114,6 +114,47 @@ test("pending/results/TAKEN patches keep one queue channel; cleanup is not a fai
   expect(statuses).toEqual(["CHANNEL_ERROR"]);
   await act(async () => { screen.unmount(); });
   expect(statuses).toEqual(["CHANNEL_ERROR"]);
+});
+
+test("Park applies one stationary precision correction but stops correction when leaving the screen", async () => {
+  let ok: PositionCallback = () => {};
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  const originalDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", { configurable: true, value: { hidden: false, addEventListener() {}, removeEventListener() {} } });
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { geolocation: {
+    watchPosition: (callback: PositionCallback) => { ok = callback; return 1; }, clearWatch() {},
+  } } });
+  let screen: ReactTestRenderer | undefined;
+  try {
+    user.email = "aron@huri.team";
+    cached = [{ ...car, lot_position: "" }]; loadCount = 0; pinWrites.length = 0;
+    screen = await mount(Park);
+    const timestamp = Date.now();
+    const emit = (feet: number, at: number) => ok({ coords: { latitude: 34.123, longitude: -117.456, accuracy: feet / 3.28084, speed: 0 }, timestamp: at } as GeolocationPosition);
+    await act(async () => emit(26, timestamp - 100));
+    const drop = screen.root.findAllByType("button").find((button) => button.props.onClick?.name === "dropPin");
+    if (!drop) throw new Error("Pin control missing");
+    await act(async () => { await drop.props.onClick(); });
+    expect(pinWrites).toHaveLength(2);
+    await act(async () => emit(7, timestamp));
+    expect(pinWrites).toHaveLength(4);
+    expect(pinWrites[2]).toEqual({ table: "parked_cars", values: {
+      latitude: 34.123, longitude: -117.456, accuracy_ft: 7, pinned_at: new Date(timestamp).toISOString(),
+    } });
+    expect(pinWrites[3]?.values).toEqual(pinWrites[2]?.values);
+    await act(async () => emit(6, timestamp + 1));
+    expect(pinWrites).toHaveLength(4);
+    await act(async () => screen?.update(<GpsPinProvider><Pickup /></GpsPinProvider>));
+    await act(async () => emit(5, timestamp + 2));
+    expect(pinWrites).toHaveLength(4);
+  } finally {
+    await act(async () => screen?.unmount());
+    delete user.email;
+    if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
+    else Reflect.deleteProperty(globalThis, "navigator");
+    if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument);
+    else Reflect.deleteProperty(globalThis, "document");
+  }
 });
 
 test("Lot/Flagged ID editor keeps typed RO through late lookup and saves same car", async () => {

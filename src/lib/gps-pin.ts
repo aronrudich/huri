@@ -83,7 +83,8 @@ export class GpsPinTracker {
   /** Reuse the foreground watch, with at most one correction and no polling writes. */
   polish(saved: GpsFix, corrected: (fix: GpsFix) => void) {
     if (saved.accuracyFeet <= GPS_TARGET_FEET || this.watchId === null) return () => {};
-    const deadline = this.clock.now() + GPS_POLISH_MS;
+    const deadline = saved.timestamp + GPS_POLISH_MS;
+    if (this.clock.now() >= deadline) return () => {};
     const cancel = () => {
       this.clock.clearTimeout(timer);
       this.listeners.delete(listener);
@@ -95,7 +96,7 @@ export class GpsPinTracker {
       cancel();
       corrected(fix);
     };
-    const timer = this.clock.setTimeout(cancel, GPS_POLISH_MS);
+    const timer = this.clock.setTimeout(cancel, deadline - this.clock.now());
     this.listeners.add(listener);
     this.cancellations.add(cancel);
     return cancel;

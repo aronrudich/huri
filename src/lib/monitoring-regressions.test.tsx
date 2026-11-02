@@ -58,7 +58,7 @@ mock.module("@tanstack/react-query", () => ({
   useQueryClient: () => client,
   useQuery: (options: any) => {
     const key = options.queryKey[0];
-    const data = key === "pickups" ? requests : key === "parked-cars" ? cached : key === "pickup-taken-cars" ? taken : key === "dealership-settings" ? { company_code: "JCD29854", ro_format: "six_digits" } : key === "directory" || key === "car-photo-index" ? {} : [];
+    const data = key === "pickups" ? requests : key === "parked-cars" ? cached : key === "pickup-taken-cars" ? taken : key === "dealership-settings" ? { company_code: "JCD29854", ro_format: "digits_6" } : key === "directory" || key === "car-photo-index" ? {} : [];
     return { data, isPending: data === undefined, isError: false };
   },
 }));

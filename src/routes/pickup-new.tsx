@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useState } from "react";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { submitPickupRequest } from "@/lib/pickup.functions";
 import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarPhotos } from "@/components/CarPhotos";
+import { Switch } from "@/components/ui/switch";
+import { isAronEmail } from "@/lib/aron";
 
 
 type PickupNewSearch = { staged?: boolean; ro?: string };
@@ -42,6 +44,9 @@ function NewPickupPage() {
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
+  // Silent test submissions (Aron only): recorded normally, never alert valets.
+  const isAron = isAronEmail(user?.email);
+  const [isTest, setIsTest] = useState(false);
   const submitPickup = useServerFn(submitPickupRequest);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -74,6 +79,7 @@ function NewPickupPage() {
         sourceRole,
         lotPosition: car?.lot_position ?? null,
         staged: isStage,
+        isTest: isAron && isTest,
       } });
       if (result?.mergedEta) {
         const r = ro.trim();
@@ -119,7 +125,7 @@ function NewPickupPage() {
             Staged means the car is finished but the customer has not arrived yet. Valets are notified, but staged cars sit below every other request until claimed.
           </p>
         )}
-        <Field label="RO Number" required value={ro} onChange={setRo} autoFocus inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
+        <Field label="RO Number" required value={ro} onChange={(v) => setRo(filterRoInput(v, settings?.ro_format))} autoFocus inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <div>
           <label className="mb-1 block text-xs font-medium text-muted-foreground">{profile?.role_name || "Submitted by"}</label>
           <input
@@ -141,6 +147,18 @@ function NewPickupPage() {
         </div>
         {isValidRo(ro, settings?.ro_format) && (
           <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
+        )}
+
+        {isAron && (
+          <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Test</p>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Test mode: Submits request without sending alert notifications to valets.
+              </p>
+            </div>
+            <Switch checked={isTest} onCheckedChange={setIsTest} />
+          </div>
         )}
 
         <button disabled={busy} className="w-full rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">

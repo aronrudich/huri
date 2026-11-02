@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 // "Wash" = ask a valet to find the car and bring it to the car wash.
 // The car wash employee sets the car's next location when the wash is done,
 // which is what stamps the car as washed.
@@ -94,9 +94,9 @@ function WashRequestPage() {
           </label>
           <input
             value={ro}
-            onChange={(e) => setRo(settings?.ro_format === "flexible" ? e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10) : e.target.value.replace(/\D/g, "").slice(0, 6))}
-            inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"}
-            maxLength={settings?.ro_format === "flexible" ? 10 : 6}
+            onChange={(e) => setRo(filterRoInput(e.target.value, settings?.ro_format))}
+            inputMode="numeric"
+            maxLength={roDigitLength(settings?.ro_format)}
             autoFocus
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />

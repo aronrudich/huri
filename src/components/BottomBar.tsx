@@ -84,6 +84,8 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
     enable_staging: settings?.enable_staging,
     isOwner: profile?.is_owner,
   }).filter((id) => !(id === "stage" && hideStage));
+  // "Add/Edit Car" lives on the white car button in the header, not the menu.
+  const menuItems = items.filter((id) => id !== "new");
   if (items.length === 0) return null;
 
   const LABELS: Record<ActionId, string> = {
@@ -160,7 +162,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
       </Button>
       {open && (
         <div className="absolute right-0 top-full z-40 mt-1 w-56 overflow-hidden rounded-xl border border-border bg-popover shadow-lg md:w-64">
-          {items.map((id) => {
+          {menuItems.map((id) => {
             const props = linkProps(id);
             return (
               <Link

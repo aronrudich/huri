@@ -1,7 +1,8 @@
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy } from "lucide-react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy, Crosshair, Satellite } from "lucide-react";
+import { isAronEmail } from "@/lib/aron";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -16,8 +17,11 @@ import { dealershipSettingsQuery } from "@/lib/settings";
 import { customerArrivalLink } from "@/lib/arrive-link";
 import { CarPhotos } from "@/components/CarPhotos";
 import { uploadCarPhoto } from "@/lib/car-photos";
-import { parkedCarsQuery, type ParkedCarRow } from "@/lib/queries";
+import { parkedCarsQuery, pinnedCarsQuery, type ParkedCarRow, type PinnedCarRow } from "@/lib/queries";
 import { mergeLoadedCarDetails } from "@/lib/car-loading";
+
+// Leaflet is browser-only: the satellite map loads lazily after hydration.
+const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
 
 import { format } from "date-fns";
 
@@ -92,6 +96,70 @@ function ParkPage() {
   const role = profile?.role_name ?? "";
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const hideModel = isTechRole(role);
+  // Private GPS pin-drop test controls — Aron's accounts only.
+  const isAron = isAronEmail(user?.email);
+  const [pinBusy, setPinBusy] = useState(false);
+  const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string } | null>(null);
+  const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
+  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
+  const pinnedFocus = useMemo(() => {
+    const target = ro.trim();
+    if (!isAron || !target) return null;
+    return pinnedCars.find((c) => c.ro_number === target) ?? null;
+  }, [isAron, pinnedCars, ro]);
+
+  const dropPin = () => {
+    const target = ro.trim();
+    if (!user) return;
+    if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
+    if (!navigator.geolocation) return toast.error("This browser does not support location.");
+    setPinBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      async (fix) => {
+        const accFt = Math.round(fix.coords.accuracy * 3.28084);
+        const coords = {
+          latitude: fix.coords.latitude,
+          longitude: fix.coords.longitude,
+          accuracy_ft: accFt,
+          pinned_at: new Date().toISOString(),
+        };
+        try {
+          let carId = existingId;
+          if (!carId) {
+            const { data: found } = await supabase
+              .from("parked_cars").select("id").ilike("ro_number", target).maybeSingle();
+            carId = found?.id ?? null;
+          }
+          if (carId) {
+            const { error } = await supabase.from("parked_cars").update(coords).eq("id", carId);
+            if (error) throw error;
+          } else {
+            const { error } = await supabase.from("parked_cars").insert({
+              ro_number: target, lot_position: "UNKNOWN", parked_by: user.id, ...coords,
+            } as never);
+            if (error) throw error;
+          }
+          // Open requests for this RO carry the pin too, so the queue can map them.
+          await supabase.from("pickup_requests").update(coords)
+            .eq("ro_number", target).in("status", ["unclaimed", "claimed"]);
+          setPinDrop({ accFt, at: coords.pinned_at });
+          toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
+          void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
+        } catch (e) {
+          toast.error((e as Error).message);
+        } finally {
+          setPinBusy(false);
+        }
+      },
+      (err) => {
+        setPinBusy(false);
+        toast.error(err.code === err.PERMISSION_DENIED
+          ? "Location permission denied. Allow location access in your browser settings."
+          : "Could not get a GPS fix. Try again outside.");
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
 
@@ -258,7 +326,8 @@ function ParkPage() {
       </header>
 
       <form onSubmit={submit} className="space-y-3 p-4">
-        <Field label="RO Number" required value={ro} onChange={(value) => {
+        <Field label="RO Number" required value={ro} onChange={(raw) => {
+          const value = filterRoInput(raw, settings?.ro_format);
           roEdited.current = true;
           setRo(value);
           // A correction belongs to the same car, including its model/location.
@@ -270,8 +339,34 @@ function ParkPage() {
           setStaged(false);
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
-        }} inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"} maxLength={settings?.ro_format === "flexible" ? 10 : 6} />
+        }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
+        {isAron && (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={dropPin}
+              disabled={pinBusy}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary active:bg-primary/10 disabled:opacity-60"
+            >
+              <Crosshair className="h-4 w-4" /> {pinBusy ? "Getting GPS fix…" : "Drop GPS Pin"}
+            </button>
+            {pinDrop && (
+              <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
+                <CheckCircle2 className="h-4 w-4" /> GPS Pin Dropped: ±{pinDrop.accFt} ft accuracy
+              </p>
+            )}
+            {pinnedFocus && (
+              <button
+                type="button"
+                onClick={() => setSatFocus(pinnedFocus)}
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-background py-3 text-sm font-semibold text-foreground active:bg-accent"
+              >
+                <Satellite className="h-4 w-4" /> View on Satellite Map
+              </button>
+            )}
+          </div>
+        )}
         {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
         {washedAt && (
           <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
@@ -405,6 +500,13 @@ function ParkPage() {
             <LotMap spots={svSpots} carsBySpot={carsBySpot} staticView />
           </div>
         </div>
+      )}
+
+      {/* Only reachable from a tap, so the lazy Leaflet bundle never loads during SSR. */}
+      {satFocus && (
+        <Suspense fallback={null}>
+          <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
+        </Suspense>
       )}
     </div>
   );

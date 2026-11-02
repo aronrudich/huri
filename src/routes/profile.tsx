@@ -27,7 +27,8 @@ import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { LocationTestCard } from "@/components/LocationTestCard";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
-import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole } from "@/lib/roles";
+import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole, splitRolesByLevel } from "@/lib/roles";
+import { isAronEmail } from "@/lib/aron";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [
@@ -105,19 +106,23 @@ function ProfilePage() {
       .eq("is_active", true).eq("status", "approved").order("full_name")
       .then(({ data }) =>
         setStaff(
-          ((data ?? []) as Array<Record<string, unknown>>).map((p) => ({
-            id: p.id as string,
-            full_name: p.full_name as string,
-            nickname: (p.nickname as string | null) ?? null,
-            role_name: p.role_name as string,
-            email: p.email as string,
-            is_owner: (p.is_owner as boolean | undefined) ?? false,
-            avatar_url: avatarUrlFor(
-              p.id as string,
-              p.has_avatar as boolean | null,
-              p.avatar_version as string | null,
-            ),
-          })),
+          ((data ?? []) as Array<Record<string, unknown>>).map((p) => {
+            // The global admin shows in every roster simply as "Huri".
+            const aron = isAronEmail(p.email as string | null);
+            return {
+              id: p.id as string,
+              full_name: aron ? "Huri" : (p.full_name as string),
+              nickname: aron ? null : ((p.nickname as string | null) ?? null),
+              role_name: aron ? "" : (p.role_name as string),
+              email: aron ? "" : (p.email as string),
+              is_owner: aron ? false : ((p.is_owner as boolean | undefined) ?? false),
+              avatar_url: aron ? null : avatarUrlFor(
+                p.id as string,
+                p.has_avatar as boolean | null,
+                p.avatar_version as string | null,
+              ),
+            };
+          }),
         ),
       );
   }, [canViewRoster]);
@@ -511,18 +516,22 @@ function RequestRoleSheet({ currentRole, pendingRole, onClose, onSubmit }:
   const [pick, setPick] = useState(pendingRole ?? currentRole);
   const [other, setOther] = useState("");
   const final = pick === "Other" ? other.trim() : pick;
+  const { regular, management } = splitRolesByLevel(ROLE_OPTIONS);
+  const roleButton = (r: string) => (
+    <button key={r} onClick={() => setPick(r)}
+      className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm ${pick === r ? "border-primary bg-primary/5 font-semibold" : "border-border"}`}>
+      <span>{r}</span>{pick === r && <span className="text-primary">✓</span>}
+    </button>
+  );
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 sm:p-4" onClick={onClose}>
       <div className="w-full max-w-md rounded-t-3xl bg-background p-5 shadow-2xl sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
         <h2 className="text-lg font-semibold">Request role change</h2>
         <p className="mt-1 text-xs text-muted-foreground">Current role: <span className="font-medium text-foreground">{currentRole}</span>. An admin must approve before it takes effect.</p>
         <div className="mt-4 max-h-72 space-y-1 overflow-y-auto">
-          {ROLE_OPTIONS.map((r) => (
-            <button key={r} onClick={() => setPick(r)}
-              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm ${pick === r ? "border-primary bg-primary/5 font-semibold" : "border-border"}`}>
-              <span>{r}</span>{pick === r && <span className="text-primary">✓</span>}
-            </button>
-          ))}
+          {regular.map(roleButton)}
+          {management.length > 0 && <hr className="!my-3 border-border" />}
+          {management.map(roleButton)}
         </div>
         {pick === "Other" && (
           <input value={other} onChange={(e) => setOther(e.target.value)} placeholder="Specify role"

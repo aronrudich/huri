@@ -876,6 +876,7 @@ export type Database = {
       }
       parked_cars: {
         Row: {
+          accuracy_ft: number | null
           bay_tech: string | null
           car_model: string | null
           created_at: string
@@ -884,17 +885,21 @@ export type Database = {
           flagged_at: string | null
           id: string
           is_staged: boolean
+          latitude: number | null
           located_at: string
+          longitude: number | null
           lot_position: string
           notes: string | null
           notes_updated_at: string | null
           parked_by: string | null
+          pinned_at: string | null
           ro_number: string | null
           stale_alerted_at: string | null
           tag_number: string | null
           updated_at: string
         }
         Insert: {
+          accuracy_ft?: number | null
           bay_tech?: string | null
           car_model?: string | null
           created_at?: string
@@ -903,17 +908,21 @@ export type Database = {
           flagged_at?: string | null
           id?: string
           is_staged?: boolean
+          latitude?: number | null
           located_at?: string
+          longitude?: number | null
           lot_position?: string
           notes?: string | null
           notes_updated_at?: string | null
           parked_by?: string | null
+          pinned_at?: string | null
           ro_number?: string | null
           stale_alerted_at?: string | null
           tag_number?: string | null
           updated_at?: string
         }
         Update: {
+          accuracy_ft?: number | null
           bay_tech?: string | null
           car_model?: string | null
           created_at?: string
@@ -922,11 +931,14 @@ export type Database = {
           flagged_at?: string | null
           id?: string
           is_staged?: boolean
+          latitude?: number | null
           located_at?: string
+          longitude?: number | null
           lot_position?: string
           notes?: string | null
           notes_updated_at?: string | null
           parked_by?: string | null
+          pinned_at?: string | null
           ro_number?: string | null
           stale_alerted_at?: string | null
           tag_number?: string | null
@@ -944,6 +956,7 @@ export type Database = {
       }
       pickup_requests: {
         Row: {
+          accuracy_ft: number | null
           advisor_name: string | null
           car_model: string | null
           car_notes: string | null
@@ -960,8 +973,12 @@ export type Database = {
           eta_notified_at: string | null
           id: string
           is_staged: boolean
+          is_test: boolean
           kind: string
+          latitude: number | null
+          longitude: number | null
           lot_position: string | null
+          pinned_at: string | null
           reminded_at: string | null
           requested_by: string | null
           ro_number: string | null
@@ -971,6 +988,7 @@ export type Database = {
           tag_number: string | null
         }
         Insert: {
+          accuracy_ft?: number | null
           advisor_name?: string | null
           car_model?: string | null
           car_notes?: string | null
@@ -987,8 +1005,12 @@ export type Database = {
           eta_notified_at?: string | null
           id?: string
           is_staged?: boolean
+          is_test?: boolean
           kind?: string
+          latitude?: number | null
+          longitude?: number | null
           lot_position?: string | null
+          pinned_at?: string | null
           reminded_at?: string | null
           requested_by?: string | null
           ro_number?: string | null
@@ -998,6 +1020,7 @@ export type Database = {
           tag_number?: string | null
         }
         Update: {
+          accuracy_ft?: number | null
           advisor_name?: string | null
           car_model?: string | null
           car_notes?: string | null
@@ -1014,8 +1037,12 @@ export type Database = {
           eta_notified_at?: string | null
           id?: string
           is_staged?: boolean
+          is_test?: boolean
           kind?: string
+          latitude?: number | null
+          longitude?: number | null
           lot_position?: string | null
+          pinned_at?: string | null
           reminded_at?: string | null
           requested_by?: string | null
           ro_number?: string | null
@@ -1224,6 +1251,7 @@ export type Database = {
       claim_pickup_request: {
         Args: { _pickup_id: string }
         Returns: {
+          accuracy_ft: number | null
           advisor_name: string | null
           car_model: string | null
           car_notes: string | null
@@ -1240,8 +1268,12 @@ export type Database = {
           eta_notified_at: string | null
           id: string
           is_staged: boolean
+          is_test: boolean
           kind: string
+          latitude: number | null
+          longitude: number | null
           lot_position: string | null
+          pinned_at: string | null
           reminded_at: string | null
           requested_by: string | null
           ro_number: string | null

@@ -12,8 +12,34 @@ export function parseServiceHours(value: unknown): ServiceHours {
   });
 }
 
-export function isValidRo(ro: string, format = "six_digits"): boolean {
-  return (format === "flexible" ? /^[A-Za-z0-9_-]{3,10}$/ : /^\d{6}$/).test(ro.trim());
+/**
+ * Repair order formats are strictly numeric: "digits_1" … "digits_7".
+ * Legacy values ("six_digits", "flexible") and anything unknown fall back to
+ * the 6-digit standard so old company rows keep validating the same way.
+ */
+export const RO_FORMAT_OPTIONS = [
+  { value: "digits_1", label: "1 digit" },
+  { value: "digits_2", label: "2 digits" },
+  { value: "digits_3", label: "3 digits" },
+  { value: "digits_4", label: "4 digits" },
+  { value: "digits_5", label: "5 digits" },
+  { value: "digits_6", label: "6 digits" },
+  { value: "digits_7", label: "7 digits" },
+] as const;
+
+export function roDigitLength(format?: string | null): number {
+  const match = /^digits_([1-7])$/.exec(format ?? "");
+  return match ? Number(match[1]) : 6;
+}
+
+export function isValidRo(ro: string, format?: string | null): boolean {
+  const digits = roDigitLength(format);
+  return new RegExp(`^\\d{${digits}}$`).test(ro.trim());
+}
+
+/** Numeric keyboard filter for RO inputs: digits only, capped at the company's length. */
+export function filterRoInput(value: string, format?: string | null): string {
+  return value.replace(/\D/g, "").slice(0, roDigitLength(format));
 }
 
 export function formatClock(minutes: number): string {

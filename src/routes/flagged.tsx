@@ -40,13 +40,18 @@ function FlaggedPage() {
   const { user, loading, profile } = useAuth();
   const queryClient = useQueryClient();
 
-  const allowed = canViewFlagged(profile?.role_name) || !!profile?.is_owner;
-  // Spectators watch the list but never change it.
+  const allowed = canViewFlagged(profile?.role_name, profile?.is_owner);
+  // Spectators never change the list.
   const canDismiss = allowed && !isSpectatorRole(profile?.role_name);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
+
+  // Regular employees land back on the pickup queue.
+  useEffect(() => {
+    if (!loading && user && profile && !allowed) navigate({ to: "/pickup", replace: true });
+  }, [allowed, profile, user, loading, navigate]);
 
   const { data: cars = [], isPending, isError } = useQuery({
     ...flaggedCarsQuery(),
@@ -67,15 +72,7 @@ function FlaggedPage() {
 
   if (!user) return <div className="min-h-screen bg-surface" />;
   if (!loading && user && !allowed) {
-    return (
-      <div className="min-h-screen bg-surface px-4 pb-32 safe-top">
-        <Header />
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Flagged Cars is only available to management and spectator accounts.
-        </p>
-        <BottomBar active="lot" />
-      </div>
-    );
+    return <div className="min-h-screen bg-surface" />;
   }
 
   return (

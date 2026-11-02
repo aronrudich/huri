@@ -21,7 +21,7 @@ export type DealershipSettings = {
   enable_staging: boolean;
   operating_hours: ServiceHours;
   shift_start_minutes: number;
-  ro_format: "six_digits" | "flexible";
+  ro_format: string;
 };
 
 export const SETTINGS_DEFAULTS = {

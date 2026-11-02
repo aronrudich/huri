@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { isValidRo } from "@/lib/company-configuration";
+import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configuration";
 // "Park" = ask a valet to come to the bay and park the technician's car.
 // This is NOT the same as "New" (/park), which only logs a car into the system.
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -87,9 +87,9 @@ function ParkRequestPage() {
           </label>
           <input
             value={ro}
-            onChange={(e) => setRo(settings?.ro_format === "flexible" ? e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 10) : e.target.value.replace(/\D/g, "").slice(0, 6))}
-            inputMode={settings?.ro_format === "flexible" ? "text" : "numeric"}
-            maxLength={settings?.ro_format === "flexible" ? 10 : 6}
+            onChange={(e) => setRo(filterRoInput(e.target.value, settings?.ro_format))}
+            inputMode="numeric"
+            maxLength={roDigitLength(settings?.ro_format)}
             autoFocus
             className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base outline-none focus:border-primary"
           />

@@ -118,3 +118,13 @@
 - [x] Measure project usage, expensive queries, existing indexes, and scheduled work; results in database-optimization-report.md.
 - [x] Add ordered snapshot and company/RO/date request-history indexes; preserve recovery refreshes, permissions, scoring and all data.
 - [x] Verify both indexes, faster same-query plans and identical result checksums; all 26 regression tests pass. No measured credit reduction claimed; no publishing.
+
+## Master prompt batch (Nov 2)
+- [x] Settings cleanup: removed DMS/signup helper text and the Add/Edit Car row; Actions menu no longer lists Add/Edit Car (top car button remains).
+- [x] RO formats: strictly numeric 1–7 digits (default 6) across settings, validation and all RO inputs; legacy values fall back to 6 digits; database validation and backfill applied.
+- [x] Settings/Reports/Flagged limited to manager/director/admin titles plus the owner, with redirects to the pickup queue; this removes Spectator, Valet Supervisor and Shop Foreman report access.
+- [x] Role pickers (signup, change role, request role) show regular roles above an unlabeled divider, management titles below.
+- [x] Global admin displays as "Huri" in directory and roster feeds with email/role/avatar/crown hidden.
+- [x] Aron-only GPS pin drop on Park, satellite map modal (Esri imagery, stall-level zoom, red/blue pins, accuracy circle, fit-all), Satellite button on pinned pickup cards, and a silent Test switch that records requests without alerts (verified server-side by email).
+- [x] 59 tests pass; preview build OK. Not published.
+- [ ] Signed-in acceptance of pin drop, satellite map, test switch and role gating: blocked without a preview session for the requesting account.

@@ -16,7 +16,7 @@ import {
   type DealershipSettings,
 } from "@/lib/settings";
 import { customerArrivalTemplate } from "@/lib/arrive-link";
-import { parseServiceHours, type ServiceHours } from "@/lib/company-configuration";
+import { parseServiceHours, RO_FORMAT_OPTIONS, type ServiceHours } from "@/lib/company-configuration";
 import { Button } from "@/components/ui/button";
 import { CompanyLocationEditor } from "@/components/CompanyLocationEditor";
 
@@ -47,7 +47,7 @@ type Draft = {
   enable_staging: boolean;
   operating_hours: ServiceHours;
   shift_start_minutes: string;
-  ro_format: "six_digits" | "flexible";
+  ro_format: string;
 };
 
 const toDraft = (s: DealershipSettings): Draft => ({
@@ -177,9 +177,6 @@ function SettingsPage() {
                   Company code
                 </p>
                 <p className="mt-1 font-mono text-lg font-bold tracking-[0.2em]">{settings.company_code}</p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  New employees type this when they create their account.
-                </p>
               </div>
               <button
                 onClick={copyCode}
@@ -195,10 +192,6 @@ function SettingsPage() {
                 </p>
                 <p className="mt-1 break-all font-mono text-xs font-semibold">
                   {customerArrivalTemplate(settings.slug)}
-                </p>
-                <p className="mt-1 text-[11px] text-muted-foreground">
-                  Paste this into your DMS text template and add the RO number field right after
-                  "?ro=". Customers never see your company code.
                 </p>
                 <button
                   type="button"
@@ -266,7 +259,6 @@ function SettingsPage() {
             </p>
             <CoreActionRow label="Vehicle Pickup (Bring Me A Car)" hint="Customer arrivals, advisor pulls and technician pulls." />
             <CoreActionRow label="Park My Car" hint="Technician bay-to-spot parking requests." />
-            <CoreActionRow label="Add / Edit Car" hint="Valet logging and direct car location updates." />
             <ToggleRow
               label="Car Wash (Bring Car To Wash)"
               hint="Turn off if your store doesn't run washes through Huri."
@@ -302,8 +294,10 @@ function SettingsPage() {
                 <input type="time" className="ml-3 rounded-lg border border-input bg-background p-2" value={`${String(Math.floor(Number(draft.shift_start_minutes) / 60)).padStart(2, "0")}:${String(Number(draft.shift_start_minutes) % 60).padStart(2, "0")}`} onChange={(e) => { const [h, m] = e.target.value.split(":").map(Number); setDraft({ ...draft, shift_start_minutes: String(h * 60 + m) }); }} />
               </label>
               <label className="block text-sm">Repair order format
-                <select value={draft.ro_format} onChange={(e) => setDraft({ ...draft, ro_format: e.target.value === "flexible" ? "flexible" : "six_digits" })} className="ml-3 rounded-lg border border-input bg-background p-2">
-                  <option value="six_digits">6 digits</option><option value="flexible">3–10 letters, digits, hyphens or underscores</option>
+                <select value={draft.ro_format} onChange={(e) => setDraft({ ...draft, ro_format: e.target.value })} className="ml-3 rounded-lg border border-input bg-background p-2">
+                  {RO_FORMAT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}{o.value === "digits_6" ? " (standard)" : ""}</option>
+                  ))}
                 </select>
               </label>
             </section>

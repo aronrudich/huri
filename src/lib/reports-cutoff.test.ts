@@ -31,6 +31,9 @@ const requests = [request("boundary", 28_800_000), request("short", 1000),
   request("waiting", null)];
 const original = structuredClone(requests);
 
+let reportRole = "Admin";
+let reportOwner = true;
+let reportStatus = "approved";
 function query(data: unknown) {
   const result = { data, error: null };
   const builder: Record<string, unknown> = {};
@@ -38,7 +41,7 @@ function query(data: unknown) {
     builder[method] = () => builder;
   }
   builder.maybeSingle = () => Promise.resolve({ data: {
-    role_name: "Admin", is_owner: true, is_active: true, status: "approved", dealership_id: "company",
+    role_name: reportRole, is_owner: reportOwner, is_active: true, status: reportStatus, dealership_id: "company",
   } });
   builder.single = () => Promise.resolve({ data: { timezone: "America/Los_Angeles", shift_start_minutes: 390, company_code: "JCD29854" }, error: null });
   builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve(result).then(resolve);
@@ -90,4 +93,18 @@ test("submission totals and rankings use the same eligibility gate", () => {
 test("report aggregation does not change operational request history", () => {
   expect(requests).toEqual(original);
   expect(requests).toHaveLength(4);
+});
+
+test("authenticated approved Valet Supervisor can fetch Reports; Valet and pending supervisor cannot", async () => {
+  const args = { data: { range: "all" }, context: {
+    userId: "supervisor", supabase: { from: (table: string) => query(table === "pickup_requests" ? requests : []) },
+  } };
+  try {
+    reportRole = "Valet Supervisor"; reportOwner = false;
+    expect((await run(args)).claimed).toBe(2);
+    reportRole = "Valet";
+    await expect(run(args)).rejects.toThrow("Reports are not available for your role.");
+    reportRole = "Valet Supervisor"; reportStatus = "pending";
+    await expect(run(args)).rejects.toThrow("Reports are not available for your role.");
+  } finally { reportRole = "Admin"; reportOwner = true; reportStatus = "approved"; }
 });

@@ -3,6 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { sendWebPush, isStalePushStatus, isBadSubscriptionStatus } from "./push-server.server";
 import { isValidRo } from "./company-configuration";
 import { isSpectatorRole } from "./roles";
+import { ARON_EMAILS } from "./aron";
 
 export type PickupSubmission = {
   tag?: string | null;
@@ -172,7 +173,7 @@ export async function createPickupAndNotify(
 ): Promise<PickupDeliveryResult> {
   const { data: caller, error: callerError } = await supabase
     .from("profiles")
-    .select("dealership_id, role_name, is_active, status")
+    .select("dealership_id, role_name, is_active, status, email")
     .eq("id", userId)
     .maybeSingle();
   if (callerError) throw callerError;
@@ -180,6 +181,8 @@ export async function createPickupAndNotify(
     throw new Error("Your account cannot submit pickup requests");
   }
   if (isSpectatorRole(caller.role_name)) throw new Error("Spectators cannot submit requests");
+  // Silent test mode is a private global-admin control; anyone else's flag is ignored.
+  const isTest = !!data.isTest && ARON_EMAILS.includes((caller.email ?? "").toLowerCase());
   const { data: company, error: companyError } = await supabase.from("dealerships")
     .select("ro_format").eq("id", caller.dealership_id).single();
   if (companyError) throw companyError;
@@ -193,7 +196,7 @@ export async function createPickupAndNotify(
   // A customer who used the ETA link already has a card on the list. When an
   // advisor then submits a regular pickup for the same RO, fold it into that
   // card instead of adding a duplicate, and tell every valet the customer is here.
-  if (data.ro && (data.kind ?? "pickup") === "pickup" && !data.staged) {
+  if (!isTest && data.ro && (data.kind ?? "pickup") === "pickup" && !data.staged) {
     const merged = await mergeIntoEtaRequest(caller.dealership_id, data);
     if (merged) return merged;
   }
@@ -265,6 +268,7 @@ export async function createPickupAndNotify(
       source_role: sourceRole,
       lot_position: lotPosition,
       is_staged: !!data.staged,
+      is_test: isTest,
       // dealership_id is filled by the pickups_set_dealership trigger.
     } as never)
     .select("id")
@@ -272,6 +276,8 @@ export async function createPickupAndNotify(
   if (insertError) throw insertError;
 
   const empty = { pickupId: pickup.id, recipients: 0, devices: 0, sent: 0, pruned: 0, failed: 0 };
+  // Test submissions land on the queue and map but never push or sound alerts.
+  if (isTest) return empty;
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data: recipients, error: recipientsError } = await supabaseAdmin
     .from("profiles")

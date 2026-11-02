@@ -19,6 +19,8 @@ import { CarPhotos } from "@/components/CarPhotos";
 import { uploadCarPhoto } from "@/lib/car-photos";
 import { parkedCarsQuery, pinnedCarsQuery, type ParkedCarRow, type PinnedCarRow } from "@/lib/queries";
 import { mergeLoadedCarDetails } from "@/lib/car-loading";
+import { useGpsPin } from "@/lib/use-gps-pin";
+import { Button } from "@/components/ui/button";
 
 // Leaflet is browser-only: the satellite map loads lazily after hydration.
 const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
@@ -98,6 +100,7 @@ function ParkPage() {
   const hideModel = isTechRole(role);
   // Private GPS pin-drop test controls — Aron's accounts only.
   const isAron = isAronEmail(user?.email);
+  const gps = useGpsPin(!!user && isAron && !isSpectatorRole(role));
   const [pinBusy, setPinBusy] = useState(false);
   const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string } | null>(null);
   const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
@@ -108,26 +111,26 @@ function ParkPage() {
     return pinnedCars.find((c) => c.ro_number === target) ?? null;
   }, [isAron, pinnedCars, ro]);
 
-  const dropPin = () => {
+  const dropPin = async () => {
     const target = ro.trim();
-    if (!user) return;
+    if (!user || !isAron || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
-    if (!navigator.geolocation) return toast.error("This browser does not support location.");
     setPinBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      async (fix) => {
-        const accFt = Math.round(fix.coords.accuracy * 3.28084);
+    try {
+        const fix = await gps.acquire();
+        if (!gps.isMounted()) return;
+        const accFt = Math.round(fix.accuracyFeet);
         const coords = {
-          latitude: fix.coords.latitude,
-          longitude: fix.coords.longitude,
+          latitude: fix.latitude,
+          longitude: fix.longitude,
           accuracy_ft: accFt,
-          pinned_at: new Date().toISOString(),
+          pinned_at: new Date(fix.timestamp).toISOString(),
         };
-        try {
           let carId = existingId;
           if (!carId) {
-            const { data: found } = await supabase
+            const { data: found, error: lookupError } = await supabase
               .from("parked_cars").select("id").ilike("ro_number", target).maybeSingle();
+            if (lookupError) throw lookupError;
             carId = found?.id ?? null;
           }
           if (carId) {
@@ -140,25 +143,19 @@ function ParkPage() {
             if (error) throw error;
           }
           // Open requests for this RO carry the pin too, so the queue can map them.
-          await supabase.from("pickup_requests").update(coords)
+          const { error: requestError } = await supabase.from("pickup_requests").update(coords)
             .eq("ro_number", target).in("status", ["unclaimed", "claimed"]);
+          if (requestError) throw requestError;
+          gps.stop();
+          if (!gps.isMounted()) return;
           setPinDrop({ accFt, at: coords.pinned_at });
           toast.success(`GPS Pin Dropped: ±${accFt} ft accuracy`);
           void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
-        } catch (e) {
-          toast.error((e as Error).message);
-        } finally {
-          setPinBusy(false);
-        }
-      },
-      (err) => {
-        setPinBusy(false);
-        toast.error(err.code === err.PERMISSION_DENIED
-          ? "Location permission denied. Allow location access in your browser settings."
-          : "Could not get a GPS fix. Try again outside.");
-      },
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+    } catch (e) {
+      if (gps.isMounted()) toast.error((e as Error).message);
+    } finally {
+      if (gps.isMounted()) setPinBusy(false);
+    }
   };
   // Only the SV lot has numbered spots, so only SV cars get a map.
   const mapSpot = savedPos && lotOf(savedPos) === "sv" ? savedPos : null;
@@ -341,16 +338,22 @@ function ParkPage() {
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <LocationPicker required value={pos} onChange={(value) => { detailEdits.current.pos = true; setPos(value); }} />
-        {isAron && (
+        {isAron && !isSpectatorRole(role) && (
           <div className="space-y-2">
-            <button
+            {gps.active && (
+              <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.ready ? "text-success" : "text-warning"}`}>
+                <span className={`h-2 w-2 shrink-0 rounded-full ${gps.ready ? "bg-success" : "bg-warning"}`} />
+                {gps.error ?? (gps.ready && gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : gps.fix ? `Acquiring GPS… (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
+              </p>
+            )}
+            <Button
               type="button"
               onClick={dropPin}
               disabled={pinBusy}
               className="flex w-full items-center justify-center gap-2 rounded-xl border border-primary/30 bg-primary/5 py-3 text-sm font-semibold text-primary active:bg-primary/10 disabled:opacity-60"
             >
-              <Crosshair className="h-4 w-4" /> {pinBusy ? "Getting GPS fix…" : "Drop GPS Pin"}
-            </button>
+              <Crosshair className="h-4 w-4" /> {pinBusy ? gps.refining ? "Refining GPS…" : "Saving pin…" : "Drop GPS Pin"}
+            </Button>
             {pinDrop && (
               <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
                 <CheckCircle2 className="h-4 w-4" /> GPS Pin Dropped: ±{pinDrop.accFt} ft accuracy

@@ -1,4 +1,8 @@
 # Roadmap
+## GPS polish (Nov 2)
+- [ ] Fix browser timer binding, accept the best fresh fix immediately, and improve pin-button contrast.
+- [ ] Save independent pin writes concurrently while preserving existing audit handling; treat the pin as the location and suppress new-RO timeout notices.
+- [ ] Filter pickup satellite pins to active requests; verify regression tests and preview behavior without publishing.
 ## Private GPS refinement (Nov 2)
 - [x] Add device-local warm-up, fresh best-fix selection, two-second refinement and live accuracy; stop after save/unmount.
 - [x] Verify thresholds, fallback, cleanup and controlled Park pin-save propagation; all 70 tests pass and preview build OK. Signed-out Park redirects to Sign In without runtime errors; no live car records changed or publication.

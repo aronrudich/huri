@@ -4,7 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
 // Mount the real screens with controlled query/network boundaries, no live writes.
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-const user = { id: "valet" };
+const user: { id: string; email?: string } = { id: "valet" };
 let profile = { dealership_id: "company", role_name: "Valet" };
 let search: { id?: string; ro?: string; from?: string } = { id: "car", from: "flagged" };
 let generation = 0;
@@ -14,6 +14,7 @@ const car = { id: "car", ro_number: "193626", car_model: "Jeep GC", notes: "Key 
 let cached: unknown[] = [car];
 const invalidations: unknown[] = [];
 const writes: Record<string, unknown>[] = [];
+const pinWrites: { table: string; values: Record<string, unknown> }[] = [];
 let loadCount = 0;
 let resolveLoad: ((value: unknown) => void) | undefined;
 const client = {
@@ -37,7 +38,9 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
   removeChannel: (channel: Channel) => { channel.status?.("CLOSED"); return Promise.resolve(); },
   from: (table: string) => {
     const builder: Record<string, any> = {};
-    for (const method of ["select", "eq", "ilike", "abortSignal"]) builder[method] = () => builder;
+    for (const method of ["select", "eq", "ilike", "abortSignal", "in"]) builder[method] = () => builder;
+    builder.update = (values: Record<string, unknown>) => { pinWrites.push({ table, values }); return builder; };
+    builder.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ error: null }).then(resolve);
     builder.maybeSingle = () => {
       if (table === "car_washes") return Promise.resolve({ data: null });
       if (loadCount++ === 0) return new Promise((resolve) => { resolveLoad = resolve; });
@@ -120,4 +123,40 @@ test("Lot/Flagged ID editor keeps typed RO through late lookup and saves same ca
   await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
   expect(writes[0]).toMatchObject({ _target_id: "car", _ro_number: "193627", _position: "SV 3", _car_model: "Jeep GC", _notes: "Key inside" });
   await act(async () => { screen.unmount(); });
+});
+
+test("Park warms GPS only for Aron, saves one fix to the car and open requests, then clears watch", async () => {
+  let ok: PositionCallback = () => {};
+  let watches = 0;
+  const cleared: number[] = [];
+  const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  Object.defineProperty(globalThis, "navigator", { configurable: true, value: { geolocation: {
+    watchPosition: (callback: PositionCallback) => { ok = callback; return ++watches; },
+    clearWatch: (id: number) => { cleared.push(id); },
+  } } });
+  try {
+    const regular = await mount(Park);
+    expect(watches).toBe(0);
+    await act(async () => regular.unmount());
+    user.email = "aron@huri.team";
+    cached = [car];
+    const screen = await mount(Park);
+    expect(watches).toBe(1);
+    const timestamp = Date.now();
+    await act(async () => ok({ coords: { latitude: 34.123, longitude: -117.456, accuracy: 4 }, timestamp } as GeolocationPosition));
+    const button = screen.root.findAllByType("button").find((item) => item.props.onClick?.name === "dropPin");
+    if (!button) throw new Error("Pin drop control missing");
+    await act(async () => { await button.props.onClick(); });
+    expect(pinWrites).toEqual([
+      { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
+      { table: "pickup_requests", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
+    ]);
+    expect(cleared).toEqual([1]);
+    await act(async () => screen.unmount());
+    expect(cleared).toEqual([1]);
+  } finally {
+    delete user.email;
+    if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
+    else Reflect.deleteProperty(globalThis, "navigator");
+  }
 });

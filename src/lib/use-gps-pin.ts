@@ -21,14 +21,17 @@ export function useGpsPin(enabled: boolean) {
     tracker.current = current;
     current.start();
     setActive(true);
-    const timer = setInterval(() => setFix(current.best()), 1_000);
     return () => {
       mounted.current = false;
-      clearInterval(timer);
       current.stop();
       tracker.current = null;
     };
   }, [enabled]);
+  useEffect(() => {
+    if (!enabled || !active) return;
+    const timer = setInterval(() => setFix(tracker.current?.best() ?? null), 1_000);
+    return () => clearInterval(timer);
+  }, [enabled, active]);
   return {
     fix, error, active, refining, ready: isReadyGpsFix(fix, Date.now()),
     acquire: async () => {

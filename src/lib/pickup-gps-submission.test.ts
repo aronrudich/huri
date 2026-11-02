@@ -3,6 +3,17 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 mock.module("./push-server.server", () => ({ sendWebPush: async () => {}, isStalePushStatus: () => false, isBadSubscriptionStatus: () => false }));
+let etaUpdate: Record<string, unknown> | undefined;
+mock.module("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { from(table: string) {
+  const builder = {
+    select() { return builder; }, eq() { return builder; }, in() { return builder; },
+    not() { return builder; }, order() { return builder; }, limit() { return builder; },
+    update(values: Record<string, unknown>) { etaUpdate = values; return builder; },
+    async maybeSingle() { return { data: table === "pickup_requests" ? { id: "eta-request", customer_eta: null, car_notes: null } : { lot_position: "GPS PIN" }, error: null }; },
+    then(resolve: (value: unknown) => unknown) { return Promise.resolve({ data: [], error: null }).then(resolve); },
+  };
+  return builder;
+} } }));
 const { createPickupAndNotify } = await import("./pickup-notifications.server");
 const pin = { latitude: 34.123, longitude: -117.456, accuracy_ft: 18, pinned_at: "2026-11-02T02:00:00Z" };
 
@@ -42,4 +53,13 @@ test("a car without coordinates does not get invented GPS fields", async () => {
   await createPickupAndNotify(s.client, "aron", { ro: "000006", kind: "wash", isTest: true });
   expect(s.inserts[0]).not.toHaveProperty("latitude");
   expect(s.inserts[0]).not.toHaveProperty("longitude");
+});
+
+test("an existing customer ETA request receives the same saved car pin on advisor submission", async () => {
+  etaUpdate = undefined;
+  const s = clientFor({ lot_position: "GPS PIN", ...pin });
+  const result = await createPickupAndNotify(s.client, "aron", { ro: "000006", kind: "pickup" });
+  expect(result).toMatchObject({ pickupId: "eta-request", mergedEta: true });
+  expect(etaUpdate).toMatchObject(pin);
+  expect(s.inserts).toHaveLength(0);
 });

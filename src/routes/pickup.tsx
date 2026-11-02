@@ -1,6 +1,7 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { Clock, CheckCircle2, Search, Map as MapIcon, X } from "lucide-react";
+import { createFileRoute, ClientOnly, Link, useNavigate } from "@tanstack/react-router";
+import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { Clock, CheckCircle2, Search, Map as MapIcon, X, Satellite } from "lucide-react";
+import { isAronEmail } from "@/lib/aron";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
@@ -10,7 +11,10 @@ import { format } from "date-fns";
 import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMapRequest } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery } from "@/lib/queries";
+import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery, pinnedCarsQuery, type PinnedCarRow } from "@/lib/queries";
+
+// Leaflet is browser-only: the satellite map loads lazily after hydration.
+const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
 import { isActiveCar } from "@/lib/car-loading";
 import { isCompanyEvent } from "@/lib/tenant-events";
 import { LotMap } from "@/components/LotMap";
@@ -58,6 +62,8 @@ type Pickup = {
   customer_eta?: string | null;
   /** Set when an advisor submitted a pickup for this ETA car — the customer is here. */
   customer_arrived_at?: string | null;
+  /** Silent test submissions never alert valets. */
+  is_test?: boolean | null;
 };
 
 type ParkedCar = {
@@ -152,6 +158,15 @@ function PickupPage() {
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSelection, setMapSelection] = useState<{ spot: string; highlight: boolean } | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
+  // Private satellite pin test — Aron's accounts only.
+  const isAron = isAronEmail(user?.email);
+  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
+  const pinByRo = useMemo(() => {
+    const by: Record<string, PinnedCarRow> = {};
+    pinnedCars.forEach((c) => { if (c.ro_number) by[c.ro_number] = c; });
+    return by;
+  }, [pinnedCars]);
+  const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
 
@@ -231,6 +246,8 @@ function PickupPage() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "pickup_requests", filter: `dealership_id=eq.${profile.dealership_id}` }, (payload) => {
         if (!isCompanyEvent(payload.new, profile.dealership_id)) return;
         const p = payload.new as Pickup;
+        // Silent test submissions never alert valets.
+        if (p.is_test) return;
         // Only real waiting requests alert; "Car Has Been Picked Up" shortcut
         // rows land as picked_up/completed and must stay silent.
         if (p.status !== "unclaimed" && p.status !== "claimed") return;

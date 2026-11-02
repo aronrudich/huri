@@ -49,33 +49,29 @@ test("warm accurate fix returns immediately without refinement timer", async () 
   expect(result.accuracyFeet).toBeCloseTo(14);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
-test("fresh 36-foot fix refines until a sub-20-foot fix arrives", async () => {
+test("fresh 36-foot fix returns immediately with no accuracy hold", async () => {
   const s = setup(); s.tracker.start(); s.emit(36);
   let resolved = false;
   const result = s.tracker.acquire().then((fix) => { resolved = true; return fix; });
-  await Promise.resolve(); expect(resolved).toBe(false);
-  expect(s.timers.size).toBe(1);
-  s.advance(500); s.emit(19, 50_500, 35);
-  expect((await result).accuracyFeet).toBeCloseTo(19);
+  expect((await result).accuracyFeet).toBeCloseTo(36);
   expect(resolved).toBe(true);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
-test("coarse warm fix falls back to the best reading at exactly 2000ms", async () => {
+test("instant capture chooses best fresh reading already in memory", async () => {
   const s = setup(); s.tracker.start(); s.emit(36);
-  let resolved = false;
-  const result = s.tracker.acquire().then((fix) => { resolved = true; return fix; });
   s.advance(1_000); s.emit(30, 51_000, 35); s.emit(70, 51_000, 36);
-  s.advance(999); await Promise.resolve(); expect(resolved).toBe(false);
-  s.advance(1); expect((await result).accuracyFeet).toBeCloseTo(30);
+  const result = s.tracker.acquire();
+  expect((await result).accuracyFeet).toBeCloseTo(30);
+  expect(s.timers.size).toBe(0);
   expect((await result).latitude).toBe(35); s.tracker.stop();
 });
-test("fallback waits at most 2000ms and returns best fresh fix, not latest coarse fix", async () => {
+test("cold capture resolves on first fresh fix without waiting for accuracy", async () => {
   const s = setup(); s.tracker.start();
   let resolved = false;
   const result = s.tracker.acquire().then((fix) => { resolved = true; return fix; });
   s.advance(1_000); s.emit(40, 51_000, 35); s.emit(80, 51_000, 36);
-  s.advance(999); await Promise.resolve(); expect(resolved).toBe(false);
-  s.advance(1);
+  await Promise.resolve(); expect(resolved).toBe(true);
+  expect(s.timers.size).toBe(0);
   expect((await result).latitude).toBe(35);
   expect((await result).accuracyFeet).toBeCloseTo(40); s.tracker.stop();
 });
@@ -117,7 +113,7 @@ test("default timer helpers do not invoke browser timers with tracker clock as r
     globalThis.clearTimeout = originalClear;
   }
 });
-test("successful-save cleanup clears watch and ignores late callbacks", () => {
+test("stopping clears watch and ignores late callbacks", () => {
   const s = setup(); s.tracker.start(); s.emit(14); s.tracker.stop();
   const count = s.changed.length; s.emit(10);
   expect(s.cleared).toEqual([1]); expect(s.changed).toHaveLength(count);

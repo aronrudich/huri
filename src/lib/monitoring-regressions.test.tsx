@@ -84,9 +84,10 @@ const { Route: pickupRoute } = await import("../routes/pickup");
 const { Route: parkRoute } = await import("../routes/park");
 const Pickup = (pickupRoute as any).component;
 const Park = (parkRoute as any).component;
+const { GpsPinProvider } = await import("./use-gps-pin");
 async function mount(Component: any): Promise<ReactTestRenderer> {
   let renderer: ReactTestRenderer | undefined;
-  await act(async () => { renderer = create(<Component />); });
+  await act(async () => { renderer = create(<GpsPinProvider><Component /></GpsPinProvider>); });
   if (!renderer) throw new Error("Screen did not mount");
   return renderer;
 }
@@ -150,11 +151,13 @@ test("claimed pinned pickup has one active satellite map action, private to Aron
   } finally { requests = previousRequests; delete user.email; }
 });
 
-test("Aron pin drop saves concurrently, satisfies empty location despite late lookup, and clears GPS watch", async () => {
+test("Aron pin drop saves concurrently and keeps foreground GPS until root unmount", async () => {
   let ok: PositionCallback = () => {};
   let watches = 0;
   const cleared: number[] = [];
   const originalNavigator = Object.getOwnPropertyDescriptor(globalThis, "navigator");
+  const originalDocument = Object.getOwnPropertyDescriptor(globalThis, "document");
+  Object.defineProperty(globalThis, "document", { configurable: true, value: { hidden: false, addEventListener() {}, removeEventListener() {} } });
   Object.defineProperty(globalThis, "navigator", { configurable: true, value: { geolocation: {
     watchPosition: (callback: PositionCallback) => { ok = callback; return ++watches; },
     clearWatch: (id: number) => { cleared.push(id); },
@@ -188,7 +191,7 @@ test("Aron pin drop saves concurrently, satisfies empty location despite late lo
     await act(async () => { resolveLoad?.({ data: car, error: null }); });
     await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
     expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS PIN" });
-    expect(cleared).toEqual([1]);
+    expect(cleared).toEqual([]);
     await act(async () => screen.unmount());
     expect(cleared).toEqual([1]);
   } finally {
@@ -196,5 +199,7 @@ test("Aron pin drop saves concurrently, satisfies empty location despite late lo
     delete user.email;
     if (originalNavigator) Object.defineProperty(globalThis, "navigator", originalNavigator);
     else Reflect.deleteProperty(globalThis, "navigator");
+    if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument);
+    else Reflect.deleteProperty(globalThis, "document");
   }
 });

@@ -5,6 +5,8 @@ import { isValidRo } from "./company-configuration";
 import { isSpectatorRole } from "./roles";
 import { ARON_EMAILS } from "./aron";
 
+type CarPinSnapshot = { latitude: number | null; longitude: number | null; accuracy_ft: number | null; pinned_at: string | null };
+
 export type PickupSubmission = {
   tag?: string | null;
   ro?: string | null;
@@ -75,6 +77,7 @@ function payloadFor(data: PickupSubmission, pickupId: string) {
 async function mergeIntoEtaRequest(
   dealershipId: string,
   data: PickupSubmission,
+  carPin: CarPinSnapshot | null,
 ): Promise<PickupDeliveryResult | null> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const ro = data.ro?.trim();
@@ -102,6 +105,7 @@ async function mergeIntoEtaRequest(
       ...(etaFuture ? { customer_eta: nowIso } : {}),
       advisor_name: data.advisor ?? null,
       car_notes: notes,
+      ...(carPin ?? {}),
     } as never)
     .eq("id", eta.id);
   if (error) throw error;
@@ -193,28 +197,25 @@ export async function createPickupAndNotify(
 
   const sourceRole = caller.role_name;
 
-  // A customer who used the ETA link already has a card on the list. When an
-  // advisor then submits a regular pickup for the same RO, fold it into that
-  // card instead of adding a duplicate, and tell every valet the customer is here.
-  if (!isTest && data.ro && (data.kind ?? "pickup") === "pickup" && !data.staged) {
-    const merged = await mergeIntoEtaRequest(caller.dealership_id, data);
-    if (merged) return merged;
-  }
-
   // Snapshot the car's current spot when the form didn't send one (e.g. wash requests),
   // so the pickup card can show where the car is standing at submit time.
   let lotPosition = data.lotPosition ?? null;
   let carExists = false;
+  let carPin: CarPinSnapshot | null = null;
   if (data.ro) {
-    const { data: car } = await supabase
+    const { data: car, error: carLookupError } = await supabase
       .from("parked_cars")
-      .select("lot_position")
+      .select("lot_position, latitude, longitude, accuracy_ft, pinned_at")
       .eq("dealership_id", caller.dealership_id)
       .eq("ro_number", data.ro)
       .order("located_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (carLookupError) throw carLookupError;
     carExists = !!car;
+    if (car && typeof car.latitude === "number" && typeof car.longitude === "number" && Number.isFinite(car.latitude) && Number.isFinite(car.longitude)) {
+      carPin = { latitude: car.latitude, longitude: car.longitude, accuracy_ft: car.accuracy_ft, pinned_at: car.pinned_at };
+    }
     if (!lotPosition) lotPosition = car?.lot_position ?? null;
     // If the car only shows a temporary destination because another request
     // is claimed right now, snapshot where it physically was before that claim.
@@ -234,6 +235,12 @@ export async function createPickupAndNotify(
       });
       if (physical) lotPosition = physical;
     }
+  }
+
+  // All four forms use this tenant-scoped snapshot, including an existing ETA card.
+  if (!isTest && data.ro && (data.kind ?? "pickup") === "pickup" && !data.staged) {
+    const merged = await mergeIntoEtaRequest(caller.dealership_id, data, carPin);
+    if (merged) return merged;
   }
 
   // Any submission (pickup, stage, wash, parts, park) for an RO Huri has never
@@ -269,6 +276,7 @@ export async function createPickupAndNotify(
       lot_position: lotPosition,
       is_staged: !!data.staged,
       is_test: isTest,
+      ...(carPin ?? {}),
       // dealership_id is filled by the pickups_set_dealership trigger.
     } as never)
     .select("id")

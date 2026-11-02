@@ -127,7 +127,7 @@ export type PinnedCarRow = {
   pinned_at: string | null;
 };
 
-/** Cars with a GPS pin dropped (private satellite-map test). */
+/** GPS pins include TAKEN cars; claiming must not hide their saved location. */
 export const pinnedCarsQuery = () =>
   queryOptions({
     queryKey: ["pinned-cars"],
@@ -138,7 +138,6 @@ export const pinnedCarsQuery = () =>
         .select("id, ro_number, car_model, lot_position, latitude, longitude, accuracy_ft, pinned_at")
         .not("latitude", "is", null)
         .not("longitude", "is", null)
-        .neq("lot_position", "TAKEN")
         .order("id", { ascending: true }).range(from, to)
         .abortSignal(timeoutSignal(signal)));
     },

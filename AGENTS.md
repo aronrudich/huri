@@ -25,6 +25,7 @@
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
 - Keep GPS sampling and bounded fresh-fix selection in the browser-local GPS tracker, with Park lifecycle cleanup and no polling writes; this limits battery and backend work without promising device accuracy.
 - Save GPS location and coordinates together on the car through existing audit triggers, and parallelize only independent request propagation; derive satellite queue pins from visible active requests, including their stored coordinates when a claimed car is TAKEN.
+- Snapshot existing car GPS coordinates in the shared tenant-scoped request creation path, including ETA merges, rather than trusting form-supplied coordinates; every request type retains the same saved pin without new device sampling.
 - RO formats are strictly numeric ("digits_1"…"digits_7", default digits_6) via shared roDigitLength/isValidRo/filterRoInput helpers; legacy format values fall back to 6 digits so old company rows keep working.
 - Settings, Reports and Flagged Cars access uses the isManagementTitle regex (manager|director|admin) plus the owner; role pickers render regular roles above an unlabeled divider with management titles below.
 - The global admin appears as "Huri" in every directory and roster feed, with name, email, role label, avatar and owner badge anonymized at the data-mapping layer.

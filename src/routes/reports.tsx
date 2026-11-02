@@ -73,13 +73,18 @@ function ReportsPage() {
   });
   const fetchReport = useServerFn(getReport);
 
-  const allowed = canViewReports(profile?.role_name) || !!profile?.is_owner;
+  const allowed = canViewReports(profile?.role_name, profile?.is_owner);
   const customReady = range !== "custom" || (!!custom.start && !!custom.end);
   const hoursReady = hours.start !== null && hours.end !== null && hours.start < hours.end;
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/auth", replace: true });
   }, [user, loading, navigate]);
+
+  // Regular employees land back on the pickup queue.
+  useEffect(() => {
+    if (!loading && user && profile && !allowed) navigate({ to: "/pickup", replace: true });
+  }, [allowed, profile, user, loading, navigate]);
 
   const { data, isPending, error } = useQuery({
     queryKey: ["report", "eight-hour-cutoff", range, custom.start, custom.end, hours.start, hours.end],
@@ -100,14 +105,7 @@ function ReportsPage() {
 
 
   if (!loading && user && !allowed) {
-    return (
-      <div className="min-h-screen bg-surface px-4 pb-32 safe-top">
-        <Header />
-        <p className="mt-10 text-center text-sm text-muted-foreground">
-          Reports are only available to management and spectator accounts.
-        </p>
-      </div>
-    );
+    return <div className="min-h-screen bg-surface" />;
   }
 
   return (

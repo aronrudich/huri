@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { setEmployeeRole } from "@/lib/admin.functions";
 import { toast } from "sonner";
-import { ROLE_OPTIONS } from "@/lib/roles";
+import { ROLE_OPTIONS, splitRolesByLevel } from "@/lib/roles";
 
 type Props = {
   employeeId: string;
@@ -59,16 +59,26 @@ export function ChangeRoleSheet({ employeeId, employeeName, currentRole, onClose
         </div>
         <p className="mb-3 shrink-0 text-sm text-muted-foreground">{employeeName} — currently <span className="font-medium text-foreground">{currentRole}</span></p>
         <div className="min-h-0 flex-1 space-y-1 overflow-y-auto">
-          {roles.map((r) => (
-            <button
-              key={r}
-              onClick={() => setSelected(r)}
-              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm ${selected === r ? "border-primary bg-primary/5 font-semibold" : "border-border"}`}
-            >
-              <span>{r}</span>
-              {selected === r && <span className="text-primary">✓</span>}
-            </button>
-          ))}
+          {(() => {
+            const { regular, management } = splitRolesByLevel(roles);
+            const roleButton = (r: string) => (
+              <button
+                key={r}
+                onClick={() => setSelected(r)}
+                className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm ${selected === r ? "border-primary bg-primary/5 font-semibold" : "border-border"}`}
+              >
+                <span>{r}</span>
+                {selected === r && <span className="text-primary">✓</span>}
+              </button>
+            );
+            return (
+              <>
+                {regular.map(roleButton)}
+                {management.length > 0 && <hr className="!my-3 border-border" />}
+                {management.map(roleButton)}
+              </>
+            );
+          })()}
         </div>
         <button onClick={save} disabled={busy} className="mt-4 w-full shrink-0 rounded-xl bg-primary py-3 text-base font-semibold text-primary-foreground disabled:opacity-60">
           {busy ? "Saving..." : "Save role"}

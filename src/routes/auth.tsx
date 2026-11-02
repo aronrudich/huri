@@ -9,7 +9,7 @@ import { submitBusinessInquiry } from "@/lib/business.functions";
 import { useAuth } from "@/lib/auth-context";
 import { subscribePush } from "@/lib/push";
 import { toast } from "sonner";
-import { ROLE_OPTIONS } from "@/lib/roles";
+import { ROLE_OPTIONS, splitRolesByLevel } from "@/lib/roles";
 import { BusinessAddress, emptyAddr, addrComplete, type Addr } from "@/components/BusinessAddress";
 import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import explainerVideo from "@/assets/huri-explainer-v7.mp4.asset.json";
@@ -329,9 +329,22 @@ function AuthPage() {
                   onChange={(e) => setRole(e.target.value)}
                   className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base"
                 >
-                  {roles.map((r) => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
+                  {(() => {
+                    const { regular, management } = splitRolesByLevel(roles);
+                    return (
+                      <>
+                        {regular.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                        {management.length > 0 && (
+                          <option disabled value="__divider">──────────</option>
+                        )}
+                        {management.map((r) => (
+                          <option key={r} value={r}>{r}</option>
+                        ))}
+                      </>
+                    );
+                  })()}
                 </select>
               </div>
 

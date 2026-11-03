@@ -35,6 +35,7 @@ mock.module("@/lib/queries", () => ({ parkedCarsQuery: () => ({ queryKey: ["park
 mock.module("@/lib/settings", () => ({ dealershipSettingsQuery: () => ({ queryKey: ["dealership-settings"] }) }));
 mock.module("@/components/BottomBar", () => ({ BottomBar: () => null, HuriLogo: () => null, TopActions: () => null }));
 mock.module("@/components/LotMap", () => ({ LotMap: () => <div data-lot-map /> }));
+mock.module("@/components/PhotoBadge", () => ({ PhotoBadge: () => null }));
 const { Route } = await import("../routes/lot");
 const LotPage = (Route as any).component;
 

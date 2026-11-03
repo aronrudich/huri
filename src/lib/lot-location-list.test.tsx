@@ -4,6 +4,7 @@ import { act, create, type ReactTestRenderer } from "react-test-renderer";
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 let companyCode = "BMWR2985";
+const emptyRows: unknown[] = [];
 const rules = [
   { label: "SERVICE LOT 2", lot_name: "Service Lot", capacity: 1, blockers: [] },
   { label: "SERVICE LOT 10", lot_name: "Service Lot", capacity: 1, blockers: [] },
@@ -28,7 +29,7 @@ mock.module("@/integrations/supabase/client", () => ({ supabase: {
 mock.module("@tanstack/react-query", () => ({
   queryOptions: (options: unknown) => options,
   useQueryClient: () => ({}),
-  useQuery: ({ queryKey }: any) => ({ data: queryKey[0] === "dealership-settings" ? { company_code: companyCode } : queryKey[0] === "company-locations" ? rules : queryKey[0] === "parked-cars" ? cars : queryKey[0] === "car-photo-index" ? {} : [], isError: false }),
+  useQuery: ({ queryKey }: any) => ({ data: queryKey[0] === "dealership-settings" ? { company_code: companyCode } : queryKey[0] === "company-locations" ? rules : queryKey[0] === "parked-cars" ? cars : queryKey[0] === "car-photo-index" ? {} : emptyRows, isError: false }),
 }));
 mock.module("@/lib/car-photos", () => ({ carPhotoIndexQuery: () => ({ queryKey: ["car-photo-index"] }) }));
 mock.module("@/lib/queries", () => ({ parkedCarsQuery: () => ({ queryKey: ["parked-cars"] }), lotActivePickupsQuery: () => ({ queryKey: ["lot-active-pickups"] }) }));

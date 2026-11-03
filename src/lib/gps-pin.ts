@@ -1,7 +1,7 @@
 export const GPS_TARGET_FEET = 20;
 export const GPS_FRESH_MS = 10_000;
 export const GPS_REFINE_MS = 2_000;
-export const GPS_WATCH_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 15_000 };
+export const GPS_WATCH_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 };
 export const GPS_POLISH_MS = 15_000;
 
 export type GpsFix = { latitude: number; longitude: number; accuracyFeet: number; timestamp: number; speed?: number | null };
@@ -48,6 +48,19 @@ export class GpsPinTracker {
     this.fixes = this.fixes.filter((fix) => isFreshGpsFix(fix, this.clock.now()));
     return this.fixes.reduce<GpsFix | null>((best, fix) => !best || fix.accuracyFeet < best.accuracyFeet || (fix.accuracyFeet === best.accuracyFeet && fix.timestamp > best.timestamp) ? fix : best, null);
   }
+  /** Inverse-variance (1/accuracy²) centroid of recent fresh, nearby readings. */
+  averaged(): GpsFix | null {
+    const best = this.best();
+    if (!best) return null;
+    const now = this.clock.now();
+    const pool = this.fixes.filter((f) => now - f.timestamp <= 8_000 && (f.speed == null || f.speed <= 0.5) && f.accuracyFeet <= Math.max(best.accuracyFeet * 2, GPS_TARGET_FEET));
+    if (pool.length < 2) return best;
+    let w = 0, lat = 0, lng = 0;
+    for (const f of pool) { const k = 1 / Math.max(f.accuracyFeet, 1) ** 2; w += k; lat += f.latitude * k; lng += f.longitude * k; }
+    // Report the best single reading's accuracy; averaging is not claimed as extra precision.
+    const accuracyFeet = best.accuracyFeet;
+    return { latitude: lat / w, longitude: lng / w, accuracyFeet, timestamp: best.timestamp, speed: best.speed };
+  }
   start() {
     if (this.watchId !== null) return;
     const generation = ++this.generation;
@@ -73,7 +86,7 @@ export class GpsPinTracker {
   acquire(): Promise<GpsFix> {
     if (this.pending) return Promise.reject(new Error("GPS acquisition already in progress."));
     this.start();
-    const best = this.best();
+    const best = this.averaged();
     if (best) return Promise.resolve(best);
     return new Promise((resolve, reject) => {
       const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading yet. GPS is still acquiring; try again shortly.")), GPS_REFINE_MS);
@@ -106,7 +119,7 @@ export class GpsPinTracker {
     if (!pending) return;
     this.pending = null;
     this.clock.clearTimeout(pending.timer);
-    if (fix) pending.resolve(fix);
+    if (fix) pending.resolve(this.averaged() ?? fix);
     else pending.reject(error ?? new Error("GPS acquisition stopped."));
   }
   stop() {

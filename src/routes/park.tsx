@@ -140,10 +140,10 @@ function ParkPage() {
           // The existing database trigger records the location audit with the car write.
           // Only independent car/request writes run concurrently; never duplicate that audit.
           const carWrite = carId
-            ? supabase.from("parked_cars").update({ ...coords, lot_position: "GPS PIN", parked_by: user.id })
+            ? supabase.from("parked_cars").update({ ...coords, lot_position: "GPS", parked_by: user.id })
                 .eq("dealership_id", companyId).eq("id", carId)
             : supabase.from("parked_cars").insert({
-                dealership_id: companyId, ro_number: target, lot_position: "GPS PIN", parked_by: user.id, ...coords,
+                dealership_id: companyId, ro_number: target, lot_position: "GPS", parked_by: user.id, ...coords,
               } as never);
           const [carResult, requestResult] = await Promise.all([
             carWrite,
@@ -153,8 +153,8 @@ function ParkPage() {
           // Reflect a successful car save even if propagation needs retrying.
           if (!carResult.error && gps.isMounted()) {
             detailEdits.current.pos = true;
-            setPos("GPS Pin");
-            setSavedPos("GPS PIN");
+            setPos("GPS");
+            setSavedPos("GPS");
             setPinDrop({ accFt, at: coords.pinned_at });
           }
           void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
@@ -166,14 +166,14 @@ function ParkPage() {
           gps.polish(fix, (improved) => {
             const current = pinContext.current;
             if (!gps.isMounted() || document.hidden || !current.allowed || current.userId !== user.id
-              || current.companyId !== companyId || current.ro !== target || normalizeSpot(current.pos) !== "GPS PIN") return;
+              || current.companyId !== companyId || current.ro !== target || normalizeSpot(current.pos) !== "GPS") return;
             const improvedCoords = {
               latitude: improved.latitude, longitude: improved.longitude,
               accuracy_ft: Math.round(improved.accuracyFeet), pinned_at: new Date(improved.timestamp).toISOString(),
             };
             void (async () => {
               const { data: updated, error } = await supabase.from("parked_cars").update(improvedCoords)
-                .eq("dealership_id", companyId).eq("ro_number", target).eq("lot_position", "GPS PIN")
+                .eq("dealership_id", companyId).eq("ro_number", target).in("lot_position", ["GPS", "GPS PIN"])
                 .eq("pinned_at", coords.pinned_at).select("id");
               if (error || !updated?.length) return;
               await supabase.from("pickup_requests").update(improvedCoords).eq("dealership_id", companyId)

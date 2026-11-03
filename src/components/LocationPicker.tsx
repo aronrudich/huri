@@ -22,6 +22,7 @@ const OPTIONS: { id: LocationChoice; label: string; detail: string }[] = [
   { id: "UNKNOWN", label: "Unknown", detail: "Not In A Spot" },
 ];
 // Shown when the car currently sits at TAKEN, but never offered as a manual choice.
+const GPS_OPTION = { id: "GPS" as LocationChoice, label: "GPS", detail: "GPS Pin" };
 const TAKEN_OPTION = { id: "TAKEN" as LocationChoice, label: "Taken", detail: "Taken by Customer" };
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
@@ -72,7 +73,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   };
 
 
-  const selected = choice === "TAKEN" ? TAKEN_OPTION : OPTIONS.find((option) => option.id === choice);
+  const selected = choice === "TAKEN" ? TAKEN_OPTION : choice === "GPS" ? GPS_OPTION : OPTIONS.find((option) => option.id === choice);
 
   if (settings && settings.company_code !== "JCD29854") return <div>
     <label className="mb-1 block text-xs font-medium text-muted-foreground">Location</label>

@@ -21,7 +21,6 @@ import { TabPrefetcher } from "@/components/TabPrefetcher";
 import { useRealtimeRecovery } from "@/lib/realtime-recovery";
 import { useAppUpdate } from "@/lib/app-update";
 import { PullToRefresh } from "@/components/PullToRefresh";
-import { ConnectionBanner } from "@/components/ConnectionBanner";
 import { GpsPinProvider } from "@/lib/use-gps-pin";
 
 function NotFoundComponent() {
@@ -143,7 +142,6 @@ function RootComponent() {
 
         <NotificationGate />
         <PendingGate />
-        <ConnectionBanner />
         <Toaster position="top-center" />
       </AuthProvider>
     </QueryClientProvider>

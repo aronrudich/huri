@@ -176,3 +176,9 @@ test("polish cannot follow a walking employee or a distant tighter fix", async (
   s.advance(1_000); s.emit(7, 52_000, 34.001);
   expect(corrections).toHaveLength(0); s.tracker.stop();
 });
+import { normalizeSpot, locationChoice, isCustomSpot } from "./lot";
+test("GPS pin location is its own choice, never a custom Other location", () => {
+  expect(normalizeSpot("GPS PIN")).toBe("GPS");
+  expect(locationChoice("GPS")).toBe("GPS");
+  expect(isCustomSpot("GPS")).toBe(false);
+});

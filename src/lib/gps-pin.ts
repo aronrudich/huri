@@ -57,7 +57,8 @@ export class GpsPinTracker {
     if (pool.length < 2) return best;
     let w = 0, lat = 0, lng = 0;
     for (const f of pool) { const k = 1 / Math.max(f.accuracyFeet, 1) ** 2; w += k; lat += f.latitude * k; lng += f.longitude * k; }
-    const accuracyFeet = Math.max(1, Math.min(best.accuracyFeet, 1 / Math.sqrt(w)));
+    // Report the best single reading's accuracy; averaging is not claimed as extra precision.
+    const accuracyFeet = best.accuracyFeet;
     return { latitude: lat / w, longitude: lng / w, accuracyFeet, timestamp: best.timestamp, speed: best.speed };
   }
   start() {

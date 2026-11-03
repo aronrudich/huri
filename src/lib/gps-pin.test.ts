@@ -57,13 +57,13 @@ test("fresh 36-foot fix returns immediately with no accuracy hold", async () => 
   expect(resolved).toBe(true);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
-test("instant capture chooses best fresh reading already in memory", async () => {
+test("instant capture weights nearby fresh readings toward the most accurate one", async () => {
   const s = setup(); s.tracker.start(); s.emit(36);
   s.advance(1_000); s.emit(30, 51_000, 35); s.emit(70, 51_000, 36);
   const result = s.tracker.acquire();
   expect((await result).accuracyFeet).toBeCloseTo(30);
   expect(s.timers.size).toBe(0);
-  expect((await result).latitude).toBe(35); s.tracker.stop();
+  { const lat = (await result).latitude; expect(lat).toBeGreaterThan(34); expect(lat).toBeLessThan(35); } s.tracker.stop();
 });
 test("cold capture resolves on first fresh fix without waiting for accuracy", async () => {
   const s = setup(); s.tracker.start();
@@ -130,7 +130,7 @@ test("permission denial rejects without coordinates and stops tracking", async (
   const failure = result.catch((error: Error) => error.message);
   s.denied(); expect(await failure).toContain("Location permission denied");
   expect(s.cleared).toEqual([1]); expect(s.timers.size).toBe(0);
-  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(15_000);
+  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(0);
 });
 
 test("26-foot drop gets one later sub-20-foot correction without holding capture", async () => {

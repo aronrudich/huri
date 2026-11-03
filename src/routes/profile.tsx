@@ -29,6 +29,9 @@ import { LocationTestCard } from "@/components/LocationTestCard";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole, splitRolesByLevel } from "@/lib/roles";
 import { isAronEmail } from "@/lib/aron";
+import { useQueryClient } from "@tanstack/react-query";
+import { listSwitchableDealerships, switchActiveDealership } from "@/lib/dealership-switch.functions";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [
@@ -50,6 +53,7 @@ type PendingRole = { id: string; full_name: string; nickname: string | null; ema
 
 function ProfilePage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user, profile, loading, refreshProfile } = useAuth();
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">("default");
   const [notifOn, setNotifOn] = useState(true);
@@ -64,11 +68,16 @@ function ProfilePage() {
   const [dealershipName, setDealershipName] = useState<string>("");
   const [companyCode, setCompanyCode] = useState<string>("");
   const [photo, setPhoto] = useState<{ url: string; name: string } | null>(null);
+  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
+  const [switching, setSwitching] = useState(false);
+  const privateSwitcher = isAronEmail(profile?.email);
+  const listCompanies = useServerFn(listSwitchableDealerships);
+  const switchCompany = useServerFn(switchActiveDealership);
 
   const isOwner = !!profile?.is_owner;
   const role = profile?.role_name ?? "";
   const isAdmin = isOwner || isAdminRole(role);
-  const isApprover = isAdmin;
+  const isApprover = isOwner || isUpperManagementRole(role);
   // Spectators see everything management sees, read-only (isAdmin stays false).
   const canViewRoster =
     isOwner || MANAGEMENT_ROLES.includes(role) || isSpectatorRole(role) || /manager|director/i.test(role);
@@ -125,7 +134,7 @@ function ProfilePage() {
           }),
         ),
       );
-  }, [canViewRoster]);
+  }, [canViewRoster, profile?.dealership_id]);
 
 
 
@@ -150,7 +159,29 @@ function ProfilePage() {
     const t = setInterval(loadPending, 15000);
     return () => clearInterval(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isApprover]);
+  }, [isApprover, profile?.dealership_id]);
+
+  useEffect(() => {
+    if (!privateSwitcher) return;
+    let cancelled = false;
+    void listCompanies().then((rows) => { if (!cancelled) setCompanies(rows); }).catch(() => { if (!cancelled) toast.error("Could not load dealerships"); });
+    return () => { cancelled = true; };
+  }, [privateSwitcher]);
+
+  const handleSwitch = async (dealershipId: string) => {
+    if (switching || dealershipId === profile?.dealership_id) return;
+    setSwitching(true);
+    try {
+      await queryClient.cancelQueries();
+      await switchCompany({ data: { dealershipId } });
+      queryClient.clear(); clearPersistedQueryCache();
+      setStaff([]); setPending({ accounts: [], roleChanges: [] });
+      setSearch(""); setDealershipName(""); setCompanyCode("");
+      await refreshProfile();
+      // Reload to discard route-local retained rows and live listeners; auth storage is untouched.
+      window.location.assign("/profile");
+    } catch (error) { toast.error((error as Error).message); setSwitching(false); }
+  };
 
 
   const logout = async () => { clearPersistedQueryCache(); await supabase.auth.signOut(); navigate({ to: "/auth", replace: true }); };
@@ -271,7 +302,13 @@ function ProfilePage() {
               <Pencil className="h-3.5 w-3.5" /> Edit
             </button>
           </div>
-          {dealershipName && <Row label="Dealership" value={dealershipName} />}
+          {privateSwitcher ? <label className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-sm">
+            <span className="text-muted-foreground">Dealership</span>
+            <select aria-label="Active dealership" disabled={switching} value={profile.dealership_id ?? ""} onChange={(e) => void handleSwitch(e.target.value)} className="max-w-full rounded-lg border border-input bg-background px-3 py-2 text-base">
+              {!companies.length && <option value={profile.dealership_id ?? ""}>{dealershipName || "Loading…"}</option>}
+              {companies.map((company) => <option key={company.id} value={company.id}>{company.name}</option>)}
+            </select>
+          </label> : dealershipName && <Row label="Dealership" value={dealershipName} />}
           {companyCode && (isOwner || isUpperManagementRole(role)) && (
             <div className="flex items-center gap-3 border-t border-border px-4 py-3">
               <div className="min-w-0 flex-1">

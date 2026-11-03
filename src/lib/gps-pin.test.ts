@@ -12,7 +12,7 @@ function setup() {
   const changed: (GpsFix | null)[] = [];
   const tracker = new GpsPinTracker({
     watchPosition: (ok, error, options) => {
-      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 15_000 });
+      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 });
       success = ok; failure = error ?? (() => {}); return ++watchCount;
     },
     clearWatch: (id) => { cleared.push(id); },

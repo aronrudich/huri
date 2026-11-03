@@ -15,7 +15,7 @@ import { isActiveCar } from "@/lib/car-loading";
 import { isCompanyEvent } from "@/lib/tenant-events";
 import { companyLocationsQuery } from "@/lib/company-locations";
 import { dealershipSettingsQuery } from "@/lib/settings";
-import { CompanyLotGrid } from "@/components/CompanyLotGrid";
+import { carLocationGroup, configuredSpotBadge, lotFilterNames, matchesLocationFilter } from "@/lib/location-display";
 
 
 
@@ -59,6 +59,7 @@ function LotPage() {
   const isJcd = settings?.company_code === "JCD29854";
   const [q, setQ] = useState("");
   const [tab, setTab] = useState<LotId>("sv");
+  const [locationFilter, setLocationFilter] = useState("All Locations");
   const [pickupSpots, setPickupSpots] = useState<Set<string>>(new Set());
   const [stagedSpots, setStagedSpots] = useState<Set<string>>(new Set());
   // Empty SV stall tapped on the map (spot label), shown in a details modal.
@@ -71,6 +72,20 @@ function LotPage() {
   // back to this tab paints the previous map instantly.
   const { data: carsData = [], isError: carsLoadFailed } = useQuery({ ...parkedCarsQuery(), enabled: !!user });
   const cars = carsData as ParkedCar[];
+  const locationFilters = useMemo(() => lotFilterNames(locationRules, settings?.company_code), [locationRules, settings?.company_code]);
+  useEffect(() => { setLocationFilter("All Locations"); }, [profile?.dealership_id]);
+  useEffect(() => {
+    if (locationFilter !== "All Locations" && !locationFilters.includes(locationFilter)) setLocationFilter("All Locations");
+  }, [locationFilters, locationFilter]);
+  const configuredCars = useMemo(() => cars.filter((car) => matchesLocationFilter(car.lot_position, locationFilter, locationRules)).sort((a, b) => {
+    const groupA = carLocationGroup(a.lot_position, locationRules);
+    const groupB = carLocationGroup(b.lot_position, locationRules);
+    return groupA.localeCompare(groupB, undefined, { numeric: true }) || a.lot_position.localeCompare(b.lot_position, undefined, { numeric: true }) || (a.ro_number ?? "").localeCompare(b.ro_number ?? "");
+  }), [cars, locationFilter, locationRules]);
+  const filteredConfiguredCars = useMemo(() => {
+    const term = q.trim().toLowerCase();
+    return configuredCars.filter((car) => !term || [car.ro_number, car.tag_number, car.car_model, car.lot_position].some((value) => value?.toLowerCase().includes(term)));
+  }, [configuredCars, q]);
   const { data: activePickupsData = [] } = useQuery({ ...lotActivePickupsQuery(), enabled: !!user });
   const activePickups = activePickupsData as ActivePickup[];
 
@@ -201,16 +216,17 @@ function LotPage() {
   // Photo lookups only for cars shown on the current tab (not the whole lot);
   // keyed by tab, not search text, so typing doesn't refetch.
   const photoRos = useMemo(() => {
+    if (!isJcd) return configuredCars.map((car) => car.ro_number ?? "");
     const onTab = tab === "sv" ? Object.values(byPos) : tab === "cp" ? carsInCP : tab === "bl" ? carsInBL : [];
     return [...onTab, ...carsOffLot].map((c) => c.ro_number ?? "");
-  }, [tab, byPos, carsInCP, carsInBL, carsOffLot]);
+  }, [isJcd, configuredCars, tab, byPos, carsInCP, carsInBL, carsOffLot]);
   const { data: photosByRo = {} } = useQuery(carPhotoIndexQuery(photoRos));
 
 
   // Cross-lot search: auto-switch tab if the query matches a car in another lot.
   useEffect(() => {
     const n = q.trim().toLowerCase();
-    if (!n) return;
+    if (!isJcd || !n) return;
     const matches = (c: ParkedCar) =>
       c.lot_position?.toLowerCase().includes(n) ||
       c.tag_number?.toLowerCase().includes(n) ||
@@ -225,13 +241,13 @@ function LotPage() {
         return;
       }
     }
-  }, [q, cars, tab]);
+  }, [isJcd, q, cars, tab]);
 
   // Live dropdown suggestions across every lot, like the Park tab.
   const suggestions = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return [];
-    return cars
+    return (isJcd ? cars : configuredCars)
       .filter((c) =>
         c.ro_number?.toLowerCase().includes(n) ||
         c.tag_number?.toLowerCase().includes(n) ||
@@ -239,7 +255,7 @@ function LotPage() {
         c.lot_position?.toLowerCase().includes(n),
       )
       .slice(0, 8);
-  }, [cars, q]);
+  }, [isJcd, configuredCars, cars, q]);
 
   const filled = tab === "sv" ? spots.filter((s) => byPos[s]).length : 0;
 
@@ -306,6 +322,12 @@ function LotPage() {
           ))}
         </div>}
 
+        {!isJcd && <select aria-label="Lot location" value={locationFilter} onChange={(event) => { setLocationFilter(event.target.value); setSuggestOpen(false); }} className="mt-3 w-full rounded-lg border border-input bg-background px-3 py-3 text-base">
+          {["All Locations", ...locationFilters].map((name) => <option key={name} value={name}>
+            {name === "Other" ? "Other / Custom" : name} ({cars.filter((car) => matchesLocationFilter(car.lot_position, name, locationRules)).length})
+          </option>)}
+        </select>}
+
         <p className="px-1 pt-1 text-[11px] text-muted-foreground">
            {isJcd ? tab === "sv" ? `${filled} of ${spots.length} SV spots occupied` : tab === "cp" ? `${carsInCP.length} cars in CP` : `${carsInBL.length} cars in BL` : `${cars.length} cars`}
         </p>
@@ -314,10 +336,20 @@ function LotPage() {
 
 
 
-      {!isJcd ? <div className="space-y-4 px-3">
-        <CompanyLotGrid rules={locationRules.filter((r)=>!q.trim() || r.label.toLowerCase().includes(q.toLowerCase()) || cars.some((c)=>c.lot_position===r.label && c.ro_number?.includes(q)))} cars={cars} onSelect={(car)=>navigate({to:"/park",search:{id:car.id}})} onSelectEmpty={setEmptySpot} />
-        <ul>{cars.filter((c)=>!q.trim() || `${c.ro_number} ${c.car_model} ${c.lot_position}`.toLowerCase().includes(q.toLowerCase())).map((car)=><li key={car.id} className="border-b border-border py-3"><Link to="/park" search={{id:car.id}} className="flex justify-between gap-3 text-sm"><span>{car.ro_number} · {car.car_model}</span><span>{locationLabel(car.lot_position,car.bay_tech)}</span></Link></li>)}</ul>
-      </div> : tab === "sv" ? (
+      {!isJcd ? <ul className="mx-3 overflow-hidden rounded-lg bg-background">
+        {filteredConfiguredCars.map((car) => <li key={car.id} className="border-b border-border last:border-b-0">
+          <Link to="/park" search={{ id: car.id }} className="flex items-center gap-3 px-4 py-3 active:bg-accent">
+            <span className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden rounded-full bg-primary/10 text-[10px] font-bold text-primary">{configuredSpotBadge(car.lot_position, locationRules)}</span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-semibold">{car.ro_number ? `RO #${car.ro_number}` : "No RO #"}{car.car_model && <span className="text-muted-foreground"> · {car.car_model}</span>}</p>
+              <p className="truncate text-xs text-muted-foreground">{locationLabel(car.lot_position, car.bay_tech)}</p>
+              {car.notes && <p className="truncate text-xs text-warning">Note: {car.notes}</p>}
+            </div>
+            {car.ro_number && photosByRo[car.ro_number.trim()]?.length ? <PhotoBadge photos={photosByRo[car.ro_number.trim()]} ro={car.ro_number} /> : null}
+          </Link>
+        </li>)}
+        {filteredConfiguredCars.length === 0 && <li className="px-4 py-6 text-center text-sm text-muted-foreground">{carsLoadFailed && cars.length === 0 ? "Loading cars… reconnecting to Huri." : q.trim() ? "No matching cars." : locationFilter === "All Locations" ? "No cars in any location." : `No cars in ${locationFilter === "Other" ? "Other / Custom" : locationFilter}.`}</li>}
+      </ul> : tab === "sv" ? (
         <div className="px-3">
           <LotMap
             spots={filteredNumbered.map(({ spot }) => spot)}

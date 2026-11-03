@@ -1342,10 +1342,6 @@ export type Database = {
         Args: { _inquiry_id: string; _user_id: string }
         Returns: undefined
       }
-      switch_active_dealership: {
-        Args: { _dealership_id: string }
-        Returns: string
-      }
       transfer_company_ownership: {
         Args: { _user_id: string }
         Returns: undefined

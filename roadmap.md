@@ -1,4 +1,9 @@
 # Roadmap
+## BMW Riverside onboarding (Nov 3)
+- [ ] Create BMW Riverside with configured locations and 21 all-occupied blocker rules; preserve JCD.
+- [ ] Add configured location selector and lot sections, management pickup notifications and pending approvals.
+- [ ] Add authenticated Aron-only company switch with tenant-safe cache and local state cleanup.
+- [ ] Run regressions and verify available live flows; do not publish.
 ## Rapid capture, bounded precision polish and supervisor reports (Nov 2)
 - [x] Reuse the 15-second device cache while retaining fresh-fix validation and immediate capture.
 - [x] Add one guarded precision correction within 15 seconds of the captured fix; cancel on navigation, hiding, changed RO/location, Save or authorization loss. Reject moving/distant fixes and compare saved timestamp/location before writes.

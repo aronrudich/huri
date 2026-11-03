@@ -24,7 +24,7 @@ import { PhotoBadge } from "@/components/PhotoBadge";
 import { searchCars } from "@/lib/directory.functions";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { claimHideMilliseconds, isClaimWithinWindow } from "@/lib/pickup-window";
-import { companyLocationsQuery, blockersForLocation } from "@/lib/company-locations";
+import { companyLocationsQuery, occupiedBlockers } from "@/lib/company-locations";
 import { CompanyLotGrid } from "@/components/CompanyLotGrid";
 import { activePickupPins } from "@/lib/pickup-pins";
 import { Button } from "@/components/ui/button";
@@ -519,8 +519,7 @@ function PickupPage() {
           // spot snapshot and no live car row — say so instead of "Unknown".
           const hasCarRecord = !isParts && (!!liveCar || (!!p.lot_position && p.lot_position !== "UNKNOWN" && p.lot_position !== "TAKEN") || p.status !== "unclaimed");
           const isSvSpot = isJcd ? lotOf(effectiveSpot) === "sv" : locationRules.some((r)=>r.label===effectiveSpot);
-          const adj = blockersForLocation(effectiveSpot, locationRules, isJcd);
-          const blockers = adj.map((pos: string) => carsByPos[pos]).filter(Boolean) as ParkedCar[];
+          const blockers = occupiedBlockers(effectiveSpot, locationRules, isJcd, carsByPos);
 
           const isStaged = !!p.is_staged;
           // Mirrors the database rule: management overrides; valets cancel only

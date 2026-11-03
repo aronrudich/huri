@@ -34,14 +34,14 @@ export type PickupDeliveryResult = {
   atCp?: boolean;
 };
 
-import { VALET_ROLES } from "./roles";
+import { PICKUP_NOTIFICATION_ROLES } from "./roles";
 
 const PARTS_ROLES = [
   "Technician", "Shop Foreman", "Manager", "Assistant Service Manager",
   "Parts Manager", "Director", "Admin", "Service Manager", "Service Director", "General Manager",
 ];
 
-const RECIPIENT_ROLES = [...VALET_ROLES, "Admin"];
+const RECIPIENT_ROLES = PICKUP_NOTIFICATION_ROLES;
 
 function payloadFor(data: PickupSubmission, pickupId: string) {
   const isTech = data.sourceRole === "Technician" || data.sourceRole === "Shop Foreman";
@@ -129,7 +129,7 @@ async function mergeIntoEtaRequest(
   return { ...result, pickupId: eta.id, mergedEta: true, atCp };
 }
 
-const ARRIVAL_ROLES = ["Valet", "Valet Supervisor", "Admin"];
+const ARRIVAL_ROLES = PICKUP_NOTIFICATION_ROLES;
 
 async function pushToRoles(dealershipId: string, roles: string[], payload: object, pickupId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

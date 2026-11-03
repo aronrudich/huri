@@ -162,6 +162,20 @@
       "when": 1793580059065,
       "tag": "0022_gps_pins_test_mode_ro_digits",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793680932227,
+      "tag": "0023_huri_support_dealership_switch",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793680956299,
+      "tag": "0024_remove_unused_switch_rpc",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { companyLocationsQuery } from "@/lib/company-locations";
+import { ConfiguredLocationPicker } from "./ConfiguredLocationPicker";
 
 type LocationPickerProps = {
   value: string;
@@ -75,6 +76,7 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
 
   const selected = choice === "TAKEN" ? TAKEN_OPTION : choice === "GPS" ? GPS_OPTION : OPTIONS.find((option) => option.id === choice);
 
+  if (settings && settings.company_code !== "JCD29854" && rules.length) return <ConfiguredLocationPicker value={value} onChange={onChange} rules={rules} required={required} />;
   if (settings && settings.company_code !== "JCD29854") return <div>
     <label className="mb-1 block text-xs font-medium text-muted-foreground">Location</label>
     <input value={value} onChange={(e)=>onChange(e.target.value)} maxLength={60} required={required} list="company-location-options" className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base" />

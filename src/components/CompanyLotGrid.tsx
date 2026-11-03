@@ -6,10 +6,10 @@ export function CompanyLotGrid({ rules, cars, highlight, pickupSpots, onSelect, 
   rules: LocationRule[]; cars: Car[]; highlight?: string | null; pickupSpots?: Set<string>;
   onSelect?: (car: Car) => void; onSelectEmpty?: (spot: string) => void;
 }) {
-  const lots = [...new Set(rules.map((r) => r.lot_name))];
+  const lots = [...new Set(rules.map((r) => r.lot_name))].sort((a, b) => Number(rules.some((r) => r.lot_name === b && r.capacity === 1)) - Number(rules.some((r) => r.lot_name === a && r.capacity === 1)) || a.localeCompare(b));
   return <div className="space-y-5">{lots.map((lot) => <section key={lot}>
     <h2 className="mb-2 text-sm font-semibold">{lot}</h2>
-    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">{rules.filter((r) => r.lot_name === lot).map((rule) => {
+    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-6">{rules.filter((r) => r.lot_name === lot).sort((a, b) => a.label.localeCompare(b.label, undefined, { numeric: true })).map((rule) => {
       const occupants = cars.filter((c) => c.lot_position.toUpperCase() === rule.label);
       const car = occupants[0];
       const selected = highlight === rule.label || pickupSpots?.has(rule.label);

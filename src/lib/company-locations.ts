@@ -14,7 +14,14 @@ export const companyLocationsQuery = (companyId?: string | null) => queryOptions
 });
 
 export function blockersForLocation(label: string | null, rules: LocationRule[], isJcd: boolean): string[] {
-  const rule = rules.find((r) => r.label === label);
+  const rule = rules.find((r) => r.label === label?.trim().toUpperCase());
   if (rule) return rule.blockers;
   return isJcd ? adjacentSpots(label) : [];
+}
+
+/** Configured multi-exit spots block only when every exit is occupied. JCD retains its tandem behavior. */
+export function occupiedBlockers<T extends { lot_position: string }>(label: string | null, rules: LocationRule[], isJcd: boolean, carsBySpot: Record<string, T>): T[] {
+  const labels = blockersForLocation(label, rules, isJcd);
+  const cars = labels.map((spot) => carsBySpot[spot]).filter((car): car is T => !!car && car.lot_position !== "TAKEN");
+  return !isJcd && cars.length !== labels.length ? [] : cars;
 }

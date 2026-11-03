@@ -21,6 +21,7 @@ import { parkedCarsQuery, pinnedCarsQuery, type ParkedCarRow, type PinnedCarRow 
 import { mergeLoadedCarDetails } from "@/lib/car-loading";
 import { useGpsPin } from "@/lib/use-gps-pin";
 import { Button } from "@/components/ui/button";
+import { companyLocationsQuery, occupiedBlockers } from "@/lib/company-locations";
 
 // Leaflet is browser-only: the satellite map loads lazily after hydration.
 const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
@@ -97,6 +98,7 @@ function ParkPage() {
 
   const role = profile?.role_name ?? "";
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
+  const { data: locationRules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
   const hideModel = isTechRole(role);
   // Private GPS pin-drop test controls — Aron's accounts only.
   const isAron = isAronEmail(user?.email);
@@ -418,7 +420,7 @@ function ParkPage() {
             )}
           </div>
         )}
-        {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} />}
+        {editing && <BlockingInfo spot={savedPos} carsBySpot={carsBySpot} bayTech={bayTech} rules={locationRules} isJcd={settings?.company_code === "JCD29854"} />}
         {washedAt && (
           <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
             <CheckCircle2 className="h-4 w-4" /> Washed · {format(new Date(washedAt), "MMM d, yyyy")}
@@ -565,15 +567,13 @@ function ParkPage() {
 
 /** Small "who's in the way" panel for the loaded car. SV is the only lot with
  *  numbered, stacked spots, so it's the only lot with real blocking info. */
-function BlockingInfo({ spot, carsBySpot, bayTech }: { spot: string | null; carsBySpot: Record<string, MapCar>; bayTech?: string | null }) {
+function BlockingInfo({ spot, carsBySpot, bayTech, rules, isJcd }: { spot: string | null; carsBySpot: Record<string, MapCar>; bayTech?: string | null; rules: import("@/lib/company-locations").LocationRule[]; isJcd: boolean }) {
   const normalized = normalizeSpot(spot);
-  const isSv = lotOf(normalized) === "sv";
-  const blockedBy = isSv
-    ? (adjacentSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
-    : [];
-  const blocking = isSv
+  const isSv = isJcd ? lotOf(normalized) === "sv" : rules.some((r) => r.label === normalized);
+  const blockedBy = occupiedBlockers(normalized, rules, isJcd, carsBySpot);
+  const blocking = isJcd && isSv
     ? (blockedSpots(normalized).map((s) => carsBySpot[s]).filter(Boolean) as MapCar[])
-    : [];
+    : Object.values(carsBySpot).filter((car) => occupiedBlockers(car.lot_position, rules, isJcd, carsBySpot).some((blocker) => blocker.lot_position === normalized));
   const describe = (c: MapCar) =>
     `${c.lot_position} (${c.ro_number ? `RO #${c.ro_number}` : "no RO"}${c.car_model ? ` · ${c.car_model}` : ""})`;
 

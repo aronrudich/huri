@@ -7,6 +7,7 @@
 export type ActionId = "pickup" | "new" | "stage" | "parts" | "park" | "bringme" | "wash" | "reports" | "flagged" | "settings" | "help";
 
 export const VALET_ROLES = ["Valet", "Valet Supervisor"];
+export const PICKUP_NOTIFICATION_ROLES = [...VALET_ROLES, "Admin", "Service Manager", "Service Director", "General Manager"];
 
 /** Every role a user can be assigned, in display order. */
 export const ROLE_OPTIONS = [

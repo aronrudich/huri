@@ -1,4 +1,10 @@
 # Roadmap
+## BMW Riverside onboarding (Nov 3)
+- [x] Created BMWR2985 / bmw-riverside with 128 numbered spots, five named shared areas, nine lot definitions and 21 dual-blocker rules. Verified JCD code, slug and 60-minute claim window unchanged. BMW service hours temporarily use existing defaults; actual schedule not supplied.
+- [x] Added configured selector and naturally ordered lot sections, shared management notification recipients across submissions and arrivals, and management approval UI. Signup remains pending and notifications default true; no BMW accounts existed during validation.
+- [x] Added confirmed-auth Aron-only company switch with caller-only profile update, cache clearing and page reload that preserves auth storage. Ordinary users retain existing same-company RLS and cannot list or switch companies.
+- [x] All 97 tests passed independently; current preview build OK. BMW public arrival page shows company name and configured closed-hours state; signed-out Profile reaches Sign In with no switch or runtime errors. Nothing published; company setup was applied to the shared backend.
+- [ ] Live signed-in company-switch, first BMW approval and Park-to-Lot acceptance blocked: automatic requesting-user session mint found no matching account; requires preview sign-in. Controlled tests verify switch authorization and BMW picker/blocker behavior, not complete live tenant isolation.
 ## Rapid capture, bounded precision polish and supervisor reports (Nov 2)
 - [x] Reuse the 15-second device cache while retaining fresh-fix validation and immediate capture.
 - [x] Add one guarded precision correction within 15 seconds of the captured fix; cancel on navigation, hiding, changed RO/location, Save or authorization loss. Reject moving/distant fixes and compare saved timestamp/location before writes.

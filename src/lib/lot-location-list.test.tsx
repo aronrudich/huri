@@ -31,6 +31,8 @@ mock.module("@tanstack/react-query", () => ({
   useQuery: ({ queryKey }: any) => ({ data: queryKey[0] === "dealership-settings" ? { company_code: companyCode } : queryKey[0] === "company-locations" ? rules : queryKey[0] === "parked-cars" ? cars : queryKey[0] === "car-photo-index" ? {} : [], isError: false }),
 }));
 mock.module("@/lib/car-photos", () => ({ carPhotoIndexQuery: () => ({ queryKey: ["car-photo-index"] }) }));
+mock.module("@/lib/queries", () => ({ parkedCarsQuery: () => ({ queryKey: ["parked-cars"] }), lotActivePickupsQuery: () => ({ queryKey: ["lot-active-pickups"] }) }));
+mock.module("@/lib/settings", () => ({ dealershipSettingsQuery: () => ({ queryKey: ["dealership-settings"] }) }));
 mock.module("@/components/BottomBar", () => ({ BottomBar: () => null, HuriLogo: () => null, TopActions: () => null }));
 mock.module("@/components/LotMap", () => ({ LotMap: () => <div data-lot-map /> }));
 const { Route } = await import("../routes/lot");

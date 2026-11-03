@@ -1,8 +1,8 @@
 import { sendWebPush, isStalePushStatus, isBadSubscriptionStatus } from "./push-server.server";
-import { VALET_ROLES } from "./roles";
+import { PICKUP_NOTIFICATION_ROLES } from "./roles";
 
 /** Roles that get the ding when a customer sets an arrival time. */
-const RECIPIENT_ROLES = [...VALET_ROLES, "Admin"];
+const RECIPIENT_ROLES = PICKUP_NOTIFICATION_ROLES;
 
 /** Milliseconds between UTC and the company's own clock at a given moment. */
 export function timezoneOffsetMs(timeZone: string, at: Date): number {

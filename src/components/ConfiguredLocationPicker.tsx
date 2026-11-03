@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import type { LocationRule } from "@/lib/company-locations";
 
 export function configuredLocationOptions(rules: LocationRule[]) {
-  return [...new Set(rules.map((rule) => rule.lot_name)), "Technician Bay", "Other", "Unknown"].filter((name, i, all) => all.indexOf(name) === i);
+  const lots = [...new Set(rules.map((rule) => rule.lot_name))];
+  lots.sort((a, b) => Number(rules.some((r) => r.lot_name === b && r.capacity === 1)) - Number(rules.some((r) => r.lot_name === a && r.capacity === 1)) || a.localeCompare(b, undefined, { numeric: true }));
+  return [...lots, "Technician Bay", "Other", "Unknown"].filter((name, i, all) => all.indexOf(name) === i);
 }
 
 export function ConfiguredLocationPicker({ value, onChange, rules, required }: { value: string; onChange: (value: string) => void; rules: LocationRule[]; required?: boolean }) {
@@ -17,7 +19,8 @@ export function ConfiguredLocationPicker({ value, onChange, rules, required }: {
     if (rule) { setChoice(rule.lot_name); setDetail(rule.capacity === 1 ? rule.label.replace(`${rule.lot_name.toUpperCase()} `, "") : ""); }
     else { setChoice(next === "BAY" ? "Technician Bay" : next === "UNKNOWN" ? "Unknown" : next ? "Other" : ""); setDetail(next === "BAY" || next === "UNKNOWN" ? "" : next); }
   };
-  useEffect(() => { sync(value); }, [rules]);
+  const ruleSignature = JSON.stringify(rules);
+  useEffect(() => { sync(value); }, [ruleSignature]);
   useEffect(() => { if (value !== emitted.current) { emitted.current = value; sync(value); } }, [value]);
   const emit = (next: string) => { emitted.current = next; onChange(next); };
   const numbered = rules.filter((r) => r.lot_name === choice && r.capacity === 1);
@@ -40,6 +43,6 @@ export function ConfiguredLocationPicker({ value, onChange, rules, required }: {
       }} className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-3 text-base" />
     </label>}
     {choice === "Other" && <input aria-label="Other location" value={detail} maxLength={60} onChange={(e) => { setDetail(e.target.value); emit(e.target.value); }} className="w-full rounded-lg border border-input bg-background px-3 py-3 text-base" />}
-    {choice && <Button type="button" variant="ghost" size="sm" onClick={() => { setChoice(""); setDetail(""); emit(""); }}>Clear location</Button>}
+    {choice && <Button type="button" className="bg-muted text-foreground" onClick={() => { setChoice(""); setDetail(""); emit(""); }}>Clear location</Button>}
   </div>;
 }

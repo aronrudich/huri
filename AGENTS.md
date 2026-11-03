@@ -20,6 +20,8 @@
 - Store new photo objects under company-qualified paths and authorize legacy paths through company photo records; this prevents duplicate-RO collisions while retaining existing photos.
 - Provision the first owner only through the authenticated Support approval flow and transfer ownership atomically; ordinary signups remain pending.
 - Define physical exclusivity and blockers through explicit company location rules, retaining JCD's established fallback; never infer exclusivity from arbitrary text.
+- Use all-exits-occupied blocking for configured non-JCD rules through the shared occupiedBlockers helper; JCD retains its tandem any-occupied behavior.
+- Dealership switching is an authenticated Support-only server action that verifies confirmed auth identity before privileged profile reassignment; clear queries and reload route-local state without touching auth storage.
 - Share validated company service hours, RO formats, timezone and report boundaries across client and server paths; defaults preserve existing company behavior.
 - Gate every GPS pin-drop, satellite-map and silent-test control through src/lib/aron.ts email checks, and re-verify the caller's email server-side before honoring isTest; this keeps experimental controls invisible and unusable for all other accounts.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.

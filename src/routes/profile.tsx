@@ -31,7 +31,6 @@ import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperMa
 import { isAronEmail } from "@/lib/aron";
 import { useQueryClient } from "@tanstack/react-query";
 import { listSwitchableDealerships, switchActiveDealership } from "@/lib/dealership-switch.functions";
-import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/profile")({
   head: () => ({ meta: [

@@ -1,8 +1,9 @@
 # Roadmap
 ## BMW location lists and profile cleanup (Nov 3)
-- [ ] Apply BMW menu order, legacy Charger alias, and immediate numbered-input focus.
-- [ ] Replace non-JCD Lot grids with counted location filters and searchable car lists; combine BMW W1/W2 only here.
-- [ ] Remove unused Profile tracking card while preserving operational GPS; run regressions and check preview.
+- [x] Apply BMW menu order, legacy Charger alias, and immediate numbered-input focus; browser focus and 1–128 validation checked with isolated picker.
+- [x] Replace non-JCD Lot grids with counted location filters and searchable car lists; combine BMW W1/W2 only here. Controlled real-screen tests verify grouping, numerical sorting, scoped search and unchanged JCD tabs/map.
+- [x] Remove unused Profile tracking card while preserving operational GPS. All 102 independent regressions pass; current preview build OK; isolated picker has no phone overflow or browser errors. No publication or database changes.
+- [ ] Live signed-in BMW Lot/Profile acceptance and iPhone keypad check require preview sign-in and a real device; automatic requesting-user session mint found no matching account.
 ## BMW Riverside onboarding (Nov 3)
 - [x] Created BMWR2985 / bmw-riverside with 128 numbered spots, five named shared areas, nine lot definitions and 21 dual-blocker rules. Verified JCD code, slug and 60-minute claim window unchanged. BMW service hours temporarily use existing defaults; actual schedule not supplied.
 - [x] Added configured selector and naturally ordered lot sections, shared management notification recipients across submissions and arrivals, and management approval UI. Signup remains pending and notifications default true; no BMW accounts existed during validation.

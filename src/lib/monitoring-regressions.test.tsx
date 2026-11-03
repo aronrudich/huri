@@ -226,12 +226,12 @@ test("Aron pin drop saves concurrently and keeps foreground GPS until root unmou
     await act(async () => { releasePinWrites.forEach((release) => release()); await dropping; });
     holdPinWrites = false;
     expect(pinWrites).toEqual([
-      { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString(), lot_position: "GPS PIN", parked_by: "valet" } },
+      { table: "parked_cars", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString(), lot_position: "GPS", parked_by: "valet" } },
       { table: "pickup_requests", values: { latitude: 34.123, longitude: -117.456, accuracy_ft: 13, pinned_at: new Date(timestamp).toISOString() } },
     ]);
     await act(async () => { resolveLoad?.({ data: car, error: null }); });
     await act(async () => { await screen.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
-    expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS PIN" });
+    expect(writes.at(-1)).toMatchObject({ _ro_number: "193626", _position: "GPS" });
     expect(cleared).toEqual([]);
     await act(async () => screen.update(<GpsPinProvider><Pickup /></GpsPinProvider>));
     expect(watches).toBe(1);

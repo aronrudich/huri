@@ -38,6 +38,7 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
           .from("pickup_requests")
           .select("id, dealership_id, ro_number, customer_eta")
           .eq("status", "unclaimed")
+          .or("is_test.is.null,is_test.eq.false")
           .is("eta_notified_at", null)
           .not("customer_eta", "is", null)
           .lte("customer_eta", new Date(Date.now() + 30 * 60_000).toISOString());
@@ -57,14 +58,16 @@ export const Route = createFileRoute("/api/public/hooks/unclaimed-reminder")({
 
         const { data: pending, error } = await supabaseAdmin
           .from("pickup_requests")
-          .select("id, dealership_id, kind, ro_number, advisor_name, customer_name, car_notes, is_staged, created_at, customer_eta")
+          .select("id, dealership_id, kind, ro_number, advisor_name, customer_name, car_notes, is_staged, created_at, customer_eta, is_test")
           .eq("status", "unclaimed")
+          .or("is_test.is.null,is_test.eq.false")
           .is("reminded_at", null);
         if (error) throw error;
 
         const now = Date.now();
         let sent = 0;
         for (const p of pending ?? []) {
+          if (p.is_test) continue; // Test submissions never send reminders.
           const minutes = minutesFor.get(p.dealership_id) ?? DEFAULT_REMIND_MINUTES;
           if (minutes <= 0) continue;
           // Upcoming arrivals count from when they open, not when submitted.

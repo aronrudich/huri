@@ -9,7 +9,7 @@
 // Canonical values are: "UNKNOWN", "BL", "CP", "SV 1".."SV 147", or custom text.
 
 export type LotId = "sv" | "cp" | "bl";
-export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "WASH" | "TAKEN" | "OTHER" | "UNKNOWN" | null;
+export type LocationChoice = "SV" | "CP" | "BL" | "BAY" | "WASH" | "TAKEN" | "GPS" | "OTHER" | "UNKNOWN" | null;
 
 export const MIN_SPOT = 1;
 export const MAX_SPOT = 147;
@@ -26,6 +26,7 @@ export function normalizeSpot(raw: string | null | undefined): string | null {
   if (t === "" || t === "UNKNOWN") return "UNKNOWN";
   if (t === "BL" || t === "CP" || t === "BAY" || t === "WASH" || t === "TAKEN") return t;
   if (t === "TAKEN BY CUSTOMER") return "TAKEN";
+  if (t === "GPS" || t === "GPS PIN") return "GPS";
   if (/^SV\s*[0-9]+$/.test(t)) {
     const n = parseInt(t.replace(/^SV\s*/, ""), 10);
     return n >= MIN_SPOT && t.length <= 60 ? `SV ${n}` : null;
@@ -55,7 +56,7 @@ export function isValidSpot(raw: string): boolean {
 /** True when the spot is a custom location, not SV / CP / BL / BAY / WASH / unknown. */
 export function isCustomSpot(raw: string | null | undefined): boolean {
   const t = normalizeSpot(raw);
-  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL" || t === "BAY" || t === "WASH" || t === "TAKEN") return false;
+  if (!t || t === "UNKNOWN" || t === "CP" || t === "BL" || t === "BAY" || t === "WASH" || t === "TAKEN" || t === "GPS") return false;
   return !/^SV [0-9]+$/.test(t);
 }
 
@@ -64,7 +65,7 @@ export function locationChoice(raw: string | null | undefined): LocationChoice {
   const normalized = normalizeSpot(raw);
   if (!normalized) return null;
   if (normalized === "UNKNOWN") return "UNKNOWN";
-  if (normalized === "CP" || normalized === "BL" || normalized === "BAY" || normalized === "WASH" || normalized === "TAKEN") return normalized;
+  if (normalized === "CP" || normalized === "BL" || normalized === "BAY" || normalized === "WASH" || normalized === "TAKEN" || normalized === "GPS") return normalized;
   if (normalized.startsWith("SV ")) return "SV";
   return "OTHER";
 }

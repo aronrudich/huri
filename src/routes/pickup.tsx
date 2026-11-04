@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Fragment, lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, CheckCircle2, Search, Map as MapIcon, X, Satellite } from "lucide-react";
-import { isAronEmail } from "@/lib/aron";
+import { isGpsAuthorizedEmail } from "@/lib/aron";
 import { supabase } from "@/integrations/supabase/client";
 import { useRealtimeGeneration, handleChannelStatus } from "@/lib/realtime-recovery";
 import { useAuth } from "@/lib/auth-context";
@@ -162,9 +162,9 @@ function PickupPage() {
   // Spot to locate on the SV map overlay (null = overlay closed).
   const [mapSelection, setMapSelection] = useState<{ spot: string; highlight: boolean } | null>(null);
   const svSpots = useMemo(() => spotsForLot("sv"), []);
-  // Private satellite pin test — Aron's accounts only.
-  const isAron = isAronEmail(user?.email);
-  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
+  // Private satellite pin test — authorized GPS accounts only.
+  const gpsAuthorized = isGpsAuthorizedEmail(user?.email);
+  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && gpsAuthorized });
   const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
 
   useEffect(() => { if (!loading && !user) navigate({ to: "/auth", replace: true }); }, [user, loading, navigate]);
@@ -745,7 +745,7 @@ function PickupPage() {
                     </button>
                   )}
 
-                  {isAron && p.ro_number && pinByRo[p.ro_number.trim()] ? (
+                  {gpsAuthorized && p.ro_number && pinByRo[p.ro_number.trim()] ? (
                     <Button
                       onClick={() => {
                         const pin = p.ro_number ? pinByRo[p.ro_number.trim()] : null;
@@ -854,7 +854,7 @@ function PickupPage() {
       )}
 
       {/* Only reachable from a tap, so the lazy Leaflet bundle never loads during SSR. */}
-      {isAron && activeSatFocus && (
+      {gpsAuthorized && activeSatFocus && (
         <Suspense fallback={null}>
           <SatellitePinMapModal focus={activeSatFocus} others={queuePins} onClose={() => setSatFocus(null)} />
         </Suspense>

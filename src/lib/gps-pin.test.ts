@@ -12,7 +12,7 @@ function setup() {
   const changed: (GpsFix | null)[] = [];
   const tracker = new GpsPinTracker({
     watchPosition: (ok, error, options) => {
-      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 });
+      expect(options).toEqual({ enableHighAccuracy: true, timeout: 10_000, maximumAge: 3_000 });
       success = ok; failure = error ?? (() => {}); return ++watchCount;
     },
     clearWatch: (id) => { cleared.push(id); },
@@ -37,10 +37,10 @@ test("GPS precision must be strictly under 20 feet", () => {
   expect(isReadyGpsFix(fix, 50_000)).toBe(false);
   expect(isReadyGpsFix({ ...fix, accuracyFeet: 19.9 }, 50_000)).toBe(true);
 });
-test("GPS freshness is strictly less than 10 seconds", () => {
-  const fix = { latitude: 34, longitude: -117, timestamp: 40_000, accuracyFeet: 14 };
+test("GPS freshness is strictly less than 25 seconds", () => {
+  const fix = { latitude: 34, longitude: -117, timestamp: 25_000, accuracyFeet: 14 };
   expect(isReadyGpsFix(fix, 50_000)).toBe(false);
-  expect(isReadyGpsFix({ ...fix, timestamp: 40_001 }, 50_000)).toBe(true);
+  expect(isReadyGpsFix({ ...fix, timestamp: 25_001 }, 50_000)).toBe(true);
 });
 test("warm accurate fix returns immediately without refinement timer", async () => {
   const s = setup(); s.tracker.start(); s.emit(14);
@@ -76,14 +76,14 @@ test("cold capture resolves on first fresh fix without waiting for accuracy", as
   expect((await result).accuracyFeet).toBeCloseTo(40); s.tracker.stop();
 });
 test("no fresh reading fails at 2000ms instead of saving stale or invented coordinates", async () => {
-  const s = setup(); s.tracker.start(); s.emit(14, 40_000);
+  const s = setup(); s.tracker.start(); s.emit(14, 25_000);
   const result = s.tracker.acquire();
   const failure = result.catch((error: Error) => error.message);
   s.advance(2_000); expect(await failure).toContain("No fresh GPS reading"); s.tracker.stop();
 });
 test("expired precise fix cannot beat a new coarse fix", async () => {
   const s = setup(); s.tracker.start(); s.emit(14);
-  s.advance(10_000); s.emit(70, 60_000, 35);
+  s.advance(25_000); s.emit(70, 75_000, 35);
   const result = s.tracker.acquire(); s.advance(2_000);
   expect((await result).latitude).toBe(35); s.tracker.stop();
 });
@@ -130,7 +130,7 @@ test("permission denial rejects without coordinates and stops tracking", async (
   const failure = result.catch((error: Error) => error.message);
   s.denied(); expect(await failure).toContain("Location permission denied");
   expect(s.cleared).toEqual([1]); expect(s.timers.size).toBe(0);
-  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(0);
+  expect(GPS_WATCH_OPTIONS.maximumAge).toBe(3_000);
 });
 
 test("26-foot drop gets one later sub-20-foot correction without holding capture", async () => {

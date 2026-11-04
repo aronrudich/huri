@@ -24,7 +24,7 @@
 - Use all-exits-occupied blocking for configured non-JCD rules through the shared occupiedBlockers helper; JCD retains its tandem any-occupied behavior.
 - Dealership switching is an authenticated Support-only server action that verifies confirmed auth identity before privileged profile reassignment; clear queries and reload route-local state without touching auth storage.
 - Share validated company service hours, RO formats, timezone and report boundaries across client and server paths; defaults preserve existing company behavior.
-- Gate every GPS pin-drop, satellite-map and silent-test control through src/lib/aron.ts email checks, and re-verify the caller's email server-side before honoring isTest; this keeps experimental controls invisible and unusable for all other accounts.
+- Gate GPS pin-drop, satellite-map and silent-test controls through the shared GPS allowlist, separate from Support identity checks, and re-verify the caller's email server-side before honoring isTest; this grants experimental access without global privileges.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
 - Own the shared browser-local GPS tracker in the authenticated root provider, gated to authorized non-spectators, with visibility/auth cleanup rather than Park cleanup; this shares fresh fixes across pages without polling writes or promising device accuracy.
 - Reuse the shared foreground watch for at most one guarded pin correction; cancel on Park exit/hiding and compare saved timestamps and locations before writes so walking or newer car changes cannot silently replace a pin.

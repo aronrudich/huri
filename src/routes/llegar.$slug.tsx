@@ -7,7 +7,6 @@ import huriLogo from "@/assets/huri-logo-new.png.asset.json";
 import { getArrivalInfo, markCustomerArrived, submitArrival } from "@/lib/arrive.functions";
 import { isServiceTimeOpen, isServiceOpenAt, SERVICE_CLOSED_MESSAGE } from "@/lib/service-hours";
 import { ArrivalActionButton, ArrivalHoursNotice } from "@/components/ArrivalHours";
-import { ArrivalLanguageSwitch } from "@/components/ArrivalLanguageSwitch";
 
 /**
  * Customer-facing arrival screen. No sign-in, no navigation, no app chrome:
@@ -308,7 +307,6 @@ function ArrivePage() {
     <div className="flex min-h-screen flex-col items-center bg-surface px-6 pb-16 pt-14 safe-top safe-bottom overscroll-none select-none">
       <img src={huriLogo.url} alt="Huri" className="h-10 w-auto" />
 
-      <ArrivalLanguageSwitch spanish />
       {done ? (
         <div className="mt-14 w-full max-w-sm rounded-3xl bg-background p-8 text-center shadow-xl">
           <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/10">

@@ -57,6 +57,23 @@ test("fresh 36-foot fix returns immediately with no accuracy hold", async () => 
   expect(resolved).toBe(true);
   expect(s.timers.size).toBe(0); s.tracker.stop();
 });
+test("exactly 40 feet captures immediately, above 40 refines for at most two seconds", async () => {
+  const s = setup(); s.tracker.start(); s.emit(40);
+  expect((await s.tracker.acquire()).accuracyFeet).toBeCloseTo(40);
+  expect(s.timers.size).toBe(0);
+  s.advance(25_000); s.emit(41);
+  let resolved = false;
+  const result = s.tracker.acquire().then((fix) => { resolved = true; return fix; });
+  s.advance(1_999); await Promise.resolve(); expect(resolved).toBe(false);
+  s.advance(1); expect((await result).accuracyFeet).toBeCloseTo(41);
+  s.tracker.stop();
+});
+test("a twenty-four-second precise fix remains available", async () => {
+  const s = setup(); s.tracker.start(); s.emit(14);
+  s.advance(24_999);
+  expect((await s.tracker.acquire()).accuracyFeet).toBeCloseTo(14);
+  expect(s.timers.size).toBe(0); s.tracker.stop();
+});
 test("instant capture weights nearby fresh readings toward the most accurate one", async () => {
   const s = setup(); s.tracker.start(); s.emit(36);
   s.advance(1_000); s.emit(30, 51_000, 35); s.emit(70, 51_000, 36);

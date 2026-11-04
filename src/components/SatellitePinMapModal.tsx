@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet-rotate";
 import { X, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -59,12 +60,17 @@ export default function SatellitePinMapModal({
     const map = L.map(hostRef.current, {
       center: [focus.latitude, focus.longitude],
       zoom: STALL_ZOOM,
-      maxZoom: 21,
+      maxZoom: 22,
       zoomControl: false,
-      attributionControl: true,
-    });
+      attributionControl: false,
+      // leaflet-rotate: two-finger twist rotates; compass resets to north.
+      rotate: true,
+      touchRotate: true,
+      rotateControl: { closeOnZeroBearing: false, position: "bottomright" },
+      bearing: 0,
+    } as L.MapOptions);
     L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer(TILES, { attribution: ATTRIBUTION, maxZoom: 21 }).addTo(map);
+    L.tileLayer(TILES, { attribution: ATTRIBUTION, maxNativeZoom: 18, maxZoom: 22 }).addTo(map);
     mapRef.current = map;
 
     const all = [focus, ...others.filter((c) => c.id !== focus.id)];

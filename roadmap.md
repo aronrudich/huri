@@ -1,8 +1,9 @@
 # Roadmap
 ## Stage Car and shared private GPS access (Nov 4)
-- [ ] Update Stage Car subtitles across dealerships.
-- [ ] Give Tristan private GPS/maps/Test access without Support privileges; adjust cache to 3 seconds, freshness to 25 seconds and immediate capture through 40 feet.
-- [ ] Run authorization, capture, refinement and screen regressions; real-device precision remains unverified.
+- [x] Updated Stage Car subtitles across dealerships.
+- [x] Gave Tristan private GPS/maps/Test access without Support privileges; cache is 3 seconds, freshness 25 seconds and immediate capture through 40 feet, with two-second coarse fallback and existing guarded polish.
+- [x] All independent regression files pass, including Tristan's real Park-screen capture and claimed-map visibility with controlled inputs; current preview build OK. Signed-out pages show Sign In without private controls or runtime errors. Nothing published.
+- [ ] Live signed-in GPS/Test acceptance and outdoor phone precision require preview sign-in and a real device; requesting-user session mint found no matching account. No accuracy or acquisition-time guarantee.
 ## BMW location lists and profile cleanup (Nov 3)
 - [x] Apply BMW menu order, legacy Charger alias, and immediate numbered-input focus; browser focus and 1–128 validation checked with isolated picker.
 - [x] Replace non-JCD Lot grids with counted location filters and searchable car lists; combine BMW W1/W2 only here. Controlled real-screen tests verify grouping, numerical sorting, scoped search and unchanged JCD tabs/map.

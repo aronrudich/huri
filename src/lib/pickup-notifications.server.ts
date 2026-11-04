@@ -3,7 +3,7 @@ import type { Database } from "@/integrations/supabase/types";
 import { sendWebPush, isStalePushStatus, isBadSubscriptionStatus } from "./push-server.server";
 import { isValidRo } from "./company-configuration";
 import { isSpectatorRole } from "./roles";
-import { ARON_EMAILS } from "./aron";
+import { isGpsAuthorizedEmail } from "./aron";
 
 type CarPinSnapshot = { latitude: number | null; longitude: number | null; accuracy_ft: number | null; pinned_at: string | null };
 
@@ -185,8 +185,8 @@ export async function createPickupAndNotify(
     throw new Error("Your account cannot submit pickup requests");
   }
   if (isSpectatorRole(caller.role_name)) throw new Error("Spectators cannot submit requests");
-  // Silent test mode is a private global-admin control; anyone else's flag is ignored.
-  const isTest = !!data.isTest && ARON_EMAILS.includes((caller.email ?? "").toLowerCase());
+  // Silent test mode is a private GPS-authorized control; anyone else's flag is ignored.
+  const isTest = !!data.isTest && isGpsAuthorizedEmail(caller.email);
   const { data: company, error: companyError } = await supabase.from("dealerships")
     .select("ro_format").eq("id", caller.dealership_id).single();
   if (companyError) throw companyError;

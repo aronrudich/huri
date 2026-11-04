@@ -17,7 +17,7 @@ mock.module("@/integrations/supabase/client.server", () => ({ supabaseAdmin: { f
 const { createPickupAndNotify } = await import("./pickup-notifications.server");
 const pin = { latitude: 34.123, longitude: -117.456, accuracy_ft: 18, pinned_at: "2026-11-02T02:00:00Z" };
 
-function clientFor(car: Record<string, unknown> | null) {
+function clientFor(car: Record<string, unknown> | null, email = "aron@huri.team") {
   const reads: { table: string; filters: Record<string, unknown> }[] = [];
   const inserts: Record<string, unknown>[] = [];
   const client = { from(table: string) {
@@ -29,7 +29,7 @@ function clientFor(car: Record<string, unknown> | null) {
       insert(values: Record<string, unknown>) { inserts.push(values); return builder; },
       async maybeSingle() {
         reads.push({ table, filters });
-        return { data: table === "profiles" ? { dealership_id: "company-a", role_name: "Admin", is_active: true, status: "approved", email: "aron@huri.team" } : car, error: null };
+        return { data: table === "profiles" ? { dealership_id: "company-a", role_name: "Admin", is_active: true, status: "approved", email } : car, error: null };
       },
       async single() { return { data: table === "dealerships" ? { ro_format: "digits_6" } : { id: "request" }, error: null }; },
     };
@@ -37,6 +37,18 @@ function clientFor(car: Record<string, unknown> | null) {
   } } as unknown as SupabaseClient<Database>;
   return { client, reads, inserts };
 }
+
+test("Tristan's silent request records the saved pin without notifying recipients", async () => {
+  const s = clientFor({ lot_position: "GPS", ...pin }, "tristan4par@yahoo.com");
+  const result = await createPickupAndNotify(s.client, "tristan", { ro: "000006", kind: "wash", isTest: true });
+  expect(s.inserts[0]).toMatchObject({ is_test: true, ...pin });
+  expect(result).toMatchObject({ recipients: 0, devices: 0, sent: 0 });
+});
+test("an ordinary caller cannot silence notifications by supplying isTest", async () => {
+  const s = clientFor({ lot_position: "GPS", ...pin }, "employee@example.com");
+  await createPickupAndNotify(s.client, "employee", { ro: "000006", kind: "wash", isTest: true });
+  expect(s.inserts[0]?.is_test).toBe(false);
+});
 
 for (const kind of ["pickup", "park", "wash", "parts"] as const) {
   test(`${kind} request preserves all four saved GPS fields through a company-scoped lookup`, async () => {

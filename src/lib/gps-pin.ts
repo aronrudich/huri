@@ -1,7 +1,8 @@
 export const GPS_TARGET_FEET = 20;
-export const GPS_FRESH_MS = 10_000;
+export const GPS_FRESH_MS = 25_000;
+export const GPS_INSTANT_FEET = 40;
 export const GPS_REFINE_MS = 2_000;
-export const GPS_WATCH_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 };
+export const GPS_WATCH_OPTIONS: PositionOptions = { enableHighAccuracy: true, timeout: 10_000, maximumAge: 3_000 };
 export const GPS_POLISH_MS = 15_000;
 
 export type GpsFix = { latitude: number; longitude: number; accuracyFeet: number; timestamp: number; speed?: number | null };
@@ -71,7 +72,7 @@ export class GpsPinTracker {
       this.fixes.push(fix);
       const best = this.best();
       this.changed(best, null);
-      if (best) this.finish(best);
+      if (best && best.accuracyFeet <= GPS_INSTANT_FEET) this.finish(best);
       for (const listener of this.listeners) listener(fix);
     }, (error) => {
       if (generation !== this.generation) return;
@@ -87,7 +88,7 @@ export class GpsPinTracker {
     if (this.pending) return Promise.reject(new Error("GPS acquisition already in progress."));
     this.start();
     const best = this.averaged();
-    if (best) return Promise.resolve(best);
+    if (best && best.accuracyFeet <= GPS_INSTANT_FEET) return Promise.resolve(best);
     return new Promise((resolve, reject) => {
       const timer = this.clock.setTimeout(() => this.finish(this.best(), new Error("No fresh GPS reading yet. GPS is still acquiring; try again shortly.")), GPS_REFINE_MS);
       this.pending = { resolve, reject, timer };

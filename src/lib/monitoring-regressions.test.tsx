@@ -174,10 +174,10 @@ test("Lot/Flagged ID editor keeps typed RO through late lookup and saves same ca
   await act(async () => { screen.unmount(); });
 });
 
-test("claimed pinned pickup has one active satellite map action, private to Aron", async () => {
+test("Tristan's claimed pinned pickup has one active satellite map action, hidden from others", async () => {
   const previousRequests = requests;
   requests = [{ id: "pinned-request", ro_number: "000006", status: "claimed", claimed_at: new Date().toISOString(), claimed_by: "valet", kind: "pickup", created_at: new Date().toISOString(), latitude: 34.123, longitude: -117.456 }];
-  user.email = "aron@huri.team";
+  user.email = "tristan4par@yahoo.com";
   try {
     const screen = await mount(Pickup);
     const satellite = screen.root.findAllByType("button").filter((button) => button.props["aria-label"] === "Show on satellite map");
@@ -192,7 +192,7 @@ test("claimed pinned pickup has one active satellite map action, private to Aron
   } finally { requests = previousRequests; delete user.email; }
 });
 
-test("Aron pin drop saves concurrently and keeps foreground GPS until root unmount", async () => {
+test("Tristan pin drop saves concurrently and keeps foreground GPS until authorization loss", async () => {
   let ok: PositionCallback = () => {};
   let watches = 0;
   const cleared: number[] = [];
@@ -207,7 +207,7 @@ test("Aron pin drop saves concurrently and keeps foreground GPS until root unmou
     const regular = await mount(Park);
     expect(watches).toBe(0);
     await act(async () => regular.unmount());
-    user.email = "aron@huri.team";
+    user.email = "tristan4par@yahoo.com";
     cached = [{ ...car, lot_position: "" }];
     loadCount = 0;
     pinWrites.length = 0;

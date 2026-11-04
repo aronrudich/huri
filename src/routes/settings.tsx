@@ -272,7 +272,7 @@ function SettingsPage() {
               onChange={(v) => setDraft({ ...draft, enable_parts: v })}
             />
             <ToggleRow
-              label="Staged Cars (Bring Car To CP)"
+              label="Staged Cars (Stage Car)"
               hint="Turn off to remove staging from the Actions menu."
               checked={draft.enable_staging}
               onChange={(v) => setDraft({ ...draft, enable_staging: v })}

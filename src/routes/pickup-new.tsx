@@ -13,7 +13,7 @@ import { submitPickupRequest } from "@/lib/pickup.functions";
 import { isTechRole, isSpectatorRole } from "@/lib/roles";
 import { CarPhotos } from "@/components/CarPhotos";
 import { Switch } from "@/components/ui/switch";
-import { isAronEmail } from "@/lib/aron";
+import { isGpsAuthorizedEmail } from "@/lib/aron";
 
 
 type PickupNewSearch = { staged?: boolean; ro?: string };
@@ -44,8 +44,8 @@ function NewPickupPage() {
   const [model, setModel] = useState("");
   const [notes, setNotes] = useState("");
   const [busy, setBusy] = useState(false);
-  // Silent test submissions (Aron only): recorded normally, never alert valets.
-  const isAron = isAronEmail(user?.email);
+  // Silent test submissions (private GPS accounts): recorded normally, never alert valets.
+  const gpsAuthorized = isGpsAuthorizedEmail(user?.email);
   const [isTest, setIsTest] = useState(false);
   const submitPickup = useServerFn(submitPickupRequest);
 
@@ -79,7 +79,7 @@ function NewPickupPage() {
         sourceRole,
         lotPosition: car?.lot_position ?? null,
         staged: isStage,
-        isTest: isAron && isTest,
+        isTest: gpsAuthorized && isTest,
       } });
       if (result?.mergedEta) {
         const r = ro.trim();
@@ -149,7 +149,7 @@ function NewPickupPage() {
           <CarPhotos ro={ro.trim()} userId={user?.id} canEdit={!isSpectatorRole(profile?.role_name)} />
         )}
 
-        {isAron && (
+        {gpsAuthorized && (
           <div className="flex items-center gap-3 rounded-xl border border-border bg-background px-4 py-3">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Test</p>

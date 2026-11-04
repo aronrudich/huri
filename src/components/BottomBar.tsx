@@ -105,7 +105,7 @@ export function TopActions({ hideStage }: { hideStage?: boolean } = {}) {
   // Short plain-English description shown under each action label (optional).
   const HINTS: Partial<Record<ActionId, string>> = {
     pickup: "Bring Me A Car",
-    stage: "Bring Car To CP",
+    stage: "Stage Car",
     parts: "Bring Me Parts",
     bringme: "Car or Parts",
     wash: "Bring Car To Wash",

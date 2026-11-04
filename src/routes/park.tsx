@@ -2,7 +2,7 @@ import { filterRoInput, isValidRo, roDigitLength } from "@/lib/company-configura
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Map as MapIcon, X, CheckCircle2, Copy, Crosshair, Satellite } from "lucide-react";
-import { isAronEmail } from "@/lib/aron";
+import { isGpsAuthorizedEmail } from "@/lib/aron";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { HuriLogo, TopActions } from "@/components/BottomBar";
@@ -100,25 +100,25 @@ function ParkPage() {
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const { data: locationRules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
   const hideModel = isTechRole(role);
-  // Private GPS pin-drop test controls — Aron's accounts only.
-  const isAron = isAronEmail(user?.email);
-  const gps = useGpsPin(!!user && isAron && !isSpectatorRole(role));
+  // Private GPS pin-drop test controls — authorized GPS accounts only.
+  const gpsAuthorized = isGpsAuthorizedEmail(user?.email);
+  const gps = useGpsPin(!!user && gpsAuthorized && !isSpectatorRole(role));
   const [pinBusy, setPinBusy] = useState(false);
   const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string; polished?: boolean } | null>(null);
-  const pinContext = useRef({ ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: isAron && !isSpectatorRole(role) });
-  pinContext.current = { ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: isAron && !isSpectatorRole(role) };
+  const pinContext = useRef({ ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: gpsAuthorized && !isSpectatorRole(role) });
+  pinContext.current = { ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: gpsAuthorized && !isSpectatorRole(role) };
   const [satFocus, setSatFocus] = useState<PinnedCarRow | null>(null);
-  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && isAron });
+  const { data: pinnedCars = [] } = useQuery({ ...pinnedCarsQuery(), enabled: !!user && gpsAuthorized });
   const pinnedFocus = useMemo(() => {
     const target = ro.trim();
-    if (!isAron || !target) return null;
+    if (!gpsAuthorized || !target) return null;
     return pinnedCars.find((c) => c.ro_number === target) ?? null;
-  }, [isAron, pinnedCars, ro]);
+  }, [gpsAuthorized, pinnedCars, ro]);
 
   const dropPin = async () => {
     const target = ro.trim();
     const companyId = profile?.dealership_id;
-    if (!user || !companyId || !isAron || isSpectatorRole(role) || pinBusy) return;
+    if (!user || !companyId || !gpsAuthorized || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
     setPinBusy(true);
     gps.cancelPolish();
@@ -388,7 +388,7 @@ function ParkPage() {
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
         <LocationPicker required value={pos} onChange={(value) => { gps.cancelPolish(); detailEdits.current.pos = true; setPos(value); }} />
-        {isAron && !isSpectatorRole(role) && (
+        {gpsAuthorized && !isSpectatorRole(role) && (
           <div className="space-y-2">
             {gps.active && (
               <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.fix && !gps.error ? "text-success" : "text-warning"}`}>

@@ -2,7 +2,7 @@ import { createContext, createElement, useContext, useEffect, useRef, useState, 
 import { GpsPinTracker, isReadyGpsFix, type GpsFix } from "./gps-pin";
 import { watchForegroundGps } from "./gps-foreground";
 import { useAuth } from "./auth-context";
-import { isAronEmail } from "./aron";
+import { isGpsAuthorizedEmail } from "./aron";
 import { isSpectatorRole } from "./roles";
 
 type SharedGps = { tracker: GpsPinTracker | null; fix: GpsFix | null; error: string | null; active: boolean };
@@ -10,7 +10,7 @@ const GpsContext = createContext<SharedGps>({ tracker: null, fix: null, error: n
 
 export function GpsPinProvider({ children }: { children: ReactNode }) {
   const { user, profile, loading } = useAuth();
-  const enabled = !loading && !!user && !!profile?.dealership_id && isAronEmail(user.email)
+  const enabled = !loading && !!user && !!profile?.dealership_id && isGpsAuthorizedEmail(user.email)
     && profile.id === user.id && !isSpectatorRole(profile.role_name) && profile.is_active === true && profile.status === "approved";
   const [tracker, setTracker] = useState<GpsPinTracker | null>(null);
   const [fix, setFix] = useState<GpsFix | null>(null);

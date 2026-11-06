@@ -6,6 +6,7 @@ import "leaflet-rotate";
 import { X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { lotCenter, manualPinLocation, pinZoneAt, type ManualPin, type MapPoint } from "@/lib/manual-pin";
+import { SATELLITE_ZOOM } from "@/lib/satellite-zoom";
 
 export default function ManualPinMapModal({ companyCode, approximate, initial, onSave, onClose }: {
   companyCode?: string; approximate: MapPoint | null; initial: ManualPin | null;
@@ -20,14 +21,14 @@ export default function ManualPinMapModal({ companyCode, approximate, initial, o
     if (!host.current) return;
     const center = initial ?? approximate ?? lotCenter(companyCode);
     const map = L.map(host.current, { center: center ? [center.latitude, center.longitude] : [0, 0],
-      zoom: center ? 19 : 2, maxZoom: 22, zoomControl: false, attributionControl: true,
+      zoom: center ? 19 : 2, maxZoom: SATELLITE_ZOOM.maxZoom, zoomControl: false, attributionControl: true,
       rotate: true, touchRotate: true, bearing: 0,
       rotateControl: { closeOnZeroBearing: false, position: "bottomright" },
     } as L.MapOptions);
     map.attributionControl.setPrefix(false);
     L.control.zoom({ position: "topright" }).addTo(map);
     L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
-      maxNativeZoom: 18, maxZoom: 22, attribution: "Imagery © Esri, Maxar",
+      ...SATELLITE_ZOOM, attribution: "Imagery © Esri, Maxar",
     }).addTo(map);
     let marker: L.Marker | null = null;
     const select = (latlng: L.LatLng, resetSpot: boolean) => {

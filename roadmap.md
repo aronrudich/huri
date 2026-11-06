@@ -1,4 +1,7 @@
 # Roadmap
+## Satellite imagery sharpening (Nov 6)
+- [x] Share native level 19 and maximum level 20 across both satellite maps; keep required imagery credits with Leaflet branding hidden.
+- [x] Eight regressions pass; isolated browser checks show both maps render imagery and stop at zoom 20, with credits visible; preview build OK. Real-phone sharpness remains unverified. Nothing published.
 ## Private manual map pins (Nov 6)
 - [x] Add account-local Auto/Manual switch and lazy manual satellite picker with numbered JCD 1–120/BMW 1–128 zones. Existing JCD operational capacity is unchanged.
 - [x] Stage manual coordinates in the form and save after existing assignment/occupied-spot confirmation; mask GPS location wording in ordinary pickup/detail/history views. Required imagery credits retained; Leaflet branding hidden.

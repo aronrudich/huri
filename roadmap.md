@@ -1,4 +1,8 @@
 # Roadmap
+## Private manual map pins (Nov 6)
+- [ ] Add account-local Auto/Manual switch and lazy manual satellite picker with numbered JCD/BMW zones.
+- [ ] Save manual coordinates through the existing Park workflow; retain occupied-spot confirmation and private pickup presentation.
+- [ ] Run zone, privacy and Park regressions and check phone/desktop maps; live device acceptance requires an authorized session.
 ## Stage Car and shared private GPS access (Nov 4)
 - [x] Updated Stage Car subtitles across dealerships.
 - [x] Gave Tristan private GPS/maps/Test access without Support privileges; cache is 3 seconds, freshness 25 seconds and immediate capture through 40 feet, with two-second coarse fallback and existing guarded polish.

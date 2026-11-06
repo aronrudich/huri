@@ -4,6 +4,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
+.manual-car-pin span { display: block; width: 28px; height: 28px; background: var(--destructive); border: 3px solid var(--background); border-radius: 50% 50% 50% 0; transform: rotate(-45deg); }
+
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

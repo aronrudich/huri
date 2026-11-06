@@ -27,7 +27,8 @@ import { EditProfileSheet } from "@/components/EditProfileSheet";
 import { toast } from "sonner";
 import { Avatar, AvatarViewer } from "@/components/Avatar";
 import { ROLE_OPTIONS, MANAGEMENT_ROLES, isAdminRole, isSpectatorRole, isUpperManagementRole, splitRolesByLevel } from "@/lib/roles";
-import { isAronEmail } from "@/lib/aron";
+import { isAronEmail, isGpsAuthorizedEmail } from "@/lib/aron";
+import { useGpsPinMode } from "@/lib/use-gps-pin-mode";
 import { useQueryClient } from "@tanstack/react-query";
 import { listSwitchableDealerships, switchActiveDealership } from "@/lib/dealership-switch.functions";
 
@@ -69,6 +70,7 @@ function ProfilePage() {
   const [companies, setCompanies] = useState<{ id: string; name: string }[]>([]);
   const [switching, setSwitching] = useState(false);
   const privateSwitcher = isAronEmail(profile?.email);
+  const { mode: gpsPinMode, changeMode: changeGpsPinMode } = useGpsPinMode(user?.id);
   const listCompanies = useServerFn(listSwitchableDealerships);
   const switchCompany = useServerFn(switchActiveDealership);
 
@@ -336,6 +338,13 @@ function ProfilePage() {
             <Briefcase className="h-4 w-4" />
             Request role change
           </button>
+        </section>
+      )}
+
+      {isGpsAuthorizedEmail(user.email) && !isSpectatorRole(role) && (
+        <section className="mx-3 mt-4 flex items-center justify-between gap-3 border-y border-border px-4 py-4">
+          <div><p className="font-medium">GPS Pin Mode</p><p className="text-sm text-muted-foreground">{gpsPinMode === "manual" ? "Manual (Tap Map)" : "Auto (Device GPS)"}</p></div>
+          <Switch aria-label="Manual GPS pin mode" checked={gpsPinMode === "manual"} onCheckedChange={(on) => changeGpsPinMode(on ? "manual" : "auto")} />
         </section>
       )}
 

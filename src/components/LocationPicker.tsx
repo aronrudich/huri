@@ -6,6 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { dealershipSettingsQuery } from "@/lib/settings";
 import { companyLocationsQuery } from "@/lib/company-locations";
 import { ConfiguredLocationPicker } from "./ConfiguredLocationPicker";
+import { isGpsAuthorizedEmail } from "@/lib/aron";
 
 type LocationPickerProps = {
   value: string;
@@ -27,7 +28,7 @@ const GPS_OPTION = { id: "GPS" as LocationChoice, label: "GPS", detail: "GPS Pin
 const TAKEN_OPTION = { id: "TAKEN" as LocationChoice, label: "Taken", detail: "Taken by Customer" };
 
 export function LocationPicker({ value, onChange, required }: LocationPickerProps) {
-  const { profile } = useAuth();
+  const { profile, user } = useAuth();
   const { data: settings } = useQuery(dealershipSettingsQuery(profile?.dealership_id));
   const { data: rules = [] } = useQuery(companyLocationsQuery(profile?.dealership_id));
   const [open, setOpen] = useState(false);
@@ -74,12 +75,12 @@ export function LocationPicker({ value, onChange, required }: LocationPickerProp
   };
 
 
-  const selected = choice === "TAKEN" ? TAKEN_OPTION : choice === "GPS" ? GPS_OPTION : OPTIONS.find((option) => option.id === choice);
+  const selected = choice === "TAKEN" ? TAKEN_OPTION : choice === "GPS" ? isGpsAuthorizedEmail(user?.email) ? GPS_OPTION : { label: "Location", detail: "Saved" } : OPTIONS.find((option) => option.id === choice);
 
   if (settings && settings.company_code !== "JCD29854" && rules.length) return <ConfiguredLocationPicker value={value} onChange={onChange} rules={rules} required={required} companyCode={settings.company_code} />;
   if (settings && settings.company_code !== "JCD29854") return <div>
     <label className="mb-1 block text-xs font-medium text-muted-foreground">Location</label>
-    <input value={value} onChange={(e)=>onChange(e.target.value)} maxLength={60} required={required} list="company-location-options" className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base" />
+    <input value={!isGpsAuthorizedEmail(user?.email) && normalizeSpot(value) === "GPS" ? "Location saved" : value} onChange={(e)=>onChange(e.target.value)} maxLength={60} required={required} list="company-location-options" className="w-full rounded-xl border border-input bg-background px-3 py-3 text-base" />
     <datalist id="company-location-options">{[...rules.map((r)=>r.label),"BAY","WASH","UNKNOWN"].map((label)=><option key={label} value={label} />)}</datalist>
   </div>;
 

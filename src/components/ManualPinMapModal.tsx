@@ -47,7 +47,7 @@ export default function ManualPinMapModal({ companyCode, approximate, initial, o
   return <div role="dialog" aria-modal="true" aria-label="Manual car pin" className="fixed inset-0 z-[70] flex flex-col bg-background">
     <header className="flex items-center justify-between gap-3 border-b border-border px-4 py-3 safe-top">
       <p className="font-semibold">Car location</p>
-      <Button type="button" variant="ghost" size="icon" onClick={onClose} aria-label="Close manual map"><X className="h-5 w-5" /></Button>
+      <Button type="button" className="h-9 w-9 bg-muted p-0 text-foreground" onClick={onClose} aria-label="Close manual map"><X className="h-5 w-5" /></Button>
     </header>
     <div ref={host} className="min-h-0 flex-1" />
     <footer className="space-y-3 border-t border-border px-4 py-3 safe-bottom">

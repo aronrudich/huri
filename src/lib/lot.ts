@@ -131,7 +131,13 @@ export function locationLabel(raw: string | null | undefined, bayTech?: string |
   }
   if (t === "WASH") return "Wash";
   if (t === "TAKEN") return "Taken by Customer";
+  if (t === "GPS") return "Location saved";
   return t;
+}
+
+/** Presentation only: keep private map labels out of ordinary employee views. */
+export function visibleLocation(raw: string | null | undefined, gpsAuthorized: boolean): string {
+  return !gpsAuthorized && normalizeSpot(raw) === "GPS" ? "Location saved" : raw ?? "UNKNOWN";
 }
 
 /** Very short label for the round badge in search lists (fits in a small dot). */

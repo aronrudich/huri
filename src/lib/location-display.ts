@@ -36,6 +36,7 @@ export function matchesLocationFilter(position: string | null, filter: string, r
 }
 
 export function configuredSpotBadge(position: string, rules: LocationRule[]): string {
+  if (/^GPS( PIN)?$/i.test(position.trim())) return "★";
   const group = carLocationGroup(position, rules);
   const rule = rules.find((item) => item.label.toUpperCase() === position.toUpperCase());
   if (rule?.capacity === 1) return position.slice(rule.lot_name.length).trim();

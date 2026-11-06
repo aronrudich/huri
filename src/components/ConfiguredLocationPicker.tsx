@@ -16,6 +16,7 @@ export function ConfiguredLocationPicker({ value, onChange, rules, required, com
   const [detail, setDetail] = useState("");
   const options = configuredLocationOptions(rules, companyCode);
   const sync = (next: string) => {
+    if (/^GPS( PIN)?$/i.test(next.trim())) { setChoice("Location saved"); setDetail(""); return; }
     const rule = rules.find((r) => r.label.toUpperCase() === next.toUpperCase());
     if (rule) { setChoice(locationName(rule.lot_name)); setDetail(rule.capacity === 1 ? rule.label.replace(`${rule.lot_name.toUpperCase()} `, "") : ""); }
     else if (/^charg(er|ing)$/i.test(next)) { setChoice("Charger"); setDetail(""); }
@@ -38,7 +39,7 @@ export function ConfiguredLocationPicker({ value, onChange, rules, required, com
       const rule = rules.find((r) => locationName(r.lot_name) === next && r.capacity === 0);
       emit(next === "Technician Bay" ? "BAY" : next === "Unknown" ? "UNKNOWN" : rule?.label ?? "");
     }} className="w-full rounded-lg border border-input bg-background px-3 py-3 text-base">
-      <option value="">Choose A Location</option>{options.map((name) => <option key={name}>{name}</option>)}
+      <option value="">Choose A Location</option>{choice === "Location saved" && <option>Location saved</option>}{options.map((name) => <option key={name}>{name}</option>)}
     </select>
     {numbered.length > 0 && <label className="block text-xs text-muted-foreground">Spot number
       <input ref={numberInput} aria-label="Spot number" inputMode="numeric" placeholder={placeholder} value={detail} onChange={(e) => {

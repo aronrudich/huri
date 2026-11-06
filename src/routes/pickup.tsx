@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/auth-context";
 import { BottomBar, HuriLogo, TopActions } from "@/components/BottomBar";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMapRequest } from "@/lib/lot";
+import { adjacentSpots, spotsForLot, lotOf, locationLabel, spotBadge, isPickupMapRequest, visibleLocation } from "@/lib/lot";
 import { notify } from "@/lib/push";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { carWashesQuery, directoryQuery, parkedCarsQuery, pickupsQuery, pickupTakenCarsQuery, pinnedCarsQuery, type PinnedCarRow } from "@/lib/queries";
@@ -459,14 +459,14 @@ function PickupPage() {
                 className="flex items-center gap-3 border-b border-border px-4 py-3 last:border-b-0 active:bg-accent"
               >
                 <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden whitespace-nowrap rounded-full bg-primary/10 text-[11px] font-bold leading-none tracking-tight text-primary">
-                  {spotBadge(c.lot_position)}
+                  {spotBadge(visibleLocation(c.lot_position, gpsAuthorized))}
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">
                     {c.ro_number ? `RO #${c.ro_number}` : "No RO #"}
                   </p>
                   <p className="truncate text-xs text-muted-foreground">
-                    {c.car_model ?? "—"} · {c.lot_position === "UNKNOWN" ? "Spot unknown" : c.lot_position === "TAKEN" ? "Taken by Customer" : `Spot ${c.lot_position}`}
+                    {c.car_model ?? "—"} · {locationLabel(visibleLocation(c.lot_position, gpsAuthorized))}
                   </p>
                 </div>
                 <span className="text-xs font-semibold text-primary">Edit</span>
@@ -691,7 +691,7 @@ function PickupPage() {
                       <span className="text-muted-foreground">Location:</span>{" "}
                       <span className="font-semibold">
                         {hasCarRecord
-                          ? locationLabel(effectiveSpot, liveCar?.bay_tech || (isTech ? p.advisor_name : null))
+                          ? locationLabel(visibleLocation(effectiveSpot, gpsAuthorized), liveCar?.bay_tech || (isTech ? p.advisor_name : null))
                           : "Unknown"}
                       </span>
                     </p>

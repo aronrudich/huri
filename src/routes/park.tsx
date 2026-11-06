@@ -128,6 +128,7 @@ function ParkPage() {
     if (!user || !companyId || !gpsAuthorized || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
     if (gpsPinMode === "manual") { gps.cancelPolish(); setManualOpen(true); return; }
+    setManualPin(null);
     setPinBusy(true);
     gps.cancelPolish();
     try {
@@ -271,6 +272,7 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
 
     e.preventDefault();
+    if (busy) return;
     gps.cancelPolish();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");

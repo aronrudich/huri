@@ -26,6 +26,7 @@
 - Share validated company service hours, RO formats, timezone and report boundaries across client and server paths; defaults preserve existing company behavior.
 - Gate GPS pin-drop, satellite-map and silent-test controls through the shared GPS allowlist, separate from Support identity checks, and re-verify the caller's email server-side before honoring isTest; this grants experimental access without global privileges.
 - Load the satellite map only through React.lazy from a tap handler; Leaflet imports must never enter the SSR graph.
+- Share satellite native/max zoom configuration across both private map views so imagery detail and zoom limits cannot drift.
 - Own the shared browser-local GPS tracker in the authenticated root provider, gated to authorized non-spectators, with visibility/auth cleanup rather than Park cleanup; this shares fresh fixes across pages without polling writes or promising device accuracy.
 - Reuse the shared foreground watch for at most one guarded pin correction; cancel on Park exit/hiding and compare saved timestamps and locations before writes so walking or newer car changes cannot silently replace a pin.
 - Save GPS location and coordinates together on the car through existing audit triggers, and parallelize only independent request propagation; derive satellite queue pins from visible active requests, including their stored coordinates when a claimed car is TAKEN.

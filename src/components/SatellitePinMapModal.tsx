@@ -7,6 +7,7 @@ import "leaflet/dist/leaflet.css";
 import "leaflet-rotate";
 import { X, Maximize2 } from "lucide-react";
 import { format } from "date-fns";
+import { SATELLITE_ZOOM } from "@/lib/satellite-zoom";
 
 export type PinnedCar = {
   id: string;
@@ -60,7 +61,7 @@ export default function SatellitePinMapModal({
     const map = L.map(hostRef.current, {
       center: [focus.latitude, focus.longitude],
       zoom: STALL_ZOOM,
-      maxZoom: 22,
+      maxZoom: SATELLITE_ZOOM.maxZoom,
       zoomControl: false,
       attributionControl: true,
       // leaflet-rotate: two-finger twist rotates; compass resets to north.
@@ -71,7 +72,7 @@ export default function SatellitePinMapModal({
     } as L.MapOptions);
     map.attributionControl.setPrefix(false);
     L.control.zoom({ position: "topright" }).addTo(map);
-    L.tileLayer(TILES, { attribution: ATTRIBUTION, maxNativeZoom: 18, maxZoom: 22 }).addTo(map);
+    L.tileLayer(TILES, { attribution: ATTRIBUTION, ...SATELLITE_ZOOM }).addTo(map);
     mapRef.current = map;
 
     const all = [focus, ...others.filter((c) => c.id !== focus.id)];

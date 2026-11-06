@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { isGpsAuthorizedEmail } from "@/lib/aron";
 
 type EventRow = {
   id: string;
@@ -64,6 +66,7 @@ function requestTitle(r: RequestRow) {
  */
 
 export function CarHistory({ ro }: { ro: string }) {
+  const { user } = useAuth();
   const [events, setEvents] = useState<EventRow[]>([]);
   const [requests, setRequests] = useState<RequestRow[]>([]);
   const [names, setNames] = useState<Record<string, string>>({});
@@ -131,7 +134,7 @@ export function CarHistory({ ro }: { ro: string }) {
       at: e.created_at,
       title: CAR_TITLES[e.event_type] ?? e.event_type,
       lines: [
-        e.detail,
+        isGpsAuthorizedEmail(user?.email) ? e.detail : e.detail?.replace(/\bGPS(?: PIN)?\b/gi, "saved location"),
         `${who(e.actor_id)} · ${when(e.created_at)}`,
         e.notes ? `Note: ${e.notes}` : null,
       ].filter(Boolean) as string[],

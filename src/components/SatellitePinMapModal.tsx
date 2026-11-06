@@ -62,13 +62,14 @@ export default function SatellitePinMapModal({
       zoom: STALL_ZOOM,
       maxZoom: 22,
       zoomControl: false,
-      attributionControl: false,
+      attributionControl: true,
       // leaflet-rotate: two-finger twist rotates; compass resets to north.
       rotate: true,
       touchRotate: true,
       rotateControl: { closeOnZeroBearing: false, position: "bottomright" },
       bearing: 0,
     } as L.MapOptions);
+    map.attributionControl.setPrefix(false);
     L.control.zoom({ position: "topright" }).addTo(map);
     L.tileLayer(TILES, { attribution: ATTRIBUTION, maxNativeZoom: 18, maxZoom: 22 }).addTo(map);
     mapRef.current = map;

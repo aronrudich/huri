@@ -20,11 +20,14 @@ import { uploadCarPhoto } from "@/lib/car-photos";
 import { parkedCarsQuery, pinnedCarsQuery, type ParkedCarRow, type PinnedCarRow } from "@/lib/queries";
 import { mergeLoadedCarDetails } from "@/lib/car-loading";
 import { useGpsPin } from "@/lib/use-gps-pin";
+import { useGpsPinMode } from "@/lib/use-gps-pin-mode";
+import type { ManualPin } from "@/lib/manual-pin";
 import { Button } from "@/components/ui/button";
 import { companyLocationsQuery, occupiedBlockers } from "@/lib/company-locations";
 
 // Leaflet is browser-only: the satellite map loads lazily after hydration.
 const SatellitePinMapModal = lazy(() => import("@/components/SatellitePinMapModal"));
+const ManualPinMapModal = lazy(() => import("@/components/ManualPinMapModal"));
 
 import { format } from "date-fns";
 
@@ -103,6 +106,11 @@ function ParkPage() {
   // Private GPS pin-drop test controls — authorized GPS accounts only.
   const gpsAuthorized = isGpsAuthorizedEmail(user?.email);
   const gps = useGpsPin(!!user && gpsAuthorized && !isSpectatorRole(role));
+  const { mode: gpsPinMode } = useGpsPinMode(user?.id);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualPin, setManualPin] = useState<ManualPin | null>(null);
+  useEffect(() => { setManualPin(null); setManualOpen(false); }, [user?.id, profile?.dealership_id, gpsAuthorized]);
+  const approximate = useMemo(() => gps.fix ? { latitude: gps.fix.latitude, longitude: gps.fix.longitude } : null, [manualOpen]);
   const [pinBusy, setPinBusy] = useState(false);
   const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string; polished?: boolean } | null>(null);
   const pinContext = useRef({ ro: ro.trim(), pos, companyId: profile?.dealership_id, userId: user?.id, allowed: gpsAuthorized && !isSpectatorRole(role) });
@@ -120,6 +128,8 @@ function ParkPage() {
     const companyId = profile?.dealership_id;
     if (!user || !companyId || !gpsAuthorized || isSpectatorRole(role) || pinBusy) return;
     if (!isValidRo(target, settings?.ro_format)) return toast.error("Enter a valid RO # first");
+    if (gpsPinMode === "manual") { gps.cancelPolish(); setManualOpen(true); return; }
+    setManualPin(null);
     setPinBusy(true);
     gps.cancelPolish();
     try {
@@ -263,6 +273,7 @@ function ParkPage() {
   const submit = async (e: React.FormEvent) => {
 
     e.preventDefault();
+    if (busy) return;
     gps.cancelPolish();
     if (!ro.trim()) return toast.error("RO # is required");
     if (!isValidRo(ro, settings?.ro_format)) return toast.error("Invalid RO#");
@@ -337,8 +348,25 @@ function ParkPage() {
       }));
     }
 
-    setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { setBusy(false); return toast.error(error.message); }
+
+    // Manual modal Save stages the pin only. Assign first so occupied-spot rules
+    // and confirmations remain unchanged, then attach coordinates to that car.
+    if (manualPin && gpsAuthorized && profile?.dealership_id && normalizeSpot(manualPin.location) === normalizedPos) {
+      const coords = { latitude: manualPin.latitude, longitude: manualPin.longitude, accuracy_ft: null, pinned_at: manualPin.pinned_at };
+      const { data: saved, error: pinError } = await supabase.from("parked_cars").update(coords)
+        .eq("dealership_id", profile.dealership_id).eq("ro_number", normalizedRo).eq("lot_position", normalizedPos).select("id");
+      if (pinError || !saved?.length) {
+        setBusy(false);
+        void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+        return toast.error("Location saved, but the map pin could not save. Please retry Save.");
+      }
+      const { error: requestError } = await supabase.from("pickup_requests").update(coords)
+        .eq("dealership_id", profile.dealership_id).eq("ro_number", normalizedRo).in("status", ["unclaimed", "claimed"]);
+      void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
+      void queryClient.invalidateQueries({ queryKey: ["pickups"] });
+      if (requestError) { setBusy(false); return toast.error("Car pin saved, but pickup pins could not refresh. Please retry Save."); }
+    }
 
     // Attach any photos taken before the car had an RO #.
     if (pendingPhotos.current.length && user) {
@@ -354,6 +382,7 @@ function ParkPage() {
 
     toast.success(editing ? "Car updated" : "Car logged");
     await queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+    setBusy(false);
     goBack();
   };
 
@@ -373,6 +402,7 @@ function ParkPage() {
         <Field label="RO Number" required value={ro} onChange={(raw) => {
           if (pinBusy) return;
           gps.cancelPolish();
+          setManualPin(null);
           const value = filterRoInput(raw, settings?.ro_format);
           roEdited.current = true;
           setRo(value);
@@ -387,10 +417,10 @@ function ParkPage() {
           if (!detailEdits.current.model) setModel("");
           if (!detailEdits.current.notes) setNotes("");
         }} inputMode="numeric" maxLength={roDigitLength(settings?.ro_format)} />
-        <LocationPicker required value={pos} onChange={(value) => { gps.cancelPolish(); detailEdits.current.pos = true; setPos(value); }} />
+        <LocationPicker required value={pos} onChange={(value) => { gps.cancelPolish(); setManualPin(null); detailEdits.current.pos = true; setPos(value); }} />
         {gpsAuthorized && !isSpectatorRole(role) && (
           <div className="space-y-2">
-            {gps.active && (
+            {gpsPinMode === "auto" && gps.active && (
               <p role="status" className={`flex items-center gap-1.5 text-xs ${gps.fix && !gps.error ? "text-success" : "text-warning"}`}>
                 <span className={`h-2 w-2 shrink-0 rounded-full ${gps.fix && !gps.error ? "bg-success" : "bg-warning"}`} />
                 {gps.error ?? (gps.fix ? `GPS Ready (±${Math.round(gps.fix.accuracyFeet)} ft)` : "Acquiring GPS…")}
@@ -404,6 +434,7 @@ function ParkPage() {
             >
               <Crosshair className="h-4 w-4" /> {pinBusy ? gps.refining ? "Acquiring GPS…" : "Saving pin…" : "Drop GPS Pin"}
             </Button>
+            {manualPin && <p className="flex items-center gap-2 text-sm text-success"><CheckCircle2 className="h-4 w-4" />Map pin selected · {manualPin.location === "GPS" ? "Car location" : manualPin.location}</p>}
             {pinDrop && (
               <p className="flex items-center gap-1.5 rounded-xl bg-success/10 px-3 py-2 text-sm font-semibold text-success">
                 <CheckCircle2 className="h-4 w-4" /> GPS Pin {pinDrop.polished ? "Polished" : "Dropped"}: ±{pinDrop.accFt} ft accuracy
@@ -556,7 +587,14 @@ function ParkPage() {
       )}
 
       {/* Only reachable from a tap, so the lazy Leaflet bundle never loads during SSR. */}
-      {satFocus && (
+      {gpsAuthorized && !isSpectatorRole(role) && manualOpen && (
+        <Suspense fallback={<div role="status" className="fixed inset-0 z-[70] grid place-items-center bg-background">Loading map…</div>}>
+          <ManualPinMapModal companyCode={settings?.company_code} approximate={approximate} initial={manualPin} onClose={() => setManualOpen(false)} onSave={(pin) => {
+            gps.cancelPolish(); detailEdits.current.pos = true; setPos(pin.location); setManualPin(pin); setPinDrop(null); setManualOpen(false);
+          }} />
+        </Suspense>
+      )}
+      {gpsAuthorized && satFocus && (
         <Suspense fallback={null}>
           <SatellitePinMapModal focus={satFocus} others={pinnedCars} onClose={() => setSatFocus(null)} />
         </Suspense>

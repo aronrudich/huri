@@ -109,6 +109,7 @@ function ParkPage() {
   const { mode: gpsPinMode } = useGpsPinMode(user?.id);
   const [manualOpen, setManualOpen] = useState(false);
   const [manualPin, setManualPin] = useState<ManualPin | null>(null);
+  useEffect(() => { setManualPin(null); setManualOpen(false); }, [user?.id, profile?.dealership_id, gpsAuthorized]);
   const approximate = useMemo(() => gps.fix ? { latitude: gps.fix.latitude, longitude: gps.fix.longitude } : null, [manualOpen]);
   const [pinBusy, setPinBusy] = useState(false);
   const [pinDrop, setPinDrop] = useState<{ accFt: number; at: string; polished?: boolean } | null>(null);

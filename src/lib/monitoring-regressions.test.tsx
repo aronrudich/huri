@@ -30,6 +30,8 @@ const client = {
 type Channel = { name: string; handlers: Record<string, (p: unknown) => void>; status?: (s: string) => void; on: (...args: any[]) => Channel; subscribe: (fn: (s: string) => void) => Channel };
 const channels: Channel[] = [];
 const statuses: string[] = [];
+function ManualMapStub(_props: any) { return null; }
+mock.module("@/components/ManualPinMapModal", () => ({ default: ManualMapStub }));
 mock.module("@/integrations/supabase/client", () => ({ supabase: {
   channel: (name: string) => {
     const channel: Channel = { name, handlers: {},
@@ -261,5 +263,32 @@ test("Tristan pin drop saves concurrently and keeps foreground GPS until authori
     else Reflect.deleteProperty(globalThis, "navigator");
     if (originalDocument) Object.defineProperty(globalThis, "document", originalDocument);
     else Reflect.deleteProperty(globalThis, "document");
+  }
+});
+
+test("manual pin stages without writes and saves coordinates after normal spot assignment", async () => {
+  const originalStorage = Object.getOwnPropertyDescriptor(globalThis, "localStorage");
+  Object.defineProperty(globalThis, "localStorage", { configurable: true, value: { getItem: () => "manual" } });
+  user.email = "tristan4par@yahoo.com";
+  cached = [car]; loadCount = 0; pinWrites.length = 0;
+  let screen: ReactTestRenderer | undefined;
+  try {
+    screen = await mount(Park);
+    const drop = screen.root.findAllByType("button").find((b) => b.props.onClick?.name === "dropPin");
+    if (!drop) throw new Error("No manual control");
+    await act(async () => { await drop.props.onClick(); });
+    const selected = { latitude: 34.0506, longitude: -117.54225, location: "SV 120", pinned_at: "2026-11-06T01:00:00.000Z" };
+    await act(async () => { screen?.root.findByType(ManualMapStub).props.onSave(selected); });
+    expect(pinWrites).toHaveLength(0);
+    await act(async () => { await screen?.root.findByType("form").props.onSubmit({ preventDefault() {} }); });
+    expect(writes.at(-1)).toMatchObject({ _target_id: "car", _position: "SV 120", _car_model: "Jeep GC", _notes: "Key inside" });
+    expect(pinWrites).toEqual([
+      { table: "parked_cars", values: { latitude: selected.latitude, longitude: selected.longitude, accuracy_ft: null, pinned_at: selected.pinned_at } },
+      { table: "pickup_requests", values: { latitude: selected.latitude, longitude: selected.longitude, accuracy_ft: null, pinned_at: selected.pinned_at } },
+    ]);
+  } finally {
+    await act(async () => screen?.unmount()); delete user.email;
+    if (originalStorage) Object.defineProperty(globalThis, "localStorage", originalStorage);
+    else Reflect.deleteProperty(globalThis, "localStorage");
   }
 });

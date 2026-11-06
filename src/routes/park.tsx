@@ -347,8 +347,7 @@ function ParkPage() {
       }));
     }
 
-    setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) { setBusy(false); return toast.error(error.message); }
 
     // Manual modal Save stages the pin only. Assign first so occupied-spot rules
     // and confirmations remain unchanged, then attach coordinates to that car.
@@ -357,6 +356,7 @@ function ParkPage() {
       const { data: saved, error: pinError } = await supabase.from("parked_cars").update(coords)
         .eq("dealership_id", profile.dealership_id).eq("ro_number", normalizedRo).eq("lot_position", normalizedPos).select("id");
       if (pinError || !saved?.length) {
+        setBusy(false);
         void queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
         return toast.error("Location saved, but the map pin could not save. Please retry Save.");
       }
@@ -364,7 +364,7 @@ function ParkPage() {
         .eq("dealership_id", profile.dealership_id).eq("ro_number", normalizedRo).in("status", ["unclaimed", "claimed"]);
       void queryClient.invalidateQueries({ queryKey: ["pinned-cars"] });
       void queryClient.invalidateQueries({ queryKey: ["pickups"] });
-      if (requestError) return toast.error("Car pin saved, but pickup pins could not refresh. Please retry Save.");
+      if (requestError) { setBusy(false); return toast.error("Car pin saved, but pickup pins could not refresh. Please retry Save."); }
     }
 
     // Attach any photos taken before the car had an RO #.
@@ -381,6 +381,7 @@ function ParkPage() {
 
     toast.success(editing ? "Car updated" : "Car logged");
     await queryClient.invalidateQueries({ queryKey: ["parked-cars"] });
+    setBusy(false);
     goBack();
   };
 
